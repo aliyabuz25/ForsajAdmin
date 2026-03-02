@@ -52,7 +52,7 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const { getText, getImage, isLoading } = useSiteContent('general');
+  const { getText, getImage } = useSiteContent('general');
   const splashLogo = getImage('SITE_LOGO_LIGHT', '').path;
 
   useEffect(() => {
@@ -194,18 +194,15 @@ const App: React.FC = () => {
     };
   }, []);
 
-  if (isLoading || isLanguageSplashVisible) {
-    return (
-      <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
-        {splashLogo ? (
-          <img src={splashLogo} alt="Forsaj Logo" className="max-w-[220px] w-[58vw] h-auto object-contain" />
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col min-h-screen">
+      {isLanguageSplashVisible && (
+        <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
+          {splashLogo ? (
+            <img src={splashLogo} alt="Forsaj Logo" className="max-w-[220px] w-[58vw] h-auto object-contain" />
+          ) : null}
+        </div>
+      )}
       <Toaster position="top-right" />
       <Marquee />
       <Navbar currentView={currentView} onViewChange={(view) => handleViewChange(view, null)} />
