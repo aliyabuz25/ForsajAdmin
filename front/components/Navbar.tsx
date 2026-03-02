@@ -14,8 +14,11 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const languagePickerRef = useRef<HTMLDivElement | null>(null);
   const languageTimersRef = useRef<number[]>([]);
+  const languageTransitionTokenRef = useRef(0);
   const GTRANSLATE_SCRIPT_ID = 'gtranslate-widget-script';
   const GTRANSLATE_WRAPPER_CLASS = 'gtranslate_wrapper';
+  const LANGUAGE_TRANSITION_START_EVENT = 'forsaj-language-transition-start';
+  const LANGUAGE_TRANSITION_END_EVENT = 'forsaj-language-transition-end';
   const languageMap: Record<'AZ' | 'RU' | 'ENG', string> = {
     AZ: 'az|az',
     RU: 'az|ru',
@@ -110,14 +113,32 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     applyGTranslateLanguage(normalized);
   };
 
-  const scheduleLanguageReapply = (langCode: string) => {
+  const emitLanguageTransition = (type: 'start' | 'end') => {
+    window.dispatchEvent(
+      new CustomEvent(type === 'start' ? LANGUAGE_TRANSITION_START_EVENT : LANGUAGE_TRANSITION_END_EVENT)
+    );
+  };
+
+  const scheduleLanguageReapply = (langCode: string, withSplash = false) => {
     languageTimersRef.current.forEach((id) => window.clearTimeout(id));
     languageTimersRef.current = [];
+    const token = ++languageTransitionTokenRef.current;
+
+    if (withSplash) emitLanguageTransition('start');
 
     [0, 180, 600, 1300].forEach((delay) => {
       const timer = window.setTimeout(() => applySiteLanguage(langCode), delay);
       languageTimersRef.current.push(timer);
     });
+
+    if (withSplash) {
+      const settleTimer = window.setTimeout(() => {
+        if (languageTransitionTokenRef.current === token) {
+          emitLanguageTransition('end');
+        }
+      }, 1800);
+      languageTimersRef.current.push(settleTimer);
+    }
   };
 
   useEffect(() => {
@@ -129,8 +150,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   }, []);
 
   useEffect(() => {
+    scheduleLanguageReapply(languageMap[language] || 'az|az', true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     scheduleLanguageReapply(languageMap[language] || 'az|az');
-  }, [language, currentView]);
+  }, [currentView]);
 
   useEffect(() => {
     if (!isLangOpen) return;
@@ -349,7 +375,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     }
 
     setSiteLanguage(nextLanguage as any);
-    scheduleLanguageReapply(languageMap[nextLanguage as 'AZ' | 'RU' | 'ENG'] || 'az|az');
+    scheduleLanguageReapply(languageMap[nextLanguage as 'AZ' | 'RU' | 'ENG'] || 'az|az', true);
     setIsLangOpen(false);
     setIsMobileMenuOpen(false);
   };

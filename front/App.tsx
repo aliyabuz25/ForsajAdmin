@@ -18,6 +18,8 @@ import { useSiteContent } from './hooks/useSiteContent';
 import { useEffect } from 'react';
 
 const SELECTED_NEWS_ID_KEY = 'forsaj_selected_news_id';
+const LANGUAGE_TRANSITION_START_EVENT = 'forsaj-language-transition-start';
+const LANGUAGE_TRANSITION_END_EVENT = 'forsaj-language-transition-end';
 
 type FrontView =
   | 'home'
@@ -37,6 +39,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<FrontView>('home');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [eventsOpenMode, setEventsOpenMode] = useState<EventsOpenMode>('default');
+  const [isLanguageSplashVisible, setIsLanguageSplashVisible] = useState(true);
 
   const handleViewChange = (view: FrontView, category: string | null = null) => {
     setCurrentView((prevView) => {
@@ -49,7 +52,8 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const { getText } = useSiteContent('general');
+  const { getText, getImage, isLoading } = useSiteContent('general');
+  const splashLogo = getImage('SITE_LOGO_LIGHT', '').path;
 
   useEffect(() => {
     try {
@@ -171,6 +175,34 @@ const App: React.FC = () => {
 
     setCanonical(canonicalUrl);
   }, [getText]);
+
+  useEffect(() => {
+    const onLanguageTransitionStart = () => setIsLanguageSplashVisible(true);
+    const onLanguageTransitionEnd = () => setIsLanguageSplashVisible(false);
+
+    window.addEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
+    window.addEventListener(LANGUAGE_TRANSITION_END_EVENT, onLanguageTransitionEnd as EventListener);
+
+    const failsafeTimer = window.setTimeout(() => {
+      setIsLanguageSplashVisible(false);
+    }, 5000);
+
+    return () => {
+      window.removeEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
+      window.removeEventListener(LANGUAGE_TRANSITION_END_EVENT, onLanguageTransitionEnd as EventListener);
+      window.clearTimeout(failsafeTimer);
+    };
+  }, []);
+
+  if (isLoading || isLanguageSplashVisible) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
+        {splashLogo ? (
+          <img src={splashLogo} alt="Forsaj Logo" className="max-w-[220px] w-[58vw] h-auto object-contain" />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

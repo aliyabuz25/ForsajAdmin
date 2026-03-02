@@ -261,10 +261,6 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                     <div className="logo-mark">
                         <Hexagon className="logo-icon" size={22} fill="currentColor" />
                     </div>
-                    <span className="brand-name">
-                        <strong>FORSAJ</strong>
-                        <span>PANEL</span>
-                    </span>
                     <div className="sidebar-gtranslate">
                         <div className="gtranslate_wrapper"></div>
                     </div>
