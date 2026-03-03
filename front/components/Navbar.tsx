@@ -18,6 +18,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const languageTransitionTokenRef = useRef(0);
   const lastAppliedLanguageRef = useRef<string>('');
   const lastReapplyAtRef = useRef(0);
+  const gtranslateScriptReloadCountRef = useRef(0);
   const pendingSplashLanguageRef = useRef<'AZ' | 'RU' | 'ENG' | null>(null);
   const suppressObserverUntilRef = useRef(0);
   const GTRANSLATE_SCRIPT_ID = 'gtranslate-widget-script';
@@ -129,14 +130,33 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
       native_language_names: true,
       wrapper_selector: `.${GTRANSLATE_WRAPPER_CLASS}`
     };
+    const hasRuntime = typeof w.doGTranslate === 'function'
+      || !!document.querySelector(`.${GTRANSLATE_WRAPPER_CLASS} .gt_selector`)
+      || !!document.querySelector('.gt_selector');
+    if (hasRuntime) return;
 
-    if (!document.getElementById(GTRANSLATE_SCRIPT_ID)) {
-      const script = document.createElement('script');
-      script.id = GTRANSLATE_SCRIPT_ID;
-      script.src = 'https://cdn.gtranslate.net/widgets/latest/dropdown.js';
-      script.defer = true;
-      document.body.appendChild(script);
+    const existing = document.getElementById(GTRANSLATE_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      const failed = existing.dataset.loadFailed === '1';
+      const startedAt = Number(existing.dataset.loadStartedAt || '0');
+      const loadingTooLong = startedAt > 0 && Date.now() - startedAt > 3500;
+      if (!failed && !loadingTooLong) return;
+      existing.remove();
     }
+
+    const script = document.createElement('script');
+    script.id = GTRANSLATE_SCRIPT_ID;
+    script.src = `https://cdn.gtranslate.net/widgets/latest/dropdown.js?v=${gtranslateScriptReloadCountRef.current}`;
+    script.defer = true;
+    script.dataset.loadStartedAt = String(Date.now());
+    script.onload = () => {
+      script.dataset.loadFailed = '0';
+    };
+    script.onerror = () => {
+      script.dataset.loadFailed = '1';
+    };
+    gtranslateScriptReloadCountRef.current += 1;
+    document.body.appendChild(script);
   };
 
   const applySiteLanguage = (langCode: string, withSplash = false) => {
@@ -146,6 +166,15 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     suppressObserverUntilRef.current = Date.now() + (withSplash ? 1800 : 900);
     const token = languageTransitionTokenRef.current;
     applyGTranslateLanguage(normalized, token, withSplash);
+    [650, 1500].forEach((delay) => {
+      const retryTimer = window.setTimeout(() => {
+        if (token !== languageTransitionTokenRef.current) return;
+        if (lastAppliedLanguageRef.current === normalized) return;
+        ensureGTranslate();
+        applyGTranslateLanguage(normalized, token, false, 0);
+      }, delay);
+      languageTimersRef.current.push(retryTimer);
+    });
   };
 
   const emitLanguageTransition = (type: 'start' | 'end') => {
