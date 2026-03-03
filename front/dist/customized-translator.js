@@ -110,6 +110,7 @@
 
   async function handleLangChange(lang) {
     if (!lang) return;
+    const wasNonDefault = currentLang !== DEFAULT_LANG;
 
     setButtonsDisabled(true);
     try {
@@ -132,6 +133,9 @@
             combo.dispatchEvent(new Event("change", { bubbles: true }));
           }
           setActive(lang);
+          if (wasNonDefault) {
+            window.setTimeout(() => window.location.reload(), 150);
+          }
         } else {
           const applied = await waitForLanguageApplied(lang);
           if (applied) setActive(lang);

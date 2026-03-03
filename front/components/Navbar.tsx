@@ -243,7 +243,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
         </div>
 
         <div className="flex items-center justify-end min-w-[170px]">
-          <div id="customTranslator" className="custom-gtranslate full notranslate hidden lg:block" translate="no" />
+          <div className="custom-gtranslate full notranslate hidden lg:block" translate="no" />
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -296,7 +296,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
               ))}
             </div>
             <div className="pt-4 border-t border-white/10">
-              <div className="mobile-translator custom-gtranslate mini notranslate" translate="no" />
+              <div id="customTranslator" className="custom-gtranslate mini notranslate" translate="no" />
             </div>
           </div>
         </div>
