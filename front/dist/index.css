@@ -47,7 +47,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.cg-post-reload-fade {
+body.cg-post-reload-pending {
+  opacity: 0.08;
+  filter: blur(2px);
+}
+
+body.cg-post-reload-pending.cg-post-reload-ready {
   animation: cg-post-reload-fade 1200ms ease-out both;
 }
 

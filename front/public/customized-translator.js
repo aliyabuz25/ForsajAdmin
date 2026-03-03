@@ -8,6 +8,8 @@
   const READY_TIMEOUT_MS = 10000;
   const SWITCH_TIMEOUT_MS = 6000;
   const POST_RELOAD_FADE_KEY = "cg_post_reload_fade";
+  const POST_RELOAD_PENDING_CLASS = "cg-post-reload-pending";
+  const POST_RELOAD_READY_CLASS = "cg-post-reload-ready";
 
   const flags = {
     az: "https://flagcdn.com/w40/az.png",
@@ -78,15 +80,26 @@
   function applyPostReloadFade() {
     try {
       const raw = sessionStorage.getItem(POST_RELOAD_FADE_KEY);
-      if (!raw) return;
+      if (!raw) return false;
       sessionStorage.removeItem(POST_RELOAD_FADE_KEY);
       const ts = Number(raw);
-      if (!Number.isFinite(ts) || Date.now() - ts > 7000) return;
-      document.body.classList.add("cg-post-reload-fade");
-      window.setTimeout(() => {
-        document.body.classList.remove("cg-post-reload-fade");
-      }, 1600);
-    } catch (e) { }
+      if (!Number.isFinite(ts) || Date.now() - ts > 7000) return false;
+      document.body.classList.add(POST_RELOAD_PENDING_CLASS);
+      document.body.classList.remove(POST_RELOAD_READY_CLASS);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markPostReloadReady() {
+    const body = document.body;
+    if (!body || !body.classList.contains(POST_RELOAD_PENDING_CLASS)) return;
+    body.classList.add(POST_RELOAD_READY_CLASS);
+    window.setTimeout(() => {
+      body.classList.remove(POST_RELOAD_PENDING_CLASS);
+      body.classList.remove(POST_RELOAD_READY_CLASS);
+    }, 1700);
   }
 
   function applyLanguageClass(lang) {
@@ -307,7 +320,7 @@
   }
 
   async function init() {
-    applyPostReloadFade();
+    const hasPostReloadFade = applyPostReloadFade();
 
     window.gtranslateSettings = {
       default_language: DEFAULT_LANG,
@@ -334,9 +347,18 @@
       const ready = await waitForTranslatorReady();
       if (ready && currentLang !== DEFAULT_LANG) {
         applyLang(currentLang);
+        if (hasPostReloadFade) {
+          await waitForLanguageApplied(currentLang);
+          markPostReloadReady();
+        }
+      } else if (hasPostReloadFade) {
+        markPostReloadReady();
       }
     } catch (e) {
       console.error("GTranslate init failed", e);
+      if (hasPostReloadFade) {
+        markPostReloadReady();
+      }
     }
 
     window.customGTranslateSetLang = (nextLang) => {
