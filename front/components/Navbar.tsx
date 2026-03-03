@@ -206,12 +206,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
 
     if (pendingSplashLanguageRef.current === language) {
       pendingSplashLanguageRef.current = null;
-      // Safety pass: if the first splash-driven apply missed (slow script/network),
-      // retry once without splash so language never gets stuck untranslated.
-      const retryTimer = window.setTimeout(() => {
-        scheduleLanguageReapply(languageMap[language] || 'az|az', false, true);
-      }, 700);
-      return () => window.clearTimeout(retryTimer);
+      return;
     }
 
     scheduleLanguageReapply(languageMap[language] || 'az|az', isInitialSync);
