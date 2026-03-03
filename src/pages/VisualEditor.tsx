@@ -540,18 +540,19 @@ const getSectionHint = (section: Section, pageId?: string) => {
     if (pageId === 'partners' && /^PARTNER_\d+_ICON$/.test(normalizedKey)) return 'Partner kartında istifadə olunan ikon adı.';
     if (pageId === 'partners' && /^PARTNER_\d+_USE_IMAGE$/.test(normalizedKey)) return 'Kartın ikon yoxsa görsəl ilə göstərilməsini təyin edir.';
     if (pageId === 'partners' && /^PARTNER_\d+_IMAGE_ID$/.test(normalizedKey)) return 'Bu partner üçün bağlı şəkil ID-si.';
+    if (pageId === 'partners' && /^PARTNER_\d+_LINK_URL$/.test(normalizedKey)) return 'Partner kliklənəndə açılacaq link ünvanı (opsional).';
 
     return 'Bu mətn saytda olduğu kimi göstərilir.';
 };
 
-const PARTNER_KEY_REGEX = /^PARTNER_(\d+)_(NAME|TAG|ICON|USE_IMAGE|IMAGE_ID)$/;
+const PARTNER_KEY_REGEX = /^PARTNER_(\d+)_(NAME|TAG|ICON|USE_IMAGE|IMAGE_ID|LINK_URL)$/;
 const RULE_TAB_FIELD_REGEX = /^RULE_TAB_(\d+)_(ID|TITLE|ICON)$/;
 const RULE_TAB_ITEM_FIELD_REGEX = /^RULE_TAB_(\d+)_ITEM_(\d+)_(TITLE|DESC)$/;
 const RULE_TAB_SECTION_REGEX = /^RULE_TAB_\d+_(?:ID|TITLE|ICON|DOC_NAME|DOC_BUTTON|DOC_URL|ITEM_\d+_(?:TITLE|DESC))$/;
 const CONTACT_TOPIC_OPTION_REGEX = /^TOPIC_OPTION_(\d+)$/i;
 const LEGAL_DYNAMIC_SECTION_REGEX = /^SECTION_(\d+)_(TITLE|ICON|BODY)$/i;
 const LEGAL_PAGE_IDS = new Set(['privacypolicypage', 'termsofservicepage']);
-type PartnerField = 'name' | 'tag' | 'icon' | 'useImage' | 'imageId';
+type PartnerField = 'name' | 'tag' | 'icon' | 'useImage' | 'imageId' | 'linkUrl';
 type PartnerRow = {
     index: number;
     name: string;
@@ -559,6 +560,7 @@ type PartnerRow = {
     icon: string;
     useImage: string;
     imageId: string;
+    linkUrl: string;
 };
 type RuleTabItemRow = {
     index: number;
@@ -579,6 +581,7 @@ const toPartnerField = (token: string): PartnerField | null => {
     if (token === 'ICON') return 'icon';
     if (token === 'USE_IMAGE') return 'useImage';
     if (token === 'IMAGE_ID') return 'imageId';
+    if (token === 'LINK_URL') return 'linkUrl';
     return null;
 };
 
@@ -1059,6 +1062,7 @@ const VisualEditor: React.FC = () => {
                         ensureSection(`PARTNER_${idx}_ICON`, `Tərəfdaş ${idx} İkon`, item.icon);
                         ensureSection(`PARTNER_${idx}_USE_IMAGE`, `Tərəfdaş ${idx} Görsel İstifadə`, 'false');
                         ensureSection(`PARTNER_${idx}_IMAGE_ID`, `Tərəfdaş ${idx} Görsel ID`, `partner-image-${idx}`);
+                        ensureSection(`PARTNER_${idx}_LINK_URL`, `Tərəfdaş ${idx} Link`, '');
                         ensureImage(`partner-image-${idx}`);
                     });
 
@@ -2247,7 +2251,8 @@ const VisualEditor: React.FC = () => {
                 tag: 'OFFICIAL PARTNER',
                 icon: 'ShieldCheck',
                 useImage: 'false',
-                imageId: `partner-image-${idx}`
+                imageId: `partner-image-${idx}`,
+                linkUrl: ''
             };
             current[field] = section.value || '';
             rows.set(idx, current);
@@ -2276,7 +2281,8 @@ const VisualEditor: React.FC = () => {
                 { id: `PARTNER_${row.index}_TAG`, type: 'text', label: `Tərəfdaş ${row.index} Etiket`, value: row.tag },
                 { id: `PARTNER_${row.index}_ICON`, type: 'text', label: `Tərəfdaş ${row.index} İkon`, value: row.icon },
                 { id: `PARTNER_${row.index}_USE_IMAGE`, type: 'text', label: `Tərəfdaş ${row.index} Görsel İstifadə`, value: row.useImage },
-                { id: `PARTNER_${row.index}_IMAGE_ID`, type: 'text', label: `Tərəfdaş ${row.index} Görsel ID`, value: imageId }
+                { id: `PARTNER_${row.index}_IMAGE_ID`, type: 'text', label: `Tərəfdaş ${row.index} Görsel ID`, value: imageId },
+                { id: `PARTNER_${row.index}_LINK_URL`, type: 'text', label: `Tərəfdaş ${row.index} Link`, value: row.linkUrl || '' }
             );
         });
 
@@ -2307,7 +2313,8 @@ const VisualEditor: React.FC = () => {
             tag: 'OFFICIAL PARTNER',
             icon: 'ShieldCheck',
             useImage: 'false',
-            imageId: `partner-image-${nextIndex}`
+            imageId: `partner-image-${nextIndex}`,
+            linkUrl: ''
         });
         rewritePartnerRows(rows, pageIdx);
     };
@@ -4165,6 +4172,7 @@ const VisualEditor: React.FC = () => {
                 row.icon,
                 row.useImage,
                 row.imageId,
+                row.linkUrl,
                 imageAsset?.path,
                 imageAsset?.alt
             );
@@ -4215,6 +4223,13 @@ const VisualEditor: React.FC = () => {
                                         style={{ flex: 1, padding: '9px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }}
                                     />
                                 </div>
+                                <input
+                                    type="text"
+                                    value={row.linkUrl || ''}
+                                    onChange={(e) => updatePartnerRowField(row.index, 'linkUrl', e.target.value, pageIdx)}
+                                    placeholder="Link URL (opsional) - məsələn: https://example.com"
+                                    style={{ width: '100%', padding: '9px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
+                                />
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: '10px', alignItems: 'start' }}>
                                     <div style={{ width: '72px', height: '72px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
