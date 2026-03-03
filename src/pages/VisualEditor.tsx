@@ -421,16 +421,16 @@ const normalizePlainText = (value: string) => {
         .trim();
 };
 
-const toAbsoluteUrl = (rawValue: string) => {
-    const value = (rawValue || '').trim();
+const toAbsoluteUrl = (rawValue: unknown) => {
+    const value = String(rawValue ?? '').trim();
     if (!value) return '';
     if (/^(https?:)?\/\//i.test(value)) return value;
     const normalizedPath = value.startsWith('/') ? value : `/${value}`;
     return `${window.location.origin}${normalizedPath}`;
 };
 
-const toStoredUrl = (rawValue: string) => {
-    const value = (rawValue || '').trim();
+const toStoredUrl = (rawValue: unknown) => {
+    const value = String(rawValue ?? '').trim();
     if (!value) return '';
     if (/^https?:\/\//i.test(value)) {
         try {
@@ -3865,7 +3865,7 @@ const VisualEditor: React.FC = () => {
         const editableLabel = canEditSectionField(section, 'label');
         const editableValue = canEditSectionField(section, 'value');
         const editableUrl = canEditSectionField(section, 'url');
-        const hasUrlValue = !!(section.url || '').trim();
+        const hasUrlValue = !!String(section.url ?? '').trim();
         const deletable = canDeleteSection(section);
         const realSections = pageContext?.sections || [];
         const realIndex = realSections.findIndex(s => s.id === section.id);
