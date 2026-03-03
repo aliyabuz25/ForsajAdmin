@@ -218,12 +218,20 @@
           if (applied) setActive(lang);
           if (languageChanged) hideTransitionVeil();
         }
+      } else if (languageChanged) {
+        // Fallback: if translator API is temporarily unavailable, do not leave UI dark.
+        setActive(lang);
+        hideTransitionVeil();
       }
     } catch (err) {
       console.error("Translation switch error:", err);
       hideTransitionVeil();
     } finally {
       setTimeout(() => setButtonsDisabled(false), 200);
+      if (languageChanged) {
+        // Final safety net against any unexpected stuck overlay state.
+        window.setTimeout(() => hideTransitionVeil(), 2200);
+      }
     }
   }
 
