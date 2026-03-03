@@ -96,6 +96,14 @@
     body.classList.add(`cg-lang-${lang}`);
   }
 
+  function emitLanguageChanged(lang) {
+    try {
+      window.dispatchEvent(new CustomEvent("custom-gtranslate-language-changed", {
+        detail: { lang }
+      }));
+    } catch (e) { }
+  }
+
   function renderButtons() {
     const hosts = getHosts();
     if (!hosts.length) return;
@@ -203,6 +211,7 @@
     currentLang = lang;
     localStorage.setItem(STORAGE_KEY, lang);
     applyLanguageClass(lang);
+    emitLanguageChanged(lang);
 
     document.querySelectorAll(".cg-btn").forEach((btn) => {
       const isMatch = btn.querySelector('img')?.alt === lang;
@@ -329,6 +338,14 @@
     } catch (e) {
       console.error("GTranslate init failed", e);
     }
+
+    window.customGTranslateSetLang = (nextLang) => {
+      const lang = String(nextLang || "").toLowerCase();
+      if (!SUPPORTED_LANGS.includes(lang)) return false;
+      handleLangChange(lang);
+      return true;
+    };
+    window.customGTranslateGetLang = () => currentLang;
   }
 
   if (document.readyState === "complete" || document.readyState === "interactive") {

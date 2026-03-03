@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Globe, Menu, X } from 'lucide-react';
 import { useSiteContent } from '../hooks/useSiteContent';
 
 interface NavbarProps {
@@ -112,14 +112,26 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const { getPage, getText } = useSiteContent('navbar');
   const { getImage: getImageGeneral } = useSiteContent('general');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileLanguageModalOpen, setIsMobileLanguageModalOpen] = useState(false);
+  const [mobileLanguage, setMobileLanguage] = useState<string>(() => {
+    const saved = (localStorage.getItem('custom_gtranslate_lang') || 'az').toLowerCase();
+    return saved === 'ru' || saved === 'en' ? saved : 'az';
+  });
+
+  const mobileLanguageOptions = [
+    { code: 'az', label: 'AZ', flag: 'https://flagcdn.com/w40/az.png' },
+    { code: 'ru', label: 'RU', flag: 'https://flagcdn.com/w40/ru.png' },
+    { code: 'en', label: 'EN', flag: 'https://flagcdn.com/w40/us.png' }
+  ];
 
   useEffect(() => {
-    if (!isMobileMenuOpen) return;
+    if (!isMobileMenuOpen && !isMobileLanguageModalOpen) return;
 
     const previousOverflow = document.body.style.overflow;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMobileMenuOpen(false);
+        setIsMobileLanguageModalOpen(false);
       }
     };
 
@@ -130,12 +142,25 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, isMobileLanguageModalOpen]);
+
+  useEffect(() => {
+    const onLanguageChanged = (event: Event) => {
+      const next = String((event as CustomEvent)?.detail?.lang || '').toLowerCase();
+      if (next === 'az' || next === 'ru' || next === 'en') {
+        setMobileLanguage(next);
+      }
+    };
+
+    window.addEventListener('custom-gtranslate-language-changed', onLanguageChanged as EventListener);
+    return () => window.removeEventListener('custom-gtranslate-language-changed', onLanguageChanged as EventListener);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setIsMobileMenuOpen(false);
+        setIsMobileLanguageModalOpen(false);
       }
     };
 
@@ -200,6 +225,17 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleMobileLanguageSelect = (lang: string) => {
+    const normalized = (lang || '').toLowerCase();
+    if (normalized !== 'az' && normalized !== 'ru' && normalized !== 'en') return;
+    setMobileLanguage(normalized);
+    setIsMobileLanguageModalOpen(false);
+    const w = window as any;
+    if (typeof w.customGTranslateSetLang === 'function') {
+      w.customGTranslateSetLang(normalized);
+    }
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-white/5 px-6 lg:px-20 py-4 flex items-center justify-between shadow-2xl">
@@ -244,6 +280,14 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
 
         <div className="flex items-center justify-end min-w-[170px]">
           <div className="custom-gtranslate full notranslate hidden lg:block" translate="no" />
+          <button
+            type="button"
+            onClick={() => setIsMobileLanguageModalOpen(true)}
+            className="inline-flex lg:hidden items-center justify-center w-11 h-11 rounded-sm border border-white/15 bg-white/5 text-white hover:bg-[#FF4D00] hover:text-black transition-colors mr-2"
+            aria-label={getText('MOBILE_LANGUAGE_OPEN', 'Dil seçimi')}
+          >
+            <Globe size={20} />
+          </button>
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -295,8 +339,42 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
                 </button>
               ))}
             </div>
-            <div className="pt-4 border-t border-white/10">
-              <div id="customTranslator" className="custom-gtranslate mini notranslate" translate="no" />
+          </div>
+        </div>
+      )}
+
+      {isMobileLanguageModalOpen && (
+        <div className="fixed inset-0 z-[160] bg-black/80 backdrop-blur-sm lg:hidden flex items-end">
+          <div className="w-full bg-[#0A0A0A] border-t border-white/10 rounded-t-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white font-black italic text-sm uppercase tracking-[0.16em]">
+                {getText('MOBILE_LANGUAGE_OPEN', 'DİL SEÇİMİ')}
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsMobileLanguageModalOpen(false)}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-sm border border-white/15 bg-white/5 text-white hover:bg-[#FF4D00] hover:text-black transition-colors"
+                aria-label={getText('MOBILE_LANGUAGE_CLOSE', 'Dil seçimini kapat')}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {mobileLanguageOptions.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  onClick={() => handleMobileLanguageSelect(option.code)}
+                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-sm border transition-all font-black italic text-xs uppercase ${
+                    mobileLanguage === option.code
+                      ? 'bg-[#FF4D00] text-black border-[#FF4D00]'
+                      : 'bg-white/5 text-white border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <img src={option.flag} alt={option.label} className="w-5 h-5 rounded-full object-cover border border-white/30" />
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
