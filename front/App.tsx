@@ -1,5 +1,4 @@
-
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Marquee from './components/Marquee';
 import Navbar from './components/Navbar';
@@ -18,9 +17,6 @@ import { useSiteContent } from './hooks/useSiteContent';
 import { useEffect } from 'react';
 
 const SELECTED_NEWS_ID_KEY = 'forsaj_selected_news_id';
-const LANGUAGE_TRANSITION_START_EVENT = 'forsaj-language-transition-start';
-const LANGUAGE_TRANSITION_END_EVENT = 'forsaj-language-transition-end';
-const LANGUAGE_SPLASH_MIN_VISIBLE_MS = 3000;
 
 type FrontView =
   | 'home'
@@ -40,11 +36,6 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<FrontView>('home');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [eventsOpenMode, setEventsOpenMode] = useState<EventsOpenMode>('default');
-  const [isLanguageSplashVisible, setIsLanguageSplashVisible] = useState(true);
-  const [shouldRenderSplash, setShouldRenderSplash] = useState(true);
-  const splashFailSafeRef = useRef<number | null>(null);
-  const splashHideDelayRef = useRef<number | null>(null);
-  const splashStartAtRef = useRef<number>(Date.now());
 
   const handleViewChange = (view: FrontView, category: string | null = null) => {
     setCurrentView((prevView) => {
@@ -194,87 +185,19 @@ const App: React.FC = () => {
   }, [getText]);
 
   useEffect(() => {
-    const clearSplashFailsafe = () => {
-      if (splashFailSafeRef.current !== null) {
-        window.clearTimeout(splashFailSafeRef.current);
-        splashFailSafeRef.current = null;
-      }
-    };
-
-    const clearSplashHideDelay = () => {
-      if (splashHideDelayRef.current !== null) {
-        window.clearTimeout(splashHideDelayRef.current);
-        splashHideDelayRef.current = null;
-      }
-    };
-
-    const armSplashFailsafe = () => {
-      clearSplashFailsafe();
-      splashFailSafeRef.current = window.setTimeout(() => {
-        setIsLanguageSplashVisible(false);
-      }, 5000);
-    };
-
-    const onLanguageTransitionStart = () => {
-      clearSplashHideDelay();
-      splashStartAtRef.current = Date.now();
-      setIsLanguageSplashVisible(true);
-      armSplashFailsafe();
-    };
-    const onLanguageTransitionEnd = () => {
-      clearSplashFailsafe();
-      clearSplashHideDelay();
-      const elapsed = Date.now() - splashStartAtRef.current;
-      const delay = Math.max(0, LANGUAGE_SPLASH_MIN_VISIBLE_MS - elapsed);
-      splashHideDelayRef.current = window.setTimeout(() => {
-        setIsLanguageSplashVisible(false);
-        splashHideDelayRef.current = null;
-      }, delay);
-    };
-
-    window.addEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
-    window.addEventListener(LANGUAGE_TRANSITION_END_EVENT, onLanguageTransitionEnd as EventListener);
-    armSplashFailsafe();
-
-    return () => {
-      window.removeEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
-      window.removeEventListener(LANGUAGE_TRANSITION_END_EVENT, onLanguageTransitionEnd as EventListener);
-      clearSplashFailsafe();
-      clearSplashHideDelay();
-    };
+    if (document.getElementById('custom-gtranslate-script')) return;
+    const script = document.createElement('script');
+    script.id = 'custom-gtranslate-script';
+    script.src = '/customized-translator.js';
+    script.defer = true;
+    document.body.appendChild(script);
   }, []);
-
-  useEffect(() => {
-    if (isLanguageSplashVisible) {
-      setShouldRenderSplash(true);
-      return;
-    }
-
-    const hideTimer = window.setTimeout(() => {
-      setShouldRenderSplash(false);
-    }, 450);
-
-    return () => window.clearTimeout(hideTimer);
-  }, [isLanguageSplashVisible]);
 
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
-      {shouldRenderSplash && (
-        <div
-          className={`translate-transition-overlay fixed inset-0 z-[300] flex items-center justify-center transition-all duration-500 ease-out ${
-            isLanguageSplashVisible
-              ? 'is-visible opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <div className={`translate-loader ${isLanguageSplashVisible ? 'is-visible' : ''}`} aria-hidden="true">
-            <span className="translate-loader-dot dot-a" />
-            <span className="translate-loader-dot dot-b" />
-            <span className="translate-loader-dot dot-c" />
-          </div>
-        </div>
-      )}
       <Toaster position="top-right" />
+      <div id="customTranslator" className="custom-gtranslate full notranslate" translate="no" />
+      <div className="gtranslate_native_wrapper" />
       <Marquee />
       <Navbar currentView={currentView} onViewChange={(view) => handleViewChange(view, null)} />
       <main className="flex-grow w-full overflow-x-hidden">
