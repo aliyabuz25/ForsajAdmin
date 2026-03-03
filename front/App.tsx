@@ -42,6 +42,7 @@ const App: React.FC = () => {
   const [isLanguageSplashVisible, setIsLanguageSplashVisible] = useState(true);
   const [shouldRenderSplash, setShouldRenderSplash] = useState(true);
   const splashFailSafeRef = useRef<number | null>(null);
+  const splashHideDelayRef = useRef<number | null>(null);
 
   const handleViewChange = (view: FrontView, category: string | null = null) => {
     setCurrentView((prevView) => {
@@ -185,6 +186,13 @@ const App: React.FC = () => {
       }
     };
 
+    const clearSplashHideDelay = () => {
+      if (splashHideDelayRef.current !== null) {
+        window.clearTimeout(splashHideDelayRef.current);
+        splashHideDelayRef.current = null;
+      }
+    };
+
     const armSplashFailsafe = () => {
       clearSplashFailsafe();
       splashFailSafeRef.current = window.setTimeout(() => {
@@ -193,12 +201,17 @@ const App: React.FC = () => {
     };
 
     const onLanguageTransitionStart = () => {
+      clearSplashHideDelay();
       setIsLanguageSplashVisible(true);
       armSplashFailsafe();
     };
     const onLanguageTransitionEnd = () => {
       clearSplashFailsafe();
-      setIsLanguageSplashVisible(false);
+      clearSplashHideDelay();
+      splashHideDelayRef.current = window.setTimeout(() => {
+        setIsLanguageSplashVisible(false);
+        splashHideDelayRef.current = null;
+      }, 1000);
     };
 
     window.addEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
@@ -209,6 +222,7 @@ const App: React.FC = () => {
       window.removeEventListener(LANGUAGE_TRANSITION_START_EVENT, onLanguageTransitionStart as EventListener);
       window.removeEventListener(LANGUAGE_TRANSITION_END_EVENT, onLanguageTransitionEnd as EventListener);
       clearSplashFailsafe();
+      clearSplashHideDelay();
     };
   }, []);
 

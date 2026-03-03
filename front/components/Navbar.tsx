@@ -18,6 +18,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const languageTransitionTokenRef = useRef(0);
   const lastAppliedLanguageRef = useRef<string>('');
   const lastReapplyAtRef = useRef(0);
+  const pendingSplashLanguageRef = useRef<'AZ' | 'RU' | 'ENG' | null>(null);
+  const suppressObserverUntilRef = useRef(0);
   const GTRANSLATE_SCRIPT_ID = 'gtranslate-widget-script';
   const GTRANSLATE_WRAPPER_CLASS = 'gtranslate_wrapper';
   const LANGUAGE_TRANSITION_START_EVENT = 'forsaj-language-transition-start';
@@ -141,6 +143,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     const normalized = normalizeTranslateCode(langCode);
     ensureGTranslate();
     setGTranslateCookie(normalized);
+    suppressObserverUntilRef.current = Date.now() + (withSplash ? 1800 : 900);
     const token = languageTransitionTokenRef.current;
     applyGTranslateLanguage(normalized, token, withSplash);
   };
@@ -153,30 +156,40 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
 
   const scheduleLanguageReapply = (langCode: string, withSplash = false, force = false) => {
     const now = Date.now();
-    if (force && !withSplash && now - lastReapplyAtRef.current < 350) {
+    if (force && !withSplash && now - lastReapplyAtRef.current < 1200) {
+      return;
+    }
+    const normalized = normalizeTranslateCode(langCode);
+
+    if (!withSplash) {
+      if (!force && lastAppliedLanguageRef.current === normalized) return;
+      applySiteLanguage(normalized, false);
+      lastReapplyAtRef.current = now;
       return;
     }
 
     languageTimersRef.current.forEach((id) => window.clearTimeout(id));
     languageTimersRef.current = [];
     const token = ++languageTransitionTokenRef.current;
-    const normalized = normalizeTranslateCode(langCode);
 
-    // Reapply on demand even if the selected language has not changed.
-    // This prevents stale untranslated content after view/content updates.
-    if (!withSplash && !force && lastAppliedLanguageRef.current === normalized) {
-      return;
-    }
-
-    if (withSplash) emitLanguageTransition('start');
-    applySiteLanguage(normalized, withSplash);
+    emitLanguageTransition('start');
+    applySiteLanguage(normalized, true);
     lastReapplyAtRef.current = now;
-    if (withSplash) {
-      const failsafe = window.setTimeout(() => {
-        if (token === languageTransitionTokenRef.current) emitLanguageTransition('end');
-      }, 2200);
-      languageTimersRef.current.push(failsafe);
-    }
+
+    // Keep a small number of passes to avoid visual flicker.
+    const passDelays = [950];
+    passDelays.forEach((delay) => {
+      const passTimer = window.setTimeout(() => {
+        if (token !== languageTransitionTokenRef.current) return;
+        applySiteLanguage(normalized, false);
+      }, delay);
+      languageTimersRef.current.push(passTimer);
+    });
+
+    const finishTimer = window.setTimeout(() => {
+      if (token === languageTransitionTokenRef.current) emitLanguageTransition('end');
+    }, 1450);
+    languageTimersRef.current.push(finishTimer);
   };
 
   useEffect(() => {
@@ -190,40 +203,24 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   useEffect(() => {
     const isInitialSync = !languageBootstrappedRef.current;
     languageBootstrappedRef.current = true;
+
+    if (pendingSplashLanguageRef.current === language) {
+      pendingSplashLanguageRef.current = null;
+      return;
+    }
+
     scheduleLanguageReapply(languageMap[language] || 'az|az', isInitialSync);
   }, [language]);
 
   useEffect(() => {
     if (!languageBootstrappedRef.current) return;
-    scheduleLanguageReapply(languageMap[language] || 'az|az', false, true);
-  }, [currentView]);
-
-  useEffect(() => {
     if (language === 'AZ') return;
-
-    let debounceId = 0;
-    const observer = new MutationObserver((mutations) => {
-      const hasStructuralChange = mutations.some((mutation) => {
-        return mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0;
-      });
-
-      if (!hasStructuralChange) return;
-      window.clearTimeout(debounceId);
-      debounceId = window.setTimeout(() => {
-        scheduleLanguageReapply(languageMap[language] || 'az|az', false, true);
-      }, 180);
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    return () => {
-      window.clearTimeout(debounceId);
-      observer.disconnect();
-    };
-  }, [language]);
+    if (Date.now() < suppressObserverUntilRef.current) return;
+    const timer = window.setTimeout(() => {
+      scheduleLanguageReapply(languageMap[language] || 'az|az', false, true);
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [currentView]);
 
   useEffect(() => {
     if (!isLangOpen) return;
@@ -441,6 +438,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
       return;
     }
 
+    pendingSplashLanguageRef.current = nextLanguage as 'AZ' | 'RU' | 'ENG';
     setSiteLanguage(nextLanguage as any);
     scheduleLanguageReapply(languageMap[nextLanguage as 'AZ' | 'RU' | 'ENG'] || 'az|az', true);
     setIsLangOpen(false);

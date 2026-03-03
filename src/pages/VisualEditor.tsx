@@ -3170,6 +3170,45 @@ const VisualEditor: React.FC = () => {
         }
     };
 
+    const deletePhotoAlbumBulk = () => {
+        if (photoAlbumFilter === 'all') {
+            toast.error('Toplu silmək üçün əvvəlcə albom seçin');
+            return;
+        }
+
+        const targetAlbum = normalizePhotoAlbum(photoAlbumFilter);
+        const targetIds = new Set(
+            galleryPhotos
+                .filter((item) => normalizePhotoAlbum(item.album) === targetAlbum)
+                .map((item) => item.id)
+        );
+
+        if (targetIds.size === 0) {
+            toast.error('Seçilən albomda silinəcək şəkil yoxdur');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `"${targetAlbum}" albomundakı ${targetIds.size} şəkli toplu silmək istədiyinizə əminsiniz?`
+        );
+        if (!confirmed) return;
+
+        setGalleryPhotos((prev) => prev.filter((item) => !targetIds.has(item.id)));
+
+        if (selectedPhotoId !== null && targetIds.has(selectedPhotoId)) {
+            setSelectedPhotoId(null);
+            setPhotoForm({});
+            setSelectedPhotoEventId('');
+        }
+
+        if (normalizePhotoAlbum(selectedPhotoAlbum) === targetAlbum) {
+            setSelectedPhotoAlbum(DEFAULT_PHOTO_ALBUM);
+        }
+
+        setPhotoAlbumFilter('all');
+        toast.success(`"${targetAlbum}" albomu silindi (${targetIds.size} şəkil)`);
+    };
+
     const handlePhotoChange = (field: keyof GalleryPhotoItem, value: string) => {
         setPhotoForm(prev => {
             const updatedForm = { ...prev, [field]: value } as GalleryPhotoItem;
@@ -5661,6 +5700,26 @@ const VisualEditor: React.FC = () => {
                                         </option>
                                     ))}
                                 </select>
+                                <button
+                                    type="button"
+                                    onClick={deletePhotoAlbumBulk}
+                                    disabled={photoAlbumFilter === 'all'}
+                                    title={photoAlbumFilter === 'all' ? 'Əvvəlcə konkret albom seçin' : 'Seçilən albomu toplu sil'}
+                                    style={{
+                                        marginTop: '6px',
+                                        width: '100%',
+                                        padding: '8px 10px',
+                                        border: '1px solid #fecaca',
+                                        borderRadius: '8px',
+                                        background: photoAlbumFilter === 'all' ? '#f8fafc' : '#fff1f2',
+                                        color: photoAlbumFilter === 'all' ? '#94a3b8' : '#b91c1c',
+                                        cursor: photoAlbumFilter === 'all' ? 'not-allowed' : 'pointer',
+                                        fontSize: '12px',
+                                        fontWeight: 700
+                                    }}
+                                >
+                                    Albomu Toplu Sil
+                                </button>
 
                                 <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                                     <button

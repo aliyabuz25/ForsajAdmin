@@ -374,11 +374,11 @@ const GalleryPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#0A0A0A] min-h-screen py-16 px-6 lg:px-20 text-white animate-in fade-in duration-500">
+    <div className="bg-[#0A0A0A] min-h-screen py-16 px-4 sm:px-6 lg:px-20 text-white animate-in fade-in duration-500">
       <VideoModal />
 
       {/* Standardized Page Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-20">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 sm:gap-8 mb-12 sm:mb-20">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="w-1.5 sm:w-2 h-12 sm:h-16 bg-[#FF4D00] shadow-[0_0_15px_rgba(255,77,0,0.4)]"></div>
           <div>
@@ -392,21 +392,21 @@ const GalleryPage: React.FC = () => {
         </div>
 
         {/* Tab Selection */}
-        <div className="bg-white/5 p-1 rounded-sm flex items-center border border-white/10 shadow-xl self-end lg:self-center">
+        <div className="w-full lg:w-auto bg-white/5 p-1 rounded-sm flex items-center border border-white/10 shadow-xl self-stretch lg:self-center">
           <button
             onClick={() => { setActiveType('photos'); setSelectedAlbum(null); }}
-            className={`px-10 py-4 font-black italic text-sm uppercase tracking-widest transition-all flex items-center gap-3 ${activeType === 'photos' ? 'bg-[#FF4D00] text-black transform -skew-x-12 shadow-lg shadow-[#FF4D00]/20' : 'text-gray-500 hover:text-white'}`}
+            className={`flex-1 min-w-0 px-3 sm:px-6 lg:px-10 py-3 sm:py-4 font-black italic text-xs sm:text-sm uppercase tracking-[0.16em] sm:tracking-widest transition-all flex items-center justify-center gap-2 sm:gap-3 ${activeType === 'photos' ? 'bg-[#FF4D00] text-black sm:transform sm:-skew-x-12 shadow-lg shadow-[#FF4D00]/20' : 'text-gray-500 hover:text-white'}`}
           >
-            <span className={activeType === 'photos' ? 'transform skew-x-12 flex items-center gap-2' : 'flex items-center gap-2'}>
-              <ImageIcon size={18} /> {getText('TAB_PHOTOS', 'FOTOLAR')}
+            <span className={activeType === 'photos' ? 'sm:transform sm:skew-x-12 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap' : 'flex items-center gap-1.5 sm:gap-2 whitespace-nowrap'}>
+              <ImageIcon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" /> {getText('TAB_PHOTOS', 'FOTOLAR')}
             </span>
           </button>
           <button
             onClick={() => { setActiveType('videos'); setSelectedAlbum(null); }}
-            className={`px-10 py-4 font-black italic text-sm uppercase tracking-widest transition-all flex items-center gap-3 ${activeType === 'videos' ? 'bg-[#FF4D00] text-black transform -skew-x-12 shadow-lg shadow-[#FF4D00]/20' : 'text-gray-500 hover:text-white'}`}
+            className={`flex-1 min-w-0 px-3 sm:px-6 lg:px-10 py-3 sm:py-4 font-black italic text-xs sm:text-sm uppercase tracking-[0.16em] sm:tracking-widest transition-all flex items-center justify-center gap-2 sm:gap-3 ${activeType === 'videos' ? 'bg-[#FF4D00] text-black sm:transform sm:-skew-x-12 shadow-lg shadow-[#FF4D00]/20' : 'text-gray-500 hover:text-white'}`}
           >
-            <span className={activeType === 'videos' ? 'transform skew-x-12 flex items-center gap-2' : 'flex items-center gap-2'}>
-              <Video size={18} /> {getText('TAB_VIDEOS', 'VİDEOLAR')}
+            <span className={activeType === 'videos' ? 'sm:transform sm:skew-x-12 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap' : 'flex items-center gap-1.5 sm:gap-2 whitespace-nowrap'}>
+              <Video className="w-4 h-4 sm:w-[18px] sm:h-[18px]" /> {getText('TAB_VIDEOS', 'VİDEOLAR')}
             </span>
           </button>
         </div>
@@ -416,16 +416,16 @@ const GalleryPage: React.FC = () => {
       <div className="space-y-32">
         <section className="relative group">
           {/* Section Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 border-b border-white/5 pb-8">
-            <div className="flex items-center gap-6">
-              <div className="text-6xl md:text-7xl font-black italic text-white/5 select-none leading-none tracking-tighter absolute -top-12 left-0 pointer-events-none group-hover:text-[#FF4D00]/10 transition-colors">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6 border-b border-white/5 pb-6 sm:pb-8">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="text-5xl sm:text-6xl md:text-7xl font-black italic text-white/5 select-none leading-none tracking-tighter absolute -top-8 sm:-top-12 left-0 pointer-events-none group-hover:text-[#FF4D00]/10 transition-colors">
                 {activeType === 'photos' ? '01' : '02'}
               </div>
               <div className="relative">
-                <h3 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-none mb-2">
+                <h3 className="text-2xl sm:text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-none mb-2">
                   {selectedAlbum ? selectedAlbum.albumTitle : (activeType === 'photos' ? getText('TAB_PHOTOS', 'FOTOLAR') : getText('TAB_VIDEOS', 'VİDEOLAR'))}
                 </h3>
-                <div className="flex items-center gap-2 text-[#FF4D00] font-black italic text-[10px] uppercase tracking-[0.3em]">
+                <div className="flex items-center gap-2 text-[#FF4D00] font-black italic text-[9px] sm:text-[10px] uppercase tracking-[0.16em] sm:tracking-[0.3em] leading-snug break-words">
                   <Zap size={14} /> {getText('DYNAMIC_COLLECTION', 'CANLI ARXİV // YENİLƏNƏN MƏZMUN')}
                 </div>
               </div>
@@ -438,7 +438,7 @@ const GalleryPage: React.FC = () => {
                 <span className="transform skew-x-12 flex items-center gap-2"><ArrowLeft size={14} /> {getText('BTN_BACK', 'GERİ QAYIT')}</span>
               </button>
             )}
-            <p className="text-gray-600 font-black italic text-[10px] uppercase tracking-widest">
+            <p className="text-gray-600 font-black italic text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-widest self-start md:self-auto">
               {getText('TOTAL_LABEL', 'TOPLAM')} {activeType === 'photos' ? (selectedAlbum ? selectedAlbum.photos.length : preparedPhotos.length) : dynamicVideos.length} {activeType === 'photos' ? getText('TYPE_PHOTO', 'FOTO') : getText('TYPE_VIDEO', 'VİDEO')}
             </p>
           </div>

@@ -1,18 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PlayCircle, ArrowRight, X } from 'lucide-react';
 import { useSiteContent } from '../hooks/useSiteContent';
+import CsPlayer from './CsPlayer';
 
 interface VideoArchiveProps {
   onViewChange: (view: any) => void;
 }
 
+interface EventItem {
+  id: number;
+  title: string;
+  date?: string;
+  img?: string;
+  youtubeUrl?: string;
+  youtube_url?: string;
+  url?: string;
+  status?: string;
+}
 
-import CsPlayer from './CsPlayer';
+interface ArchiveVideoItem {
+  id: number;
+  title: string;
+  date: string;
+  videoId: string;
+  thumbnail: string;
+}
+
+const GALLERY_VERSION_KEY = 'forsaj_gallery_version';
+const VIDEO_ARCHIVE_REFRESH_MS = 30000;
 
 const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-  const [videos, setVideos] = React.useState<any[]>([]);
+  const [videos, setVideos] = useState<ArchiveVideoItem[]>([]);
   const { getText } = useSiteContent('videoarchive');
+
+  const parseEventDateStart = (rawValue: unknown): Date | null => {
+    const value = String(rawValue || '').trim();
+    if (!value) return null;
+
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const parsed = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const dottedMatch = value.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+    if (dottedMatch) {
+      const parsed = new Date(Number(dottedMatch[3]), Number(dottedMatch[2]) - 1, Number(dottedMatch[1]));
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  };
+
+  const normalizeEventStatus = (rawStatus: unknown, rawDate?: unknown): 'planned' | 'past' => {
+    const normalized = String(rawStatus || '').trim().toLocaleLowerCase('az');
+    if (normalized === 'past' || normalized === 'kecmis' || normalized === 'keçmiş') return 'past';
+    if (normalized === 'planned' || normalized === 'gelecek' || normalized === 'gələcək') return 'planned';
+
+    const eventDate = parseEventDateStart(rawDate);
+    if (eventDate) {
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (eventDate.getTime() < todayStart.getTime()) return 'past';
+    }
+    return 'planned';
+  };
+
+  const getEventDateSortValue = (rawDate: unknown) => parseEventDateStart(rawDate)?.getTime() || 0;
 
   const extractYoutubeId = (url: string) => {
     if (!url) return null;
@@ -37,35 +94,58 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
     return match ? match[1] : null;
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
+    let mounted = true;
+
     const loadVideos = async () => {
       try {
-        const response = await fetch('/api/videos');
-        if (!response.ok) throw new Error('Failed to fetch videos');
-
+        const stamp = Date.now();
+        const response = await fetch(`/api/events?v=${stamp}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to fetch events');
         const data = await response.json();
 
-        if (data) {
+        if (Array.isArray(data) && mounted) {
           const mapped = data
-            .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-            .slice(0, 4)
-            .map((v: any) => {
-              const videoId = v.videoId || v.video_id || extractYoutubeId(v.youtubeUrl || v.url);
+            .map((event: EventItem) => {
+              const status = normalizeEventStatus(event?.status, event?.date);
+              const youtubeUrl = String(event?.youtubeUrl || event?.youtube_url || event?.url || '').trim();
+              const videoId = extractYoutubeId(youtubeUrl);
+              if (status !== 'past' || !videoId) return null;
+
               return {
-                id: v.id,
-                title: v.title,
-                videoId: videoId,
-                thumbnail: v.thumbnail || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '')
+                id: Number(event?.id || 0),
+                title: String(event?.title || 'Tədbir').trim() || 'Tədbir',
+                date: String(event?.date || '').trim(),
+                videoId,
+                thumbnail: String(event?.img || '').trim() || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
               };
             })
-            .filter((video: any) => !!video.videoId);
+            .filter((video): video is ArchiveVideoItem => !!video && !!video.videoId)
+            .sort((a, b) => getEventDateSortValue(b.date) - getEventDateSortValue(a.date))
+            .slice(0, 4);
+
           setVideos(mapped);
         }
       } catch (err) {
-        console.error('Videos load fail from API:', err);
+        console.error('Video archive load fail from events API:', err);
       }
     };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === GALLERY_VERSION_KEY || event.key === 'forsaj_site_content_version') {
+        loadVideos();
+      }
+    };
+
     loadVideos();
+    const refreshInterval = window.setInterval(loadVideos, VIDEO_ARCHIVE_REFRESH_MS);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const VideoModal = () => {
@@ -114,30 +194,42 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {videos.map((video, idx) => (
-          <div
-            key={idx}
-            onClick={() => {
-              if (!video.videoId) return;
-              setPlayingVideoId(video.videoId);
-            }}
-            className="group relative aspect-[3/4] overflow-hidden bg-[#111] cursor-pointer shadow-2xl rounded-sm border border-white/5"
-          >
-            <img
-              src={video.thumbnail || video.img}
-              alt={video.title}
-              className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-40 group-hover:opacity-80 grayscale`}
-            />
-            <div className="absolute inset-0 bg-black/40 group-hover:bg-[#FF4D00]/10 transition-colors flex items-center justify-center">
-              <PlayCircle className="w-16 h-16 text-white opacity-40 group-hover:opacity-100 group-hover:text-[#FF4D00] transition-all transform group-hover:scale-110" strokeWidth={1} />
-            </div>
-            <div className="absolute bottom-8 left-6 right-6 text-center">
-              <h3 className="text-white font-black italic uppercase tracking-tighter text-lg md:text-2xl drop-shadow-2xl group-hover:text-[#FF4D00] transition-colors">
-                {video.title}
-              </h3>
-            </div>
+        {videos.length === 0 ? (
+          <div className="col-span-2 md:col-span-4 py-20 text-center border border-white/5 bg-[#111] rounded-sm shadow-2xl">
+            <p className="text-gray-400 font-black italic uppercase tracking-widest text-sm">
+              {getText('NO_PAST_EVENT_VIDEOS', 'KEÇMİŞ TƏDBİR VİDEOSU TAPILMADI')}
+            </p>
+            <p className="text-gray-600 font-bold italic uppercase tracking-[0.2em] text-[10px] mt-3">
+              {getText('NO_PAST_EVENT_VIDEOS_HINT', 'KEÇMİŞ TƏDBİRƏ YOUTUBE LİNKİ ƏLAVƏ EDİN')}
+            </p>
           </div>
-        ))}
+        ) : (
+          videos.map((video) => (
+            <div
+              key={video.id}
+              onClick={() => {
+                if (!video.videoId) return;
+                setPlayingVideoId(video.videoId);
+              }}
+              className="group relative aspect-[3/4] overflow-hidden bg-[#111] cursor-pointer shadow-2xl rounded-sm border border-white/5"
+            >
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-40 group-hover:opacity-80 grayscale"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-[#FF4D00]/10 transition-colors flex items-center justify-center">
+                <PlayCircle className="w-16 h-16 text-white opacity-40 group-hover:opacity-100 group-hover:text-[#FF4D00] transition-all transform group-hover:scale-110" strokeWidth={1} />
+              </div>
+              <div className="absolute bottom-8 left-6 right-6 text-center">
+                <div className="text-gray-400 font-black italic text-[10px] mb-2 uppercase tracking-widest">{video.date}</div>
+                <h3 className="text-white font-black italic uppercase tracking-tighter text-lg md:text-2xl drop-shadow-2xl group-hover:text-[#FF4D00] transition-colors">
+                  {video.title}
+                </h3>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </section>
   );
