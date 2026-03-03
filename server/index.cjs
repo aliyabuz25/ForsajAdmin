@@ -1367,6 +1367,10 @@ const notifySubscribersAboutDriversRankingChange = async (note = '') => {
     const drivers = await getContent('drivers', []);
     const categories = Array.isArray(drivers) ? drivers : [];
     if (!categories.length) return { sent: false, reason: 'no_drivers_data' };
+    const baseUrl = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim() || 'http://localhost:3005';
+    const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+    const driversUrl = `${normalizedBaseUrl}/?view=drivers`;
+    const safeDriversUrl = escapeHtml(driversUrl);
 
     const summaryLines = categories.map((category) => {
         const catName = String(category?.name || category?.id || 'Kateqoriya').trim();
@@ -1394,12 +1398,24 @@ const notifySubscribersAboutDriversRankingChange = async (note = '') => {
     const header = 'Pilot sıralamasında yenilənmə';
     const textParts = [header];
     if (cleanNote) textParts.push(`Qeyd: ${cleanNote}`);
-    textParts.push('', ...summaryLines);
+    textParts.push('', ...summaryLines, '', `Bütün reytinqi gör: ${driversUrl}`);
 
     return sendBulkSubscriberEmail({
         subject: header,
         introText: cleanNote || 'Sürücü reytinqində yenilənmə edildi. Yeni top sıralama aşağıdadır.',
-        htmlContent: `<ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlRows}</ul>`,
+        htmlContent: `
+            <ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlRows}</ul>
+            <div style="margin-top:16px;">
+                <a
+                    href="${safeDriversUrl}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="display:inline-block;background:#f97316;color:#0b1220;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;letter-spacing:0.02em;"
+                >
+                    Bütün reytinqi gör
+                </a>
+            </div>
+        `,
         textContent: textParts.join('\n')
     });
 };
