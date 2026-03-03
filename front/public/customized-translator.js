@@ -63,19 +63,20 @@
     veil.style.pointerEvents = "none";
     veil.style.background = "#000";
     veil.style.opacity = "0";
-    veil.style.transition = "opacity 160ms ease";
+    // Intentionally snappy fade-out before reload so text doesn't appear to morph.
+    veil.style.transition = "opacity 90ms linear";
     veil.style.zIndex = "2147483647";
     document.body.appendChild(veil);
 
     requestAnimationFrame(() => {
-      veil.style.opacity = "0.14";
+      veil.style.opacity = "0.82";
     });
 
     try {
       sessionStorage.setItem(POST_RELOAD_FADE_KEY, String(Date.now()));
     } catch (e) { }
 
-    window.setTimeout(() => window.location.reload(), 180);
+    window.setTimeout(() => window.location.reload(), 110);
   }
 
   function applyPostReloadFade() {
@@ -185,6 +186,19 @@
 
     setButtonsDisabled(true);
     try {
+      // If user selected another language, reload with the new target cookie.
+      // We skip in-place translation to avoid visible text morph before reload.
+      if (languageChanged) {
+        if (lang === DEFAULT_LANG) {
+          clearGoogTransCookies();
+        } else {
+          setGoogTransCookie(lang);
+        }
+        setActive(lang);
+        smoothReload();
+        return;
+      }
+
       if (lang === DEFAULT_LANG) {
         clearGoogTransCookies();
       } else {
@@ -204,12 +218,10 @@
             combo.dispatchEvent(new Event("change", { bubbles: true }));
           }
           setActive(lang);
-          if (languageChanged) smoothReload();
         } else {
           const applied = await waitForLanguageApplied(lang);
           if (applied) {
             setActive(lang);
-            if (languageChanged) smoothReload();
           }
         }
       }
