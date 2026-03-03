@@ -108,7 +108,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-black/40"></div>
       </div>
 
-      <div className="relative z-10 text-center px-4 max-w-6xl">
+      <div className="relative z-10 text-center px-4 max-w-6xl w-full">
         <div className="flex items-center justify-center gap-2 mb-6">
           <div className="w-10 h-0.5 bg-[#FF4D00]"></div>
           <h3 className="hero-kicker text-[#FF4D00] font-black italic tracking-[0.16em] text-[10px] uppercase break-words [overflow-wrap:anywhere]">
@@ -123,16 +123,19 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
           {getText('text-2', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.')}
         </p>
 
-        <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+        <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-center items-center w-full max-w-3xl mx-auto">
           <button
             onClick={() => handleAction('text-3', 'events')}
-            className="bg-[#FF4D00] hover:bg-white hover:text-black text-black font-black italic py-5 px-12 rounded-sm flex items-center gap-3 transition-all transform hover:scale-105 active:scale-95 shadow-[0_10px_40px_rgba(255,77,0,0.3)]"
+            className="w-full sm:w-auto max-w-full bg-[#FF4D00] hover:bg-white hover:text-black text-black font-black italic py-5 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-3 transition-all transform hover:scale-105 active:scale-95 shadow-[0_10px_40px_rgba(255,77,0,0.3)]"
           >
-            {getText('text-3', 'YARIŞLARA BAX')} <ChevronRight className="w-6 h-6" />
+            <span className="break-words [overflow-wrap:anywhere] text-center">
+              {getText('text-3', 'YARIŞLARA BAX')}
+            </span>
+            <ChevronRight className="w-6 h-6 shrink-0" />
           </button>
           <button
             onClick={() => handleAction('text-4', 'about')}
-            className="border-2 border-white/20 text-white hover:border-[#FF4D00] hover:text-[#FF4D00] font-black italic py-5 px-12 rounded-sm transition-all bg-white/5 backdrop-blur-sm"
+            className="w-full sm:w-auto max-w-full border-2 border-white/20 text-white hover:border-[#FF4D00] hover:text-[#FF4D00] font-black italic py-5 px-6 sm:px-12 rounded-sm transition-all bg-white/5 backdrop-blur-sm break-words [overflow-wrap:anywhere]"
           >
             {getText('text-4', 'HAQQIMIZDA')}
           </button>

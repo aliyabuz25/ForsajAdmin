@@ -100,6 +100,19 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', onPageShow as EventListener);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     const title = getText('SEO_TITLE', 'Forsaj Club - Offroad Motorsport Hub');
     const description = getText('SEO_DESCRIPTION', '');
     const keywords = getText('SEO_KEYWORDS', '');
@@ -240,7 +253,7 @@ const App: React.FC = () => {
   }, [isLanguageSplashVisible]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       {shouldRenderSplash && (
         <div
           className={`translate-transition-overlay fixed inset-0 z-[300] flex items-center justify-center transition-all duration-500 ease-out ${
@@ -259,7 +272,7 @@ const App: React.FC = () => {
       <Toaster position="top-right" />
       <Marquee />
       <Navbar currentView={currentView} onViewChange={(view) => handleViewChange(view, null)} />
-      <main className="flex-grow">
+      <main className="flex-grow w-full overflow-x-hidden">
         {currentView === 'home' && <Home onViewChange={(view, cat) => handleViewChange(view, cat || null)} />}
         {currentView === 'about' && <About />}
         {currentView === 'news' && <NewsPage />}

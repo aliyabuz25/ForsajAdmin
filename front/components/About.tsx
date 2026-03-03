@@ -188,10 +188,10 @@ const About: React.FC = () => {
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="w-1.5 sm:w-2 h-12 sm:h-16 bg-[#FF4D00] shadow-[0_0_15px_rgba(255,77,0,0.4)]"></div>
           <div>
-            <h2 className="text-4xl sm:text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-none text-white">
+            <h2 className="text-3xl sm:text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.92] text-white break-words [overflow-wrap:anywhere]">
               {toPlainText(getText('PAGE_TITLE', getText('txt-haqqimizda-904', 'HAQQIMIZDA')))}
             </h2>
-            <p className="text-[#FF4D00] font-black italic text-[10px] sm:text-[11px] md:text-sm mt-2 uppercase tracking-[0.2em] sm:tracking-[0.4em] leading-snug break-words">
+            <p className="text-[#FF4D00] font-black italic text-[10px] sm:text-[11px] md:text-sm mt-2 uppercase tracking-[0.16em] sm:tracking-[0.4em] leading-snug break-words [overflow-wrap:anywhere]">
               {toPlainText(getText('PAGE_SUBTITLE', getText('txt-bi-zi-m-hekay-mi-z-m-888', 'BİZİM HEKAYƏMİZ // MİSSİYAMIZ VƏ GƏLƏCƏYİMİZ')))}
             </p>
           </div>
@@ -247,17 +247,17 @@ const About: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
           <div className="relative">
             <div className="w-10 h-1 bg-[#FF4D00] mb-8"></div>
-            <h3 className="text-5xl font-black italic mb-8 uppercase tracking-tighter">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black italic mb-8 uppercase tracking-tighter break-words [overflow-wrap:anywhere]">
               {text('txt-bi-zi-m-mi-ssi-yamiz-424', 'BİZİM MİSSİYAMIZ')}
             </h3>
-            <p className="text-gray-400 font-bold italic text-sm leading-relaxed mb-12 max-w-lg uppercase tracking-wide">
+            <p className="text-gray-400 font-bold italic text-sm leading-relaxed mb-12 max-w-lg uppercase tracking-wide break-words [overflow-wrap:anywhere]">
               {text('txt-az-rbaycan-n-h-r-bir-45', 'Azərbaycanın hər bir guşəsində offroad idmanını təbliğ etmək, yerli pilotları beynəlxalq standartlara uyğun yetişdirmək və təbiəti qoruyaraq ekstremal adrenalin təcrübəsi bəxş etmək.')}
             </p>
             <div className="bg-[#FF4D00] p-5 inline-flex items-center gap-4 transform -skew-x-12 text-black shadow-[0_0_30px_rgba(255,77,0,0.2)]">
               <div className="bg-black p-2 text-[#FF4D00] transform skew-x-12 rounded-full">
                 <Target size={20} />
               </div>
-              <span className="font-black italic text-xs transform skew-x-12 uppercase">
+              <span className="font-black italic text-xs transform skew-x-12 uppercase break-words [overflow-wrap:anywhere]">
                 {text('txt-h-d-fi-mi-z-dakar-ral-50', 'HƏDƏFİMİZ: DAKAR RALLİ 2026')}
               </span>
             </div>
@@ -265,17 +265,17 @@ const About: React.FC = () => {
 
           <div className="relative">
             <div className="w-10 h-1 bg-white/20 mb-8"></div>
-            <h3 className="text-5xl font-black italic mb-8 uppercase tracking-tighter">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black italic mb-8 uppercase tracking-tighter break-words [overflow-wrap:anywhere]">
               {text('txt-bi-zi-m-baxi-imiz-944', 'BİZİM BAXIŞIMIZ')}
             </h3>
-            <p className="text-gray-400 font-bold italic text-sm leading-relaxed mb-12 max-w-lg uppercase tracking-wide">
+            <p className="text-gray-400 font-bold italic text-sm leading-relaxed mb-12 max-w-lg uppercase tracking-wide break-words [overflow-wrap:anywhere]">
               {text('txt-regionun-n-b-y-k-mo-901', 'Regionun ən böyük motorsport hubuna çevrilmək, rəqəmsal və fiziki infrastrukturlarla pilotlarımızı dəstəkləmək və motorsportu hər kəs üçün əlçatan bir ehtirasa çevirmək.')}
             </p>
             <div className="bg-white/5 border border-white/10 p-5 inline-flex items-center gap-4 transform -skew-x-12">
               <div className="bg-white/10 p-2 text-white transform skew-x-12 rounded-full border border-white/10">
                 <Globe size={20} />
               </div>
-              <span className="font-black italic text-xs text-white transform skew-x-12 uppercase">
+              <span className="font-black italic text-xs text-white transform skew-x-12 uppercase break-words [overflow-wrap:anywhere]">
                 {text('txt-qafqazin-li-der-klubu-758', 'QAFQAZIN LİDER KLUBUNA ÇEVRİLMƏK')}
               </span>
             </div>
@@ -285,10 +285,10 @@ const About: React.FC = () => {
 
       <section className="py-24 px-6 lg:px-20 bg-[#0A0A0A]">
         <div className="text-center mb-20">
-          <h4 className="text-[#FF4D00] font-black italic text-[10px] tracking-[0.4em] mb-4 uppercase">
+          <h4 className="text-[#FF4D00] font-black italic text-[9px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.4em] mb-4 uppercase break-words [overflow-wrap:anywhere]">
             {text('txt-fundamental-pri-nsi-pl-219', 'FUNDAMENTAL PRİNSİPLƏR')}
           </h4>
-          <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none text-white">
+          <h2 className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase leading-[0.92] text-white break-words [overflow-wrap:anywhere]">
             {text('txt-sas-d-y-rl-ri-mi-z-482', 'ƏSAS DƏYƏRLƏRİMİZ')}
           </h2>
         </div>
@@ -299,8 +299,10 @@ const About: React.FC = () => {
               <div className="bg-white/5 border border-white/5 p-6 rounded-sm transform group-hover:scale-110 group-hover:bg-[#FF4D00]/10 transition-all">
                 {v.icon}
               </div>
-              <h5 className="font-black italic text-2xl uppercase tracking-tighter text-white group-hover:text-[#FF4D00] transition-colors">{v.title}</h5>
-              <p className="text-gray-500 font-bold italic text-[10px] uppercase leading-relaxed tracking-widest">
+              <h5 className="font-black italic text-xl sm:text-2xl uppercase tracking-tighter text-white group-hover:text-[#FF4D00] transition-colors break-words [overflow-wrap:anywhere] leading-tight">
+                {v.title}
+              </h5>
+              <p className="text-gray-500 font-bold italic text-[10px] uppercase leading-relaxed tracking-widest break-words [overflow-wrap:anywhere]">
                 {v.desc}
               </p>
             </div>

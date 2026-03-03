@@ -17,7 +17,7 @@ const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
   React.useEffect(() => {
     const loadLeaders = async () => {
       try {
-        const response = await fetch('/api/drivers');
+        const response = await fetch(`/api/drivers?v=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to fetch drivers');
 
         const data = await response.json();

@@ -33,7 +33,7 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
   useEffect(() => {
     const loadDrivers = async () => {
       try {
-        const response = await fetch('/api/drivers');
+        const response = await fetch(`/api/drivers?v=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to fetch drivers');
 
         const data = await response.json();

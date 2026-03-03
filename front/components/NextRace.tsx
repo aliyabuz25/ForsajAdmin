@@ -152,7 +152,7 @@ const NextRace: React.FC<NextRaceProps> = ({ onViewChange }) => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events');
+        const response = await fetch(`/api/events?v=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to fetch events');
         const data = await response.json();
 
@@ -183,14 +183,14 @@ const NextRace: React.FC<NextRaceProps> = ({ onViewChange }) => {
 
   return (
     <section className="py-24 px-6 lg:px-20 bg-[#0F0F0F]">
-      <div className="flex justify-between items-end mb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div className="flex items-start gap-3">
           <div className="w-1.5 h-12 bg-[#FF4D00]"></div>
           <div>
-            <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-white">
+            <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-white break-words [overflow-wrap:anywhere]">
               {getText('SECTION_TITLE', 'NÖVBƏTİ YARIŞ')}
             </h2>
-            <p className="text-[#FF4D00] font-black italic text-[10px] mt-1 uppercase tracking-[0.2em]">
+            <p className="text-[#FF4D00] font-black italic text-[10px] mt-1 uppercase tracking-[0.2em] break-words [overflow-wrap:anywhere]">
               {getText('SECTION_SUBTITLE', 'LİVE REGİSTRATİON OPEN')}
             </p>
           </div>
@@ -199,9 +199,9 @@ const NextRace: React.FC<NextRaceProps> = ({ onViewChange }) => {
           onClick={() => {
             navigateFromConfig(getUrl('VIEW_ALL_BTN', 'events'), 'events');
           }}
-          className="bg-white/5 text-white font-black italic text-[10px] px-8 py-3 rounded-sm transform -skew-x-12 flex items-center gap-2 hover:bg-[#FF4D00] hover:text-black transition-all border border-white/5"
+          className="self-start md:self-auto max-w-full bg-white/5 text-white font-black italic text-[10px] px-5 sm:px-8 py-3 rounded-sm transform -skew-x-12 flex items-center gap-2 hover:bg-[#FF4D00] hover:text-black transition-all border border-white/5"
         >
-          <span className="transform skew-x-12">{getText('VIEW_ALL_BTN', 'TAM TƏQVİM')}</span> <ChevronRight className="w-4 h-4 transform skew-x-12" />
+          <span className="transform skew-x-12 break-words [overflow-wrap:anywhere]">{getText('VIEW_ALL_BTN', 'TAM TƏQVİM')}</span> <ChevronRight className="w-4 h-4 transform skew-x-12 shrink-0" />
         </button>
       </div>
 
@@ -224,7 +224,7 @@ const NextRace: React.FC<NextRaceProps> = ({ onViewChange }) => {
             <Calendar className="w-5 h-5" />
             <span className="text-lg tracking-widest uppercase">{displayDate}</span>
           </div>
-          <h2 className="text-5xl md:text-7xl font-black italic leading-[0.9] mb-6 tracking-tighter uppercase text-white">
+          <h2 className="text-5xl md:text-7xl font-black italic leading-[0.9] mb-6 tracking-tighter uppercase text-white break-words [overflow-wrap:anywhere]">
             {displayTitle}
           </h2>
           <div className="flex items-center gap-2 text-gray-500 font-black italic mb-3 text-xs uppercase tracking-widest">
@@ -239,10 +239,10 @@ const NextRace: React.FC<NextRaceProps> = ({ onViewChange }) => {
             onClick={() => {
               saveTargetEventAndNavigate(getUrl('REGISTER_BTN', 'events'), 'events');
             }}
-            className="bg-[#FF4D00] hover:bg-white text-black font-black italic py-5 px-12 rounded-sm flex items-center gap-3 transition-all self-start transform -skew-x-12 group shadow-[0_10px_30px_rgba(255,77,0,0.2)]"
+            className="w-full sm:w-auto max-w-full bg-[#FF4D00] hover:bg-white text-black font-black italic py-5 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-3 transition-all self-start transform -skew-x-12 group shadow-[0_10px_30px_rgba(255,77,0,0.2)]"
           >
-            <span className="transform skew-x-12 uppercase text-lg">{getText('REGISTER_BTN', 'QATILMAQ ÜÇÜN QEYDİYYAT')}</span>
-            <ChevronRight className="w-6 h-6 transform skew-x-12 group-hover:translate-x-2 transition-transform" />
+            <span className="transform skew-x-12 uppercase text-base sm:text-lg break-words [overflow-wrap:anywhere] text-center">{getText('REGISTER_BTN', 'QATILMAQ ÜÇÜN QEYDİYYAT')}</span>
+            <ChevronRight className="w-6 h-6 transform skew-x-12 shrink-0 group-hover:translate-x-2 transition-transform" />
           </button>
         </div>
       </div>

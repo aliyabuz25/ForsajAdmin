@@ -30,6 +30,12 @@ const CACHE_TTL_MS = 10000;
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
 const SITE_LANG_KEY = 'forsaj_site_lang';
 type SiteLang = 'AZ' | 'RU' | 'ENG';
+const NO_STORE_FETCH_OPTIONS: RequestInit = {
+    cache: 'no-store',
+    headers: {
+        'Cache-Control': 'no-cache'
+    }
+};
 
 const normalizeContent = (data: any): PageContent[] => {
     if (!Array.isArray(data)) return [];
@@ -116,11 +122,15 @@ const fetchSiteContentOnce = async (): Promise<PageContent[]> => {
 
     siteContentInFlight = (async () => {
         const version = localStorage.getItem(CONTENT_VERSION_KEY) || '';
+        const stamp = Date.now().toString();
         let data: any[] = [];
         let loadedFromStruct = false;
 
         try {
-            const structResponse = await fetch(`/api/site-new-struct?v=${encodeURIComponent(version)}`);
+            const structResponse = await fetch(
+                `/api/site-new-struct?v=${encodeURIComponent(version)}&_ts=${encodeURIComponent(stamp)}`,
+                NO_STORE_FETCH_OPTIONS
+            );
             if (structResponse.ok) {
                 const struct = await structResponse.json();
                 const fromStruct = extractSiteContentResource(struct);
@@ -134,7 +144,10 @@ const fetchSiteContentOnce = async (): Promise<PageContent[]> => {
         }
 
         if (!loadedFromStruct) {
-            const response = await fetch(`/api/site-content?v=${encodeURIComponent(version)}`);
+            const response = await fetch(
+                `/api/site-content?v=${encodeURIComponent(version)}&_ts=${encodeURIComponent(Date.now().toString())}`,
+                NO_STORE_FETCH_OPTIONS
+            );
             if (!response.ok) throw new Error('Failed to fetch site content');
             data = await response.json();
         }

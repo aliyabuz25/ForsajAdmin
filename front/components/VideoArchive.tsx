@@ -173,22 +173,22 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
     <section className="py-24 px-6 lg:px-20 bg-[#0A0A0A]">
       <VideoModal />
 
-      <div className="flex justify-between items-end mb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div className="flex items-start gap-4">
           <div className="w-2 h-16 bg-[#FF4D00] shadow-[0_0_15px_rgba(255,77,0,0.5)]"></div>
           <div>
-            <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none text-white">
+            <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none text-white break-words [overflow-wrap:anywhere]">
               {getText('SECTION_TITLE', 'VİDEO ARXİVİ')}
             </h2>
-            <p className="text-[#FF4D00] font-black italic text-xs mt-2 uppercase tracking-[0.3em]">{getText('SECTION_SUBTITLE', 'Tarixi yarışların unudulmaz anları')}</p>
+            <p className="text-[#FF4D00] font-black italic text-xs mt-2 uppercase tracking-[0.3em] break-words [overflow-wrap:anywhere]">{getText('SECTION_SUBTITLE', 'Tarixi yarışların unudulmaz anları')}</p>
           </div>
         </div>
         <button
           onClick={() => onViewChange('gallery')}
-          className="bg-white/5 border border-white/10 text-white font-black italic text-xs px-10 py-4 rounded-sm transform -skew-x-12 flex items-center gap-2 hover:bg-[#FF4D00] hover:text-black transition-all shadow-md active:scale-95 group"
+          className="self-start md:self-auto max-w-full bg-white/5 border border-white/10 text-white font-black italic text-xs px-6 sm:px-10 py-4 rounded-sm transform -skew-x-12 flex items-center gap-2 hover:bg-[#FF4D00] hover:text-black transition-all shadow-md active:scale-95 group"
         >
-          <span className="transform skew-x-12 flex items-center gap-2 uppercase tracking-widest">
-            {getText('VIEW_ALL_BTN', 'BÜTÜN QALEREYA')} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <span className="transform skew-x-12 flex items-center gap-2 uppercase tracking-widest break-words [overflow-wrap:anywhere]">
+            {getText('VIEW_ALL_BTN', 'BÜTÜN QALEREYA')} <ArrowRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" />
           </span>
         </button>
       </div>

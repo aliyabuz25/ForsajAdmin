@@ -6,9 +6,11 @@
     "location": "SUMQAYIT",
     "category": "OFFROAD FEATURED",
     "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
-    "description": "SUMQAYITIN SAHİL QUMRUQLARINDA KEÇİRİLƏN BU YARIŞDA PİLOTLARIN HƏM SÜRƏT, HƏM DƏ QUMLUQDA MANEVR QABİLİYYƏTLƏRİ SINAĞA ÇƏKİLƏCƏK. AZƏRBAYCANIN ƏN PRESTİJLİ SAHİL YARIŞI OLARAQ QƏBUL EDİLİR.",
-    "rules": "30KM/H LİMİT PİT-STOP ƏRAZİSİNDƏ MƏCBURİDİR. BÜTÜN AVTOMOBİLLƏRDƏ YANĞINSÖNDÜRƏN VƏ TƏHLÜKƏSİZLİK KARKASI OLMALIDIR.",
-    "status": "planned"
+    "description": "<p></p>",
+    "rules": "<p></p>",
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 2,
@@ -17,7 +19,9 @@
     "location": "XIZI",
     "category": "DAĞ SINAĞI",
     "img": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 3,
@@ -26,7 +30,9 @@
     "location": "NAXÇIVAN",
     "category": "DESERT",
     "img": "https://images.unsplash.com/photo-1547038577-da80abbc4f19?q=80&w=2055&auto=format&fit=crop",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 4,
@@ -35,7 +41,9 @@
     "location": "LERİK",
     "category": "NIGHT TRAIL",
     "img": "https://images.unsplash.com/photo-1533558701576-23c65e0272fb?q=80&w=1974&auto=format&fit=crop",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 5,
@@ -44,7 +52,9 @@
     "location": "QƏBƏLƏ",
     "category": "WINTER CUP",
     "img": "https://images.unsplash.com/photo-1541447271487-09612b3f49f7?q=80&w=1974&auto=format&fit=crop",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 6,
@@ -53,7 +63,9 @@
     "location": "BAKI",
     "category": "RALLY",
     "img": "https://images.unsplash.com/photo-1547038577-da80abbc4f19?q=80&w=2055&auto=format&fit=crop",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 7,
@@ -62,7 +74,9 @@
     "location": "QUSAR",
     "category": "CHALLENGE",
     "img": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 8,
@@ -71,7 +85,9 @@
     "location": "QOBUSTAN",
     "category": "TROPHY",
     "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 9,
@@ -80,7 +96,9 @@
     "location": "ŞƏKİ",
     "category": "TRAIL",
     "img": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 11,
@@ -90,7 +108,9 @@
     "category": "DESERT RAID",
     "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
     "description": "Abşeronun qum dyunlarında sürət və dözümlülük yarışı. Mart ayının sərinliyində qızmar yarış!",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 12,
@@ -100,7 +120,9 @@
     "category": "EXPEDITION",
     "img": "https://images.unsplash.com/photo-1547038577-da80abbc4f19?q=80&w=2055&auto=format&fit=crop",
     "description": "Offroad texnikası ilə Şəkinin qədim kəndlərinə və tarixi abidələrinə səyahət.",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 13,
@@ -110,7 +132,9 @@
     "category": "FESTIVAL",
     "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
     "description": "Böyük Palçıq Festivalı. Həm yarış, həm əyləncə!",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true,
+    "youtubeUrl": ""
   },
   {
     "id": 101,
@@ -122,7 +146,8 @@
     "description": "[b]Forsaj Club[/b] 2026 mövsümünün açılış yarışı.",
     "rules": "Texniki baxış və təhlükəsizlik qaydaları məcburidir.",
     "youtubeUrl": "",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true
   },
   {
     "id": 102,
@@ -134,7 +159,8 @@
     "description": "Dağ marşrutunda sürət və stabillik testləri.",
     "rules": "Təkər standartı və roll-cage yoxlaması aparılır.",
     "youtubeUrl": "",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true
   },
   {
     "id": 103,
@@ -146,7 +172,8 @@
     "description": "Mövsümün ən çətin palçıq mərhələlərindən biri.",
     "rules": "Dəbilqə və 4 nöqtəli kəmər mütləqdir.",
     "youtubeUrl": "https://www.youtube.com/watch?v=M7lc1UVf-VE",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true
   },
   {
     "id": 104,
@@ -158,7 +185,8 @@
     "description": "Qaya keçidləri və dar texniki zolaqlar üzrə 2 mərhələ.",
     "rules": "Qayalı hissədə spotter məcburidir.",
     "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "status": "past"
+    "status": "past",
+    "registrationEnabled": true
   },
   {
     "id": 105,
@@ -170,6 +198,33 @@
     "description": "Meşə marşrutları, çay keçidləri və texniki sürmə mərhələləri ilə 1 günlük offroad tədbiri.",
     "rules": "Dəbilqə, çəkmə trosu və ilkin tibbi çanta mütləqdir.",
     "youtubeUrl": "",
-    "status": "planned"
+    "status": "planned",
+    "registrationEnabled": true
+  },
+  {
+    "id": 106,
+    "title": "Yeni Tədbir",
+    "date": "2026-02-25",
+    "location": "Bakı",
+    "category": "OFFROAD",
+    "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
+    "description": "<p></p>",
+    "rules": "<p></p>",
+    "youtubeUrl": "",
+    "status": "planned",
+    "registrationEnabled": true
+  },
+  {
+    "id": 107,
+    "title": "Yeni Tədbirsadasdsad",
+    "date": "2026-02-25",
+    "location": "Bakı",
+    "category": "OFFROAD",
+    "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
+    "description": "<p>asdasd</p>",
+    "rules": "<p>asdasd</p>",
+    "youtubeUrl": "",
+    "status": "planned",
+    "registrationEnabled": true
   }
 ]

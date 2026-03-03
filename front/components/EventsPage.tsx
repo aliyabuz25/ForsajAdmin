@@ -102,7 +102,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onViewChange, openMode = 'defau
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const eventsRes = await fetch('/api/events');
+        const eventsRes = await fetch(`/api/events?v=${Date.now()}`, { cache: 'no-store' });
 
         if (eventsRes.ok) {
           const data = await eventsRes.json();

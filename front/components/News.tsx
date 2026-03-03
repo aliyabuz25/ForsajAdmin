@@ -60,7 +60,7 @@ const News: React.FC<NewsProps> = ({ onViewChange }) => {
   useEffect(() => {
     const loadNews = async () => {
       try {
-        const response = await fetch('/api/news');
+        const response = await fetch(`/api/news?v=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to fetch news');
 
         const data = await response.json();
@@ -97,23 +97,23 @@ const News: React.FC<NewsProps> = ({ onViewChange }) => {
   return (
     <section className="py-24 px-4 lg:px-10 bg-[#0A0A0A]">
       <div className="max-w-[1800px] mx-auto">
-        <div className="flex justify-between items-end mb-12 px-2">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 px-2">
           <div className="flex items-start gap-4">
             <div className="w-2 h-16 bg-[#FF4D00]"></div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-white">
+              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-white break-words [overflow-wrap:anywhere]">
                 {getText('SECTION_TITLE', 'SON XƏBƏRLƏR')}
               </h2>
-              <p className="text-[#FF4D00] font-black italic text-xs mt-2 uppercase tracking-widest">
+              <p className="text-[#FF4D00] font-black italic text-xs mt-2 uppercase tracking-widest break-words [overflow-wrap:anywhere]">
                 {getText('SECTION_SUBTITLE', 'Motorsport və Offroad dünyasından yeniliklər')}
               </p>
             </div>
           </div>
           <button
             onClick={() => openNews()}
-            className="bg-[#FF4D00] text-black font-black italic text-xs px-10 py-4 rounded-sm transform -skew-x-12 flex items-center gap-3 hover:bg-white transition-all shadow-xl hover:scale-105 active:scale-95"
+            className="self-start md:self-auto max-w-full bg-[#FF4D00] text-black font-black italic text-xs px-6 sm:px-10 py-4 rounded-sm transform -skew-x-12 flex items-center gap-3 hover:bg-white transition-all shadow-xl hover:scale-105 active:scale-95"
           >
-            <span className="transform skew-x-12 flex items-center gap-2">{getText('VIEW_ALL_BTN', 'HAMISI')} <ArrowRight className="w-5 h-5" /></span>
+            <span className="transform skew-x-12 flex items-center gap-2 break-words [overflow-wrap:anywhere]">{getText('VIEW_ALL_BTN', 'HAMISI')} <ArrowRight className="w-5 h-5 shrink-0" /></span>
           </button>
         </div>
 
@@ -130,7 +130,7 @@ const News: React.FC<NewsProps> = ({ onViewChange }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
             <div className="relative z-10 w-full">
               <span className="text-[#FF4D00] text-[10px] font-black italic uppercase mb-3 block tracking-[0.3em]">{getText('FEATURED_LABEL', 'SON XƏBƏR')}</span>
-              <h3 className="text-4xl md:text-7xl font-black italic text-white leading-none tracking-tighter mb-5 uppercase">
+              <h3 className="text-4xl md:text-7xl font-black italic text-white leading-none tracking-tighter mb-5 uppercase break-words [overflow-wrap:anywhere]">
                 {mainNews.title}
               </h3>
               <p className="text-gray-400 font-bold italic text-xs md:text-base uppercase tracking-wide max-w-xl break-words [overflow-wrap:anywhere] line-clamp-4">

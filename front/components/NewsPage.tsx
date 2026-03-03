@@ -47,7 +47,7 @@ const NewsPage: React.FC = () => {
   useEffect(() => {
     const loadNews = async () => {
       try {
-        const response = await fetch('/api/news');
+        const response = await fetch(`/api/news?v=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to fetch news');
 
         const data = await response.json();
