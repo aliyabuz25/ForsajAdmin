@@ -362,24 +362,24 @@ const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
           </ul>
         </div>
 
-        <div className="bg-white/5 p-8 rounded-sm border border-white/5">
+        <div className="bg-white/5 p-8 rounded-sm border border-white/5 overflow-hidden">
           <h4 className="text-white font-black italic text-sm mb-4 uppercase tracking-tighter">{newsletterTitle}</h4>
-          <p className="text-gray-500 font-bold italic text-[11px] uppercase mb-8 leading-relaxed tracking-tight">
+          <p className="text-gray-500 font-bold italic text-[11px] uppercase mb-8 leading-relaxed tracking-tight break-words [overflow-wrap:anywhere]">
             {newsletterDesc}
           </p>
-          <form className="flex items-center" onSubmit={submitNewsletter}>
+          <form className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0" onSubmit={submitNewsletter}>
             <input
               type="email"
               value={newsletterEmail}
               onChange={(event) => setNewsletterEmail(event.target.value)}
               placeholder={newsletterPlaceholder}
               disabled={isNewsletterSubmitting}
-              className="flex-grow bg-[#111] border border-white/10 border-r-0 py-4 px-5 font-black italic text-[11px] text-white uppercase focus:outline-none focus:border-[#FF4D00] transition-colors placeholder:text-gray-600"
+              className="w-full min-w-0 bg-[#111] border border-white/10 sm:border-r-0 py-4 px-5 font-black italic text-[11px] text-white uppercase focus:outline-none focus:border-[#FF4D00] transition-colors placeholder:text-gray-600"
             />
             <button
               type="submit"
               disabled={isNewsletterSubmitting}
-              className="bg-[#FF4D00] text-black p-4 hover:bg-white transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto bg-[#FF4D00] text-black p-4 hover:bg-white transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <ArrowRight size={22} strokeWidth={3} />
             </button>
