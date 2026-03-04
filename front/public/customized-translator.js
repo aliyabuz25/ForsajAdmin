@@ -226,17 +226,22 @@
     const previousLang = currentLang;
     const languageChanged = previousLang !== lang;
 
+    // Fast-path: base language -> translated language should not block UI with a veil.
+    if (previousLang === DEFAULT_LANG && lang !== DEFAULT_LANG) {
+      setButtonsDisabled(true);
+      try {
+        setGoogTransCookie(lang);
+        setActive(lang);
+        window.setTimeout(() => window.location.reload(), 30);
+      } finally {
+        window.setTimeout(() => setButtonsDisabled(false), 180);
+      }
+      return;
+    }
+
     setButtonsDisabled(true);
     try {
       if (languageChanged) showTransitionVeil();
-
-      // AZ -> other languages: apply target cookie and reload immediately.
-      if (previousLang === DEFAULT_LANG && lang !== DEFAULT_LANG) {
-        setGoogTransCookie(lang);
-        setActive(lang);
-        window.setTimeout(() => window.location.reload(), 60);
-        return;
-      }
 
       // Returning to base language should fully stop translation and reload cleanly.
       if (lang === DEFAULT_LANG && languageChanged) {
