@@ -135,6 +135,12 @@
     }
   }
 
+  function armPostReloadFade() {
+    try {
+      sessionStorage.setItem(POST_RELOAD_FADE_KEY, String(Date.now()));
+    } catch (e) { }
+  }
+
   function markPostReloadReady() {
     const body = document.body;
     if (!body || !body.classList.contains(POST_RELOAD_PENDING_CLASS)) return;
@@ -226,13 +232,15 @@
     const previousLang = currentLang;
     const languageChanged = previousLang !== lang;
 
-    // Fast-path: base language -> translated language should not block UI with a veil.
+    // Fast-path: base language -> translated language with explicit fade-out + fade-in.
     if (previousLang === DEFAULT_LANG && lang !== DEFAULT_LANG) {
       setButtonsDisabled(true);
       try {
+        showTransitionVeil();
         setGoogTransCookie(lang);
         setActive(lang);
-        window.setTimeout(() => window.location.reload(), 30);
+        armPostReloadFade();
+        window.setTimeout(() => window.location.reload(), 220);
       } finally {
         window.setTimeout(() => setButtonsDisabled(false), 180);
       }
@@ -252,6 +260,7 @@
           combo.dispatchEvent(new Event("change", { bubbles: true }));
         }
         setActive(lang);
+        armPostReloadFade();
         window.setTimeout(() => window.location.reload(), 120);
         return;
       }
@@ -293,12 +302,16 @@
           } else {
             // Last-resort fallback: hard reload with target cookie guarantees translation on reopen.
             setActive(lang);
-            if (languageChanged) window.setTimeout(() => window.location.reload(), 120);
+            if (languageChanged) {
+              armPostReloadFade();
+              window.setTimeout(() => window.location.reload(), 120);
+            }
           }
         }
       } else if (languageChanged) {
         // Fallback: widget unavailable; reload with selected language cookie.
         setActive(lang);
+        armPostReloadFade();
         window.setTimeout(() => window.location.reload(), 120);
       }
     } catch (err) {
