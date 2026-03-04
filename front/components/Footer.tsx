@@ -374,7 +374,7 @@ const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
               onChange={(event) => setNewsletterEmail(event.target.value)}
               placeholder={newsletterPlaceholder}
               disabled={isNewsletterSubmitting}
-              className="w-full min-w-0 bg-[#111] border border-white/10 sm:border-r-0 py-4 px-5 font-black italic text-[11px] text-white uppercase focus:outline-none focus:border-[#FF4D00] transition-colors placeholder:text-gray-600"
+              className="w-full min-w-0 sm:flex-1 sm:min-w-[320px] bg-[#111] border border-white/10 sm:border-r-0 py-4 px-5 font-black italic text-[11px] text-white uppercase focus:outline-none focus:border-[#FF4D00] transition-colors placeholder:text-gray-600"
             />
             <button
               type="submit"
