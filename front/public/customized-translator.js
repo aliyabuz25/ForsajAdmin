@@ -13,6 +13,7 @@
   const POST_RELOAD_FADE_DURATION_MS = 2200;
   const POST_RELOAD_COVER_ID = "cg-post-reload-cover";
   const POST_RELOAD_COVER_FADE_MS = 1800;
+  const NAVBAR_TRANSLATION_GRACE_MS = 2600;
 
   const flags = {
     az: "https://flagcdn.com/w40/az.png",
@@ -418,8 +419,11 @@
     if (!targetLang || targetLang === DEFAULT_LANG) return true;
     const started = Date.now();
     while (Date.now() - started < SWITCH_TIMEOUT_MS + 4000) {
+      const elapsed = Date.now() - started;
       const langApplied = getCurrentTranslatorLang() === targetLang;
-      if (langApplied && hasTranslatedDomSignal() && hasNavbarTranslatedSignal()) return true;
+      if (langApplied && hasTranslatedDomSignal()) {
+        if (hasNavbarTranslatedSignal() || elapsed >= NAVBAR_TRANSLATION_GRACE_MS) return true;
+      }
       await new Promise((r) => setTimeout(r, 180));
     }
     return false;
