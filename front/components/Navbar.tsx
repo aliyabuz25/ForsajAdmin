@@ -271,7 +271,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
             <button
               key={`${item.name}-${idx}`}
               onClick={() => handleNavTargetClick(item.target)}
-              className={`px-4 py-2 text-[10px] xl:text-[11px] font-black italic transition-all uppercase tracking-tight relative transform -skew-x-12 ${currentView === item.activeView
+              className={`px-4 py-2 text-[11px] xl:text-xs font-black italic transition-all uppercase tracking-tight relative transform -skew-x-12 ${currentView === item.activeView
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_25px_rgba(255,77,0,0.25)] border-2 border-[#FF4D00]'
                 : 'text-gray-400 hover:text-white hover:bg-white/5 border-2 border-transparent'
                 }`}
