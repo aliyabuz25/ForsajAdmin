@@ -12,6 +12,7 @@
   const POST_RELOAD_READY_CLASS = "cg-post-reload-ready";
   const POST_RELOAD_FADE_DURATION_MS = 2200;
   const POST_RELOAD_COVER_ID = "cg-post-reload-cover";
+  const POST_RELOAD_COVER_CLASS = "cg-post-reload-cover";
   const POST_RELOAD_COVER_FADE_MS = 1800;
   const NAVBAR_TRANSLATION_GRACE_MS = 2600;
 
@@ -91,10 +92,10 @@
     if (cover) return cover;
     cover = document.createElement("div");
     cover.id = POST_RELOAD_COVER_ID;
+    cover.className = POST_RELOAD_COVER_CLASS;
     cover.setAttribute("aria-hidden", "true");
     cover.style.position = "fixed";
     cover.style.inset = "0";
-    cover.style.background = "#000";
     cover.style.opacity = "1";
     cover.style.pointerEvents = "none";
     cover.style.zIndex = "2147483646";
@@ -486,11 +487,6 @@
   }
 
   async function init() {
-    const hasPostReloadFade = applyPostReloadFade();
-    if (!hasPostReloadFade) {
-      startInitialFadeIn();
-    }
-
     window.gtranslateSettings = {
       default_language: DEFAULT_LANG,
       languages: SUPPORTED_LANGS,
@@ -508,6 +504,18 @@
       setGoogTransCookie(currentLang || DEFAULT_LANG);
     }
 
+    const hasPostReloadFade = applyPostReloadFade();
+    const needsTranslatedGhost = currentLang !== DEFAULT_LANG;
+    if (!hasPostReloadFade) {
+      if (needsTranslatedGhost) {
+        document.body.classList.add(POST_RELOAD_PENDING_CLASS);
+        document.body.classList.remove(POST_RELOAD_READY_CLASS);
+        showPostReloadCover();
+      } else {
+        startInitialFadeIn();
+      }
+    }
+
     applyLanguageClass(currentLang);
     renderButtons();
 
@@ -516,16 +524,16 @@
       const ready = await waitForTranslatorReady();
       if (ready && currentLang !== DEFAULT_LANG) {
         applyLang(currentLang);
-        if (hasPostReloadFade) {
-          await waitForRenderedTranslation(currentLang);
+        await waitForRenderedTranslation(currentLang);
+        if (hasPostReloadFade || needsTranslatedGhost) {
           markPostReloadReady();
         }
-      } else if (hasPostReloadFade) {
+      } else if (hasPostReloadFade || needsTranslatedGhost) {
         markPostReloadReady();
       }
     } catch (e) {
       console.error("GTranslate init failed", e);
-      if (hasPostReloadFade) {
+      if (hasPostReloadFade || needsTranslatedGhost) {
         markPostReloadReady();
       }
     }
