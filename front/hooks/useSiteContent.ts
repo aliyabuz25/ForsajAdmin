@@ -77,11 +77,59 @@ const extractSiteContentResource = (payload: any) => {
 const normalizeToken = (value: string) =>
     (value || '')
         .toLocaleLowerCase('az')
+        .replace(/ə/g, 'e')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ü/g, 'u')
+        .replace(/ğ/g, 'g')
+        .replace(/ş/g, 's')
+        .replace(/ç/g, 'c')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '');
 
 const isKeyLikeValue = (value?: string) => /^[A-Z0-9_]+$/.test((value || '').trim());
+
+type CommonTranslationPair = {
+    AZ: string;
+    RU: string;
+    ENG: string;
+};
+
+const COMMON_TRANSLATION_PAIRS: CommonTranslationPair[] = [
+    { AZ: 'ANA SƏHİFƏ', RU: 'ГЛАВНАЯ', ENG: 'HOME' },
+    { AZ: 'HAQQIMIZDA', RU: 'О НАС', ENG: 'ABOUT US' },
+    { AZ: 'XƏBƏRLƏR', RU: 'НОВОСТИ', ENG: 'NEWS' },
+    { AZ: 'TƏDBİRLƏR', RU: 'СОБЫТИЯ', ENG: 'EVENTS' },
+    { AZ: 'SÜRÜCÜLƏR', RU: 'ПИЛОТЫ', ENG: 'DRIVERS' },
+    { AZ: 'QALEREYA', RU: 'ГАЛЕРЕЯ', ENG: 'GALLERY' },
+    { AZ: 'QAYDALAR', RU: 'ПРАВИЛА', ENG: 'RULES' },
+    { AZ: 'ƏLAQƏ', RU: 'КОНТАКТЫ', ENG: 'CONTACT' },
+    { AZ: 'HAMISI', RU: 'ВСЕ', ENG: 'ALL' },
+    { AZ: 'HAMISINA BAX', RU: 'СМОТРЕТЬ ВСЕ', ENG: 'VIEW ALL' },
+    { AZ: 'BÜTÜN XƏBƏRLƏR', RU: 'ВСЕ НОВОСТИ', ENG: 'ALL NEWS' },
+    { AZ: 'OXU', RU: 'ЧИТАТЬ', ENG: 'READ' },
+    { AZ: 'XƏBƏRİ OXU', RU: 'ЧИТАТЬ НОВОСТЬ', ENG: 'READ NEWS' },
+    { AZ: 'GERİ QAYIT', RU: 'НАЗАД', ENG: 'GO BACK' },
+    { AZ: 'DAHA ƏTRAFLI', RU: 'ПОДРОБНЕЕ', ENG: 'MORE DETAILS' },
+    { AZ: 'ƏTRAFLI BAX', RU: 'ПОСМОТРЕТЬ ДЕТАЛИ', ENG: 'VIEW DETAILS' }
+];
+
+const COMMON_TRANSLATION_INDEX = new Map<string, CommonTranslationPair>();
+for (const pair of COMMON_TRANSLATION_PAIRS) {
+    const key = normalizeToken(pair.AZ);
+    if (!key || COMMON_TRANSLATION_INDEX.has(key)) continue;
+    COMMON_TRANSLATION_INDEX.set(key, pair);
+}
+
+const translateCommonAzText = (lang: SiteLang, value: string) => {
+    if (lang === 'AZ') return '';
+    const key = normalizeToken(value || '');
+    if (!key) return '';
+    const pair = COMMON_TRANSLATION_INDEX.get(key);
+    if (!pair) return '';
+    return lang === 'RU' ? pair.RU : pair.ENG;
+};
 
 const stripLanguageAffixes = (rawKey: string | number) => {
     const key = String(rawKey || '').trim();
@@ -305,6 +353,9 @@ const resolveLocalizedText = (
             if (value) return value;
         }
     }
+
+    const commonFallback = translateCommonAzText(lang, defaultValue);
+    if (commonFallback) return commonFallback;
 
     return '';
 };
@@ -553,6 +604,9 @@ export const useSiteContent = (scopePageId?: string) => {
         const resolved = isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase())
             ? defaultValue
             : (value || defaultValue);
+
+        const commonFallback = translateCommonAzText(language, resolved) || translateCommonAzText(language, defaultValue);
+        if (commonFallback) return commonFallback;
 
         return resolved;
     };
