@@ -175,6 +175,31 @@ const normalizeLocalization = (payload: any): LocalizationMap => {
     return normalized;
 };
 
+const hasLocalizationContent = (localization: LocalizationMap) =>
+    Object.values(localization).some((pageMap) => Object.keys(pageMap || {}).length > 0);
+
+const mergeLocalizationMaps = (base: LocalizationMap, override: LocalizationMap): LocalizationMap => {
+    const merged: LocalizationMap = { ...base };
+
+    for (const [pageId, overridePage] of Object.entries(override || {})) {
+        const basePage = merged[pageId] || {};
+        const nextPage: LocalizationPageMap = { ...basePage };
+
+        for (const [key, overrideEntry] of Object.entries(overridePage || {})) {
+            const baseEntry = basePage[key] || {};
+            nextPage[key] = {
+                AZ: String(overrideEntry.AZ ?? baseEntry.AZ ?? ''),
+                RU: String(overrideEntry.RU ?? baseEntry.RU ?? ''),
+                ENG: String(overrideEntry.ENG ?? baseEntry.ENG ?? '')
+            };
+        }
+
+        merged[pageId] = nextPage;
+    }
+
+    return merged;
+};
+
 const getEntryValue = (entry: LocalizationEntry, lang: SiteLang) => {
     if (lang === 'AZ') return String(entry.AZ || '').trim();
     if (lang === 'RU') return String(entry.RU || '').trim();
@@ -360,19 +385,32 @@ const fetchLocalizationOnce = async (): Promise<LocalizationMap> => {
 
     localizationInFlight = (async () => {
         try {
-            const apiResponse = await fetch('/api/localization', FETCH_OPTIONS);
-            if (apiResponse.ok) {
-                const payload = await apiResponse.json();
-                const normalized = normalizeLocalization(payload);
-                localizationCache = normalized;
-                localizationValueIndexCache = buildLocalizationValueIndex(normalized);
-                return normalized;
+            let apiLocalization: LocalizationMap = {};
+            try {
+                const apiResponse = await fetch('/api/localization', FETCH_OPTIONS);
+                if (apiResponse.ok) {
+                    const payload = await apiResponse.json();
+                    apiLocalization = normalizeLocalization(payload);
+                }
+            } catch {
+                // fallback handled below
             }
 
-            const staticResponse = await fetch('/localization.json', FETCH_OPTIONS);
-            if (!staticResponse.ok) return {};
-            const payload = await staticResponse.json();
-            const normalized = normalizeLocalization(payload);
+            let staticLocalization: LocalizationMap = {};
+            try {
+                const staticResponse = await fetch('/localization.json', FETCH_OPTIONS);
+                if (staticResponse.ok) {
+                    const payload = await staticResponse.json();
+                    staticLocalization = normalizeLocalization(payload);
+                }
+            } catch {
+                // optional fallback source
+            }
+
+            const normalized = hasLocalizationContent(staticLocalization)
+                ? mergeLocalizationMaps(staticLocalization, apiLocalization)
+                : apiLocalization;
+
             localizationCache = normalized;
             localizationValueIndexCache = buildLocalizationValueIndex(normalized);
             return normalized;

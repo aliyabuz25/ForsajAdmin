@@ -69,6 +69,36 @@ const normalizePayload = (raw: any): LocalizationPayload => {
     };
 };
 
+const hasPayloadPages = (payload: LocalizationPayload) =>
+    Object.values(payload.pages || {}).some((entries) => Object.keys(entries || {}).length > 0);
+
+const mergePayload = (base: LocalizationPayload, override: LocalizationPayload): LocalizationPayload => {
+    const mergedPages: LocalizationPayload['pages'] = { ...base.pages };
+
+    for (const [pageId, overrideEntries] of Object.entries(override.pages || {})) {
+        const baseEntries = mergedPages[pageId] || {};
+        const nextEntries: Record<string, LocalizationEntry> = { ...baseEntries };
+
+        for (const [key, overrideEntry] of Object.entries(overrideEntries || {})) {
+            const baseEntry = baseEntries[key] || { AZ: '', RU: '', ENG: '' };
+            nextEntries[key] = {
+                AZ: String(overrideEntry.AZ ?? baseEntry.AZ ?? ''),
+                RU: String(overrideEntry.RU ?? baseEntry.RU ?? ''),
+                ENG: String(overrideEntry.ENG ?? baseEntry.ENG ?? '')
+            };
+        }
+
+        mergedPages[pageId] = nextEntries;
+    }
+
+    return {
+        schemaVersion: Number(override.schemaVersion) || Number(base.schemaVersion) || 1,
+        generatedAt: String(override.generatedAt || base.generatedAt || ''),
+        languages: ['AZ', 'RU', 'ENG'],
+        pages: mergedPages
+    };
+};
+
 const prettyPageName = (pageId: string) =>
     String(pageId || '')
         .replace(/[-_]+/g, ' ')
@@ -164,13 +194,30 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         setLoading(true);
         try {
             const token = getAuthToken();
+            let apiPayload = DEFAULT_PAYLOAD;
             const response = await fetch('/api/localization', {
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             });
             if (!response.ok) throw new Error('load_failed');
             const data = await response.json();
-            const normalized = normalizePayload(data);
-            setPayload(normalized);
+            apiPayload = normalizePayload(data);
+
+            let staticPayload = DEFAULT_PAYLOAD;
+            try {
+                const staticResponse = await fetch('/localization.json');
+                if (staticResponse.ok) {
+                    const staticData = await staticResponse.json();
+                    staticPayload = normalizePayload(staticData);
+                }
+            } catch {
+                // optional fallback source
+            }
+
+            const merged = hasPayloadPages(staticPayload)
+                ? mergePayload(staticPayload, apiPayload)
+                : apiPayload;
+
+            setPayload(merged);
             setDirty(false);
         } catch (error) {
             console.error(error);

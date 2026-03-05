@@ -164,6 +164,7 @@ const VIDEOS_FILE_PATH = path.join(FRONT_PUBLIC_DIR, 'videos.json');
 const DRIVERS_FILE_PATH = path.join(FRONT_PUBLIC_DIR, 'drivers.json');
 const SUBSCRIBERS_FILE_PATH = path.join(WEB_DATA_DIR, 'subscribers.json');
 const LOCALIZATION_FILE_PATH = path.join(WEB_DATA_DIR, 'localization.json');
+const DEFAULT_LOCALIZATION_FILE_PATH = path.join(__dirname, '../front/public/localization.json');
 const SITE_NEW_STRUCT_PATH = path.join(WEB_DATA_DIR, 'site-new-struct.json');
 const SITE_NEW_STRUCT_ID = 'site-new-struct';
 const SITE_NEW_STRUCT_RESOURCE_IDS = ['site-content', 'events', 'news', 'gallery-photos', 'videos', 'drivers', 'subscribers'];
@@ -554,6 +555,23 @@ const normalizeLocalizationPayload = (payload) => {
         languages: ['AZ', 'RU', 'ENG'],
         pages
     };
+};
+
+const hasLocalizationContent = (payload) => {
+    if (!isPlainObject(payload)) return false;
+    const pages = isPlainObject(payload.pages) ? payload.pages : {};
+    return Object.values(pages).some((entries) => isPlainObject(entries) && Object.keys(entries).length > 0);
+};
+
+const loadBundledLocalization = async () => {
+    try {
+        if (!fs.existsSync(DEFAULT_LOCALIZATION_FILE_PATH)) return null;
+        const raw = await fsPromises.readFile(DEFAULT_LOCALIZATION_FILE_PATH, 'utf8');
+        const parsed = JSON.parse(raw);
+        return normalizeLocalizationPayload(parsed);
+    } catch {
+        return null;
+    }
 };
 
 const isRegistrationEnabled = (rawValue, fallback = true) => {
@@ -2204,7 +2222,16 @@ app.get('/api/site-content', async (req, res) => {
 app.get('/api/localization', async (req, res) => {
     try {
         const data = await getContent('localization', createDefaultLocalization());
-        const normalized = normalizeLocalizationPayload(data) || createDefaultLocalization();
+        let normalized = normalizeLocalizationPayload(data) || createDefaultLocalization();
+
+        // If persisted localization is empty, fallback to bundled localization shipped with frontend build.
+        if (!hasLocalizationContent(normalized)) {
+            const bundled = await loadBundledLocalization();
+            if (bundled && hasLocalizationContent(bundled)) {
+                normalized = bundled;
+            }
+        }
+
         res.json(normalized);
     } catch (error) {
         console.error('Error reading localization:', error);
