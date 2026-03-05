@@ -16,11 +16,25 @@ interface LeaderCard {
 }
 
 const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
-  const { getText } = useSiteContent('categoryleaders');
-  const leaderSuffix = getText('LEADER_TITLE_SUFFIX', 'LİDERİ');
+  const { getText, language } = useSiteContent('categoryleaders');
+  const leaderSuffixDefaultByLanguage: Record<string, string> = {
+    AZ: 'LİDERİ',
+    RU: 'ЛИДЕР',
+    ENG: 'LEADER'
+  };
+  const leaderSuffix = getText('LEADER_TITLE_SUFFIX', leaderSuffixDefaultByLanguage[language] || 'LİDERİ');
   const emptyName = getText('EMPTY_DRIVER_NAME', '---');
   const emptyTeam = getText('EMPTY_DRIVER_TEAM', '---');
   const [leaders, setLeaders] = React.useState<LeaderCard[]>([]);
+
+  const getLeaderTitle = React.useCallback((categoryName: string) => {
+    const raw = String(categoryName || '').trim();
+    if (!raw) return leaderSuffix;
+
+    const stripped = raw.replace(/\s+(LİDERİ|LIDERI|LEADER|ЛИДЕР)$/i, '').trim();
+    const base = stripped || raw;
+    return `${base} ${leaderSuffix}`.trim();
+  }, [leaderSuffix]);
 
   React.useEffect(() => {
     const loadLeaders = async () => {
@@ -81,7 +95,7 @@ const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
         {leaders.map((leader) => (
           <div key={`${leader.id}-${leader.name}`} className="flex flex-col group">
             <div className="text-center mb-6">
-              <h4 className="text-gray-500 font-black italic text-xs tracking-[0.2em] uppercase group-hover:text-[#FF4D00] transition-colors">{leader.categoryName} {leaderSuffix}</h4>
+              <h4 className="text-gray-500 font-black italic text-xs tracking-[0.2em] uppercase group-hover:text-[#FF4D00] transition-colors">{getLeaderTitle(leader.categoryName)}</h4>
             </div>
 
             <div
