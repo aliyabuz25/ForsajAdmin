@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     Layout,
@@ -235,35 +235,12 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
         return buckets;
     }, [preparedItems]);
 
-    useEffect(() => {
-        const w = window as any;
-        w.gtranslateSettings = {
-            default_language: 'az',
-            languages: ['az', 'ru', 'en'],
-            wrapper_selector: '.gtranslate_wrapper',
-            flag_size: 24,
-            flag_style: '3d'
-        };
-
-        const scriptId = 'gtranslate-flags-script';
-        if (document.getElementById(scriptId)) return;
-
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = 'https://cdn.gtranslate.net/widgets/latest/flags.js';
-        script.defer = true;
-        document.body.appendChild(script);
-    }, []);
-
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
                 <div className="brand-logo">
                     <div className="logo-mark">
                         <Hexagon className="logo-icon" size={22} fill="currentColor" />
-                    </div>
-                    <div className="sidebar-gtranslate">
-                        <div className="gtranslate_wrapper"></div>
                     </div>
                 </div>
                 <div className="sidebar-lang-switch" aria-label="Admin language switch">
