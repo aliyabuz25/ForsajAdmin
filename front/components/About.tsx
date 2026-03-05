@@ -3,11 +3,14 @@ import { Target, Globe, Shield, Users, Leaf, Zap } from 'lucide-react';
 import { useSiteContent } from '../hooks/useSiteContent';
 
 const buildPreviewText = (content: string, sentenceLimit = 2, maxChars = 190) => {
-  const normalized = content.replace(/\s+/g, ' ').trim();
+  const normalized = content.replace(/\r\n?/g, '\n').trim();
   if (!normalized) return '';
+  if (normalized.includes('\n')) return normalized;
 
-  const sentences = normalized.match(/[^.!?]+[.!?]+/g);
-  let preview = normalized;
+  const flattened = normalized.replace(/\s+/g, ' ');
+
+  const sentences = flattened.match(/[^.!?]+[.!?]+/g);
+  let preview = flattened;
 
   if (sentences && sentences.length > sentenceLimit) {
     preview = sentences.slice(0, sentenceLimit).join(' ').trim();
@@ -58,7 +61,9 @@ const About: React.FC = () => {
     const finalDoc = new DOMParser().parseFromString(current, 'text/html');
     return (finalDoc.body.textContent || '')
       .replace(/\u00a0/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/\r\n?/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
   };
   const text = (id: string, fallback: string) => toPlainText(getText(id, fallback));
@@ -225,7 +230,7 @@ const About: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-black italic leading-tight mb-8 max-w-3xl text-white tracking-tighter break-words [overflow-wrap:anywhere]">
               {aboutHeadline}
             </h2>
-            <p className="text-gray-400 font-bold italic text-sm md:text-base leading-relaxed mb-5 max-w-3xl tracking-wide break-words [overflow-wrap:anywhere]">
+            <p className="text-gray-400 font-bold italic text-sm md:text-base leading-relaxed mb-5 max-w-3xl tracking-wide break-words [overflow-wrap:anywhere] whitespace-pre-line">
               {isAboutTextExpanded ? aboutDescription : aboutDescriptionPreview}
             </p>
             {!isAboutTextExpanded && isAboutExpandable ? (

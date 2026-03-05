@@ -35,6 +35,7 @@ services:
       REQUIRE_DB_HEALTH: "true"
     volumes:
       - ./.data/app:/app/data
+      - ./front/public:/app/front/public
     ports:
       - "5005:5000"
     depends_on:

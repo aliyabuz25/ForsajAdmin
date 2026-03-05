@@ -39,7 +39,8 @@ let siteContentCacheAt = 0;
 let localizationCache: LocalizationMap | null = null;
 let localizationValueIndexCache: LocalizationValueIndex | null = null;
 let localizationInFlight: Promise<LocalizationMap> | null = null;
-const CACHE_TTL_MS = 0;
+let localizationCacheAt = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
 const SITE_LANG_KEY = 'forsaj_site_lang';
 const LOCALIZATION_READY_EVENT = 'forsaj-localization-ready';
@@ -88,6 +89,11 @@ const normalizeToken = (value: string) =>
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '');
+
+const normalizeTextLineBreaks = (value: string) =>
+    String(value ?? '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/\\n/g, '\n');
 
 const isKeyLikeValue = (value?: string) => /^[A-Z0-9_]+$/.test((value || '').trim());
 
@@ -327,7 +333,7 @@ const resolveLocalizedText = (
     lang: SiteLang,
     defaultValue: string
 ) => {
-    if (lang === 'AZ' || typeof key === 'number') return '';
+    if (typeof key === 'number') return '';
 
     const pageMap = localization[pageId.toLowerCase()];
     if (!pageMap) return '';
@@ -337,7 +343,7 @@ const resolveLocalizedText = (
         const entry = pageMap[normalizedKey];
         if (!entry) continue;
 
-        const preferred = (lang === 'RU' ? entry.RU : entry.ENG) || entry.AZ || '';
+        const preferred = (lang === 'AZ' ? entry.AZ : (lang === 'RU' ? entry.RU : entry.ENG)) || entry.AZ || '';
         const value = String(preferred || '').trim();
         if (!value) continue;
 
@@ -357,8 +363,8 @@ const resolveLocalizedText = (
 
         if (defaultValue && normalizeToken(defaultValue) === normalizedValue) {
             const byDefault = localizationValueIndex[normalizeToken(defaultValue)];
-            if (byDefault) {
-                const byDefaultValue = String((lang === 'RU' ? byDefault.RU : byDefault.ENG) || '').trim();
+            if (byDefault && lang !== 'AZ') {
+                const byDefaultValue = String((lang === 'RU' ? byDefault.RU : byDefault.ENG) || byDefault.AZ || '').trim();
                 if (byDefaultValue && normalizeToken(byDefaultValue) !== normalizedValue) {
                     return byDefaultValue;
                 }
@@ -372,7 +378,7 @@ const resolveLocalizedText = (
         const normalizedDefault = normalizeToken(defaultValue);
         const byValue = localizationValueIndex[normalizedDefault];
         if (byValue) {
-            const preferred = (lang === 'RU' ? byValue.RU : byValue.ENG) || byValue.AZ || '';
+            const preferred = (lang === 'AZ' ? byValue.AZ : (lang === 'RU' ? byValue.RU : byValue.ENG)) || byValue.AZ || '';
             const value = String(preferred || '').trim();
             if (value) return value;
         }
@@ -455,7 +461,7 @@ const fetchSiteContentOnce = async (): Promise<PageContent[]> => {
 };
 
 const fetchLocalizationOnce = async (): Promise<LocalizationMap> => {
-    if (localizationCache) return localizationCache;
+    if (localizationCache && Date.now() - localizationCacheAt < CACHE_TTL_MS) return localizationCache;
     if (localizationInFlight) return localizationInFlight;
 
     localizationInFlight = (async () => {
@@ -487,6 +493,7 @@ const fetchLocalizationOnce = async (): Promise<LocalizationMap> => {
                 : apiLocalization;
 
             localizationCache = normalized;
+            localizationCacheAt = Date.now();
             localizationValueIndexCache = buildLocalizationValueIndex(normalized);
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent(LOCALIZATION_READY_EVENT));
@@ -506,7 +513,7 @@ export const useSiteContent = (scopePageId?: string) => {
     const [content, setContent] = useState<PageContent[]>([]);
     const [localization, setLocalization] = useState<LocalizationMap>(() => localizationCache || {});
     const [localizationValueIndex, setLocalizationValueIndex] = useState<LocalizationValueIndex>(() => localizationValueIndexCache || {});
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(() => !(siteContentCache && localizationCache));
     const [language, setLanguage] = useState<SiteLang>(() =>
         normalizeSiteLanguage(localStorage.getItem(SITE_LANG_KEY))
     );
@@ -515,6 +522,17 @@ export const useSiteContent = (scopePageId?: string) => {
         let isMounted = true;
 
         const loadContent = async () => {
+            const hasWarmCache = Boolean(siteContentCache && localizationCache);
+            if (hasWarmCache) {
+                if (isMounted) {
+                    setContent(siteContentCache || []);
+                    setLocalization(localizationCache || {});
+                    setLocalizationValueIndex(localizationValueIndexCache || {});
+                    setIsLoading(false);
+                }
+                return;
+            }
+
             try {
                 const [mapped, localized] = await Promise.all([
                     siteContentCache ? Promise.resolve(siteContentCache) : fetchSiteContentOnce(),
@@ -536,13 +554,21 @@ export const useSiteContent = (scopePageId?: string) => {
         const refresh = () => {
             siteContentCache = null;
             siteContentCacheAt = 0;
-            fetchSiteContentOnce()
-                .then((mapped) => {
+            siteContentInFlight = null;
+            localizationCache = null;
+            localizationCacheAt = 0;
+            localizationValueIndexCache = null;
+            localizationInFlight = null;
+
+            Promise.all([fetchSiteContentOnce(), fetchLocalizationOnce()])
+                .then(([mapped, localized]) => {
                     if (!isMounted) return;
                     setContent(mapped);
+                    setLocalization(localized);
+                    setLocalizationValueIndex(localizationValueIndexCache || buildLocalizationValueIndex(localized));
                     setIsLoading(false);
                 })
-                .catch((err) => console.error('Failed to refresh site content from storage event:', err));
+                .catch((err) => console.error('Failed to refresh content/localization from storage event:', err));
         };
 
         const onStorage = (event: StorageEvent) => {
@@ -615,11 +641,11 @@ export const useSiteContent = (scopePageId?: string) => {
                 language,
                 defaultValue
             );
-            if (localized) return localized;
+            if (localized) return normalizeTextLineBreaks(localized);
         }
 
         const page = getPage(pageId);
-        if (!page) return defaultValue;
+        if (!page) return normalizeTextLineBreaks(defaultValue);
         const sections = Array.isArray(page.sections) ? page.sections : [];
 
         let section = typeof sectionIdOrIndex === 'number'
@@ -630,7 +656,7 @@ export const useSiteContent = (scopePageId?: string) => {
             section = findSectionByFallback(sections, defaultValue);
         }
 
-        if (!section) return defaultValue;
+        if (!section) return normalizeTextLineBreaks(defaultValue);
         const value = String(section.value || '');
         const keyCandidates = buildLanguageCandidates(sectionIdOrIndex, language).map(v => v.toUpperCase());
         const resolved = isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase())
@@ -642,15 +668,15 @@ export const useSiteContent = (scopePageId?: string) => {
             if (byValue) {
                 const preferred = String((language === 'RU' ? byValue.RU : byValue.ENG) || '').trim();
                 if (preferred && normalizeToken(preferred) !== normalizeToken(resolved)) {
-                    return preferred;
+                    return normalizeTextLineBreaks(preferred);
                 }
             }
         }
 
         const commonFallback = translateCommonAzText(language, resolved) || translateCommonAzText(language, defaultValue);
-        if (commonFallback) return commonFallback;
+        if (commonFallback) return normalizeTextLineBreaks(commonFallback);
 
-        return resolved;
+        return normalizeTextLineBreaks(resolved);
     };
 
     const getImage = (arg1: string, arg2?: string | number, arg3: string = '') => {

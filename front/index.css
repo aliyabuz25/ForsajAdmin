@@ -94,6 +94,36 @@ a {
   color: inherit;
 }
 
+/* Preserve admin-entered newlines in localized copy by default. */
+.cg-localized-preserve-lines {
+  white-space: normal;
+}
+
+.cg-localized-preserve-lines :is(h1, h2, h3, h4, h5, h6, p, span, a, button, label, li, small, strong, em, b, i, u, blockquote) {
+  white-space: pre-line;
+}
+
+/* Keep explicit no-wrap/normal/pre utilities authoritative when set on elements. */
+.cg-localized-preserve-lines .whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
+.cg-localized-preserve-lines .whitespace-normal {
+  white-space: normal !important;
+}
+
+.cg-localized-preserve-lines .whitespace-pre {
+  white-space: pre !important;
+}
+
+.cg-localized-preserve-lines .whitespace-pre-wrap {
+  white-space: pre-wrap !important;
+}
+
+.cg-localized-preserve-lines .whitespace-pre-line {
+  white-space: pre-line !important;
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -264,7 +294,7 @@ a {
 .hero-kicker,
 .hero-title,
 .hero-desc {
-  white-space: normal;
+  white-space: inherit;
   word-break: break-word;
   overflow-wrap: anywhere;
 }

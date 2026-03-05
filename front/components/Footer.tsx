@@ -308,7 +308,7 @@ const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
               <div>
                 <p className="text-[9px] font-black italic uppercase tracking-widest text-[#FF4D00] mb-1">{addressLabel}</p>
                 <p className="text-[11px] font-bold italic uppercase leading-tight">
-                  {getGeneralText('CONTACT_ADDRESS_1') || 'AZADLIQ 102, BAKI'}
+                  {getText('CONTACT_ADDRESS_1', getGeneralText('CONTACT_ADDRESS_1') || 'AZADLIQ 102, BAKI')}
                 </p>
               </div>
             </div>

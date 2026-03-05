@@ -56,8 +56,17 @@ const ContactPage: React.FC = () => {
       setSelectedType(topicOptions[0]);
     }
   }, [selectedType, topicOptions]);
-  const phoneNumber = getText('PHONE_NUMBER', getGeneralText('CONTACT_PHONE') || '+994 50 123 45 67');
+  const phoneNumber = getText(
+    'PHONE_NUMBER',
+    getText('CONTACT_PHONE', getGeneralText('CONTACT_PHONE') || '+994 50 123 45 67')
+  );
   const phoneNumberSingleLine = phoneNumber.replace(/\s+/g, '\u00A0');
+  const addressLine1 = getText(
+    'ADDRESS_LINE_1',
+    getText('CONTACT_ADDRESS_1', getGeneralText('CONTACT_ADDRESS_1') || 'AZADLIQ 102, BAKI')
+  );
+  const addressLine1SingleLine = addressLine1.replace(/\s+/g, '\u00A0');
+  const officeEmail = 'PROTOCOL@FORSAJ.AZ';
 
   const { getPage: getSocialsPage } = useSiteContent('socials');
   const socialsPage = getSocialsPage('socials');
@@ -107,15 +116,21 @@ const ContactPage: React.FC = () => {
                 <h4 className="text-lg font-black italic uppercase tracking-widest">{getText('OFFICE_LABEL', 'BAŞ OFİS')}</h4>
               </div>
 
-              <h3 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-2 leading-none text-white">
-                {getText('ADDRESS_LINE_1', getGeneralText('CONTACT_ADDRESS_1') || 'AZADLIQ 102, BAKI')}
+              <h3 className="text-[clamp(1.2rem,4vw,2.75rem)] font-black italic uppercase tracking-tighter mb-2 leading-none text-white whitespace-nowrap">
+                {addressLine1SingleLine}
               </h3>
               <p className="text-[#FF4D00] font-black italic text-[10px] uppercase tracking-[0.3em] pb-8 border-b border-white/5">
-                {getText('ADDRESS_LINE_2', getGeneralText('CONTACT_ADDRESS_2') || 'AZƏRBAYCAN // SECTOR_01')}
+                {getText(
+                  'ADDRESS_LINE_2',
+                  getText('CONTACT_ADDRESS_2', getGeneralText('CONTACT_ADDRESS_2') || 'AZƏRBAYCAN // SECTOR_01')
+                )}
               </p>
 
               <div className="mt-8 flex justify-between items-center text-[10px] font-black italic uppercase tracking-widest">
-                <span className="flex items-center gap-3 text-gray-500"><Clock size={14} className="text-[#FF4D00]" /> {getText('WORK_HOURS', getGeneralText('CONTACT_HOURS') || '09:00 - 18:00')}</span>
+                <span className="flex items-center gap-3 text-gray-500">
+                  <Clock size={14} className="text-[#FF4D00]" />
+                  {getText('WORK_HOURS', getText('CONTACT_HOURS', getGeneralText('CONTACT_HOURS') || '09:00 - 18:00'))}
+                </span>
                 <span className="text-[#25D366] flex items-center gap-2 font-black"><span className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse"></span> {onlineLabel}</span>
               </div>
             </div>
@@ -139,7 +154,7 @@ const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-600 font-black italic text-[8px] uppercase tracking-[0.4em] mb-1">{getText('EMAIL_LABEL', 'E-POÇT ÜNVANI')}</p>
-                  <p className="text-xl font-black italic uppercase tracking-tighter text-white">{getText('EMAIL_Address', getGeneralText('CONTACT_EMAIL') || 'PROTOCOL@FORSAJ.AZ')}</p>
+                  <p className="text-xl font-black italic uppercase tracking-tighter text-white">{officeEmail}</p>
                 </div>
               </div>
 

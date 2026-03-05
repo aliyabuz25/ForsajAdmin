@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-03-05T07:08:41.251Z",
+  "schemaVersion": 314,
+  "generatedAt": "2026-03-05T18:15:01.219Z",
   "languages": [
     "AZ",
     "RU",
@@ -190,12 +190,12 @@
       },
       "ABOUT_HEADLINE": {
         "AZ": "\"FORSAJ CLUB\" AZƏRBAYCANIN OFFROAD MƏDƏNİYYƏTİNİ PEŞƏKAR SƏVİYYƏYƏ ÇATDIRMAQ ÜÇÜN YARADILMIŞDIR.",
-        "RU": "«FORSAJ CLUB» СОЗДАН ДЛЯ ТОГО, ЧТОБЫ ПОДНЯТЬ OFFROAD-КУЛЬТУРУ АЗЕРБАЙДЖАНА НА ПРОФЕССИОНАЛЬНЫЙ УРОВЕНЬ.",
+        "RU": "«FORSAJadssa CLUB» СОЗДАН ДЛЯ ТОГО, ЧТОБЫ ПОДНЯТЬ OFFROAD-КУЛЬТУРУ АЗЕРБАЙДЖАНА НА ПРОФЕССИОНАЛЬНЫЙ УРОВЕНЬ.",
         "ENG": "\"FORSAJ CLUB\" WAS CREATED TO ELEVATE AZERBAIJAN'S OFFROAD CULTURE TO A PROFESSIONAL LEVEL."
       },
       "ABOUT_DESCRIPTION": {
-        "AZ": "Klubumuz sadəcə bir həvəskar qrupu deyil, ölkəmizi beynəlxalq ralli xəritəsinə daxil etməyi hədəfləyən rəsmi və peşəkar bir platformadır. 2018-ci ildən bəri biz 50-dən çox rəsmi yarış, 100-dən çox ekspedisiya və saysız-hesabsız adrenalin dolu anlar yaşamışıq.",
-        "RU": "Наш клуб — это не просто любительская группа, а официальная и профессиональная платформа, цель которой — вывести нашу страну на международную раллийную карту. С 2018 года мы провели более 50 официальных гонок, более 100 экспедиций и пережили бесчисленное количество адреналиновых моментов.",
+        "AZ": "Klubumuzss sadəcə bir həvəskar qrupu deyil, ölkəmizi beynəlxalq ralli xəritəsinə daxil etməyi hədəfləyən rəsmi və peşəkar bir platformadır. 2018-ci ildən bəri biz 50-dən çox rəsmi yarış, 100-dən çox ekspedisiya və saysız-hesabsız adrenalin dolu anlar yaşamışıq.",
+        "RU": "Нашd клуб — это не просто любительская группа, а официальная и профессиональная платформа, цель которой — вывести нашу страну на международную раллийную карту. С 2018 года мы провели более 50 официальных гонок, более 100 экспедиций и пережили бесчисленное количество адреналиновых моментов.",
         "ENG": "Our club is not just an amateur group, but an official and professional platform aiming to place our country on the international rally map. Since 2018, we have held over 50 official races, over 100 expeditions, and countless adrenaline-filled moments."
       },
       "txt-est-2018-motorsp-949": {
@@ -1627,6 +1627,61 @@
         "AZ": "Toyota",
         "RU": "Тойота",
         "ENG": "Toyota"
+      },
+      "FIELD_WHATSAPP": {
+        "AZ": "WHATSAPP NÖMRƏSİ",
+        "RU": "НОМЕР ВАТСАПП",
+        "ENG": "WHATSAPP NUMBER"
+      },
+      "PLACEHOLDER_WHATSAPP": {
+        "AZ": "+994 50 123 45 67",
+        "RU": "+994 50 123 45 67",
+        "ENG": "+994 50 123 45 67"
+      },
+      "CLUB_OPTION_1": {
+        "AZ": "Fərdi İştirakçı",
+        "RU": "Индивидуальный участник",
+        "ENG": "Individual Participant"
+      },
+      "CLUB_OPTION_2": {
+        "AZ": "Club 4X4",
+        "RU": "Club 4X4",
+        "ENG": "Club 4X4"
+      },
+      "CLUB_OPTION_3": {
+        "AZ": "Extreme 4X4",
+        "RU": "Extreme 4X4",
+        "ENG": "Extreme 4X4"
+      },
+      "CLUB_OPTION_4": {
+        "AZ": "Forsaj Club",
+        "RU": "Forsaj Club",
+        "ENG": "Forsaj Club"
+      },
+      "CLUB_OPTION_5": {
+        "AZ": "Offroad.az",
+        "RU": "Offroad.az",
+        "ENG": "Offroad.az"
+      },
+      "CLUB_OPTION_6": {
+        "AZ": "Overland 4X4",
+        "RU": "Overland 4X4",
+        "ENG": "Overland 4X4"
+      },
+      "CLUB_OPTION_7": {
+        "AZ": "PatrolClub.az",
+        "RU": "PatrolClub.az",
+        "ENG": "PatrolClub.az"
+      },
+      "CLUB_OPTION_8": {
+        "AZ": "Victory Club",
+        "RU": "Victory Club",
+        "ENG": "Victory Club"
+      },
+      "CLUB_OPTION_9": {
+        "AZ": "Zəfər 4X4 Club",
+        "RU": "Zəfər 4X4 Club",
+        "ENG": "Zəfər 4X4 Club"
       }
     },
     "footer": {
@@ -1656,7 +1711,7 @@
         "ENG": "CONTACT_PHONE"
       },
       "FOOTER_ABOUT_TEXT": {
-        "AZ": "Azərbaycanın ən prestijli motorsport mərkəzi. Sərhədsiz offroad həyəcanını bizimlə yaşayın.",
+        "AZ": "Azərbaycanın ən prestijli motorsport mərkəzi. Sərhədsiz offroad həyəcanını bizimlə yaşayın.d\n",
         "RU": "Самый престижный автоспортивный центр Азербайджана. Испытайте безграничное удовольствие от бездорожья вместе с нами.",
         "ENG": "The most prestigious motorsport center of Azerbaijan. Experience unlimited offroad excitement with us."
       },
@@ -2016,92 +2071,92 @@
     "general": {
       "SEO_AUTHOR": {
         "AZ": "Forsaj Club",
-        "RU": "Клуб Форсажа",
+        "RU": "qa-ru-general-0-mix",
         "ENG": "Fast and Furious Club"
       },
       "SEO_BING_VERIFICATION": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-1-mix",
         "ENG": ""
       },
       "SEO_DESCRIPTION": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-2-mix",
         "ENG": ""
       },
       "SEO_GOOGLE_VERIFICATION": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-3-mix",
         "ENG": ""
       },
       "SEO_KEYWORDS": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-4-mix",
         "ENG": ""
       },
       "SEO_LANGUAGE": {
         "AZ": "az",
-        "RU": "ru",
+        "RU": "qa-ru-general-5-mix",
         "ENG": "en"
       },
       "SEO_OG_IMAGE": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-6-mix",
         "ENG": ""
       },
       "SEO_ROBOTS": {
         "AZ": "index,follow",
-        "RU": "индекс, следовать",
+        "RU": "qa-ru-general-7-mix",
         "ENG": "index, follow"
       },
       "SEO_TITLE": {
         "AZ": "Forsaj Club - Offroad Motorsport Hub",
-        "RU": "Forsaj Club - Центр внедорожного автоспорта",
+        "RU": "qa-ru-general-8-mix",
         "ENG": "Forsaj Club - Offroad Motorsport Hub"
       },
       "SEO_TWITTER_CARD": {
         "AZ": "summary_large_image",
-        "RU": "summary_large_image",
+        "RU": "qa-ru-general-9-mix",
         "ENG": "summary_large_image"
       },
       "SEO_TWITTER_CREATOR": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-10-mix",
         "ENG": ""
       },
       "SEO_TWITTER_SITE": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-11-mix",
         "ENG": ""
       },
       "SEO_YANDEX_VERIFICATION": {
         "AZ": "",
-        "RU": "",
+        "RU": "qa-ru-general-12-mix",
         "ENG": ""
       },
       "SMTP_FROM": {
         "AZ": "aliyabuz30@gmail.com",
-        "RU": "aliyabuz30@gmail.com",
+        "RU": "qa-ru-general-13-mix",
         "ENG": "aliyabuz30@gmail.com"
       },
       "SMTP_HOST": {
         "AZ": "smtp.gmail.com",
-        "RU": "smtp.gmail.com",
+        "RU": "qa-ru-general-14-mix",
         "ENG": "smtp.gmail.com"
       },
       "SMTP_PASS": {
         "AZ": "bqvm drzu ywve eijv",
-        "RU": "bqvm drzu ywve eijv",
+        "RU": "qa-ru-general-15-mix",
         "ENG": "bqvm drzu ywve eijv"
       },
       "SMTP_TO": {
         "AZ": "aliyabuz30@gmail.com,tural.rahim99@gmail.com",
-        "RU": "aliyabuz30@gmail.com, tural.rahim99@gmail.com",
+        "RU": "qa-ru-general-16-mix",
         "ENG": "aliyabuz30@gmail.com, tural.rahim99@gmail.com"
       },
       "SMTP_USER": {
         "AZ": "aliyabuz30@gmail.com",
-        "RU": "aliyabuz30@gmail.com",
+        "RU": "qa-ru-general-17-mix",
         "ENG": "aliyabuz30@gmail.com"
       }
     },
@@ -3469,7 +3524,7 @@
         "ENG": "NAVIGATION"
       },
       "txt-offroad-n-dir-134": {
-        "AZ": "OFFROAD NƏDIR?",
+        "AZ": "offroad-fix-token-111",
         "RU": "ЧТО ТАКОЕ БЕЗДОРОЖЬЕ?",
         "ENG": "WHAT IS OFFROAD?"
       },

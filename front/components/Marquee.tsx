@@ -6,8 +6,7 @@ const Marquee: React.FC = () => {
   const { getPage, getImage, getText } = useSiteContent('marquee');
   const marqueePage = getPage('marquee');
   const marqueeImage = getImage('marquee-image', '');
-
-  if (!marqueePage || marqueePage.active === false) return null;
+  if (marqueePage && marqueePage.active === false) return null;
 
   const isKeyLike = (value: string) => /^[A-Z0-9_]+$/.test((value || '').trim());
   const getClean = (value: string) => {
@@ -18,17 +17,18 @@ const Marquee: React.FC = () => {
   };
 
   const textFromKey = getClean(getText('MARQUEE_TEXT', ''));
+  const sections = marqueePage?.sections || [];
   const textFromExactSection = getClean(
-    marqueePage.sections?.find((section: any) => section.id === 'MARQUEE_TEXT')?.value || ''
+    sections.find((section: any) => section.id === 'MARQUEE_TEXT')?.value || ''
   );
   const textFromFirstSection = getClean(
-    marqueePage.sections?.find((section: any) => getClean(section?.value || ''))?.value || ''
+    sections.find((section: any) => getClean(section?.value || ''))?.value || ''
   );
   const text = textFromKey || textFromExactSection || textFromFirstSection || 'FORSAJ CLUB';
   const marqueeLink =
-    marqueePage.sections?.find((section: any) => section.id === 'MARQUEE_LINK')?.value?.trim() || '';
+    sections.find((section: any) => section.id === 'MARQUEE_LINK')?.value?.trim() || '';
   const rawLinkActive =
-    marqueePage.sections?.find((section: any) => section.id === 'MARQUEE_LINK_ACTIVE')?.value || '';
+    sections.find((section: any) => section.id === 'MARQUEE_LINK_ACTIVE')?.value || '';
   const isLinkActive = ['1', 'true', 'yes', 'on'].includes(String(rawLinkActive).trim().toLowerCase());
   const canUseLink = isLinkActive && marqueeLink.length > 0;
 

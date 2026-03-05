@@ -184,7 +184,7 @@ const App: React.FC = () => {
   }, [getText]);
 
   return (
-    <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
+    <div className="cg-localized-preserve-lines flex flex-col min-h-screen w-full overflow-x-hidden">
       <Toaster position="top-right" />
       <Marquee />
       <Navbar currentView={currentView} onViewChange={(view) => handleViewChange(view, null)} />

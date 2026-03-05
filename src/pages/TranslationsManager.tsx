@@ -3,7 +3,7 @@ import { CheckCircle2, Globe2, Loader2, RefreshCw, Save, Search } from 'lucide-r
 import toast from 'react-hot-toast';
 import type { AdminLanguage } from '../utils/adminLanguage';
 import { getLocalizedText } from '../utils/adminLanguage';
-import { getAuthToken } from '../utils/session';
+import { clearAdminSession, getAuthToken } from '../utils/session';
 import './TranslationsManager.css';
 
 type SiteLanguage = 'AZ' | 'RU' | 'ENG';
@@ -21,8 +21,27 @@ interface LocalizationPayload {
     pages: Record<string, Record<string, LocalizationEntry>>;
 }
 
+interface LocalizationUsagePage {
+    keys: string[];
+    prefixes?: string[];
+}
+
+interface LocalizationUsageMap {
+    [pageId: string]: {
+        keys: Set<string>;
+        prefixes: string[];
+    };
+}
+
 interface TranslationsManagerProps {
     language: AdminLanguage;
+}
+
+interface PageLabelMeta {
+    az: string;
+    ru: string;
+    descriptionAz: string;
+    descriptionRu: string;
 }
 
 const DEFAULT_PAYLOAD: LocalizationPayload = {
@@ -30,6 +49,141 @@ const DEFAULT_PAYLOAD: LocalizationPayload = {
     generatedAt: '',
     languages: ['AZ', 'RU', 'ENG'],
     pages: {}
+};
+const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const PAGE_META: Record<string, PageLabelMeta> = {
+    about: {
+        az: 'Haqqımızda',
+        ru: 'О нас',
+        descriptionAz: 'Klub və missiya məzmunu',
+        descriptionRu: 'Контент о клубе и миссии'
+    },
+    admin_sidebar: {
+        az: 'Admin Menyu',
+        ru: 'Админ-меню',
+        descriptionAz: 'Admin panel yan menyusu',
+        descriptionRu: 'Боковое меню админ-панели'
+    },
+    app: {
+        az: 'Tətbiq',
+        ru: 'Приложение',
+        descriptionAz: 'Ümumi tətbiq mətnləri',
+        descriptionRu: 'Общие тексты приложения'
+    },
+    categoryleaders: {
+        az: 'Kateqoriya liderləri',
+        ru: 'Лидеры категорий',
+        descriptionAz: 'Ana səhifə lider blokları',
+        descriptionRu: 'Блок лидеров на главной'
+    },
+    contactpage: {
+        az: 'Əlaqə səhifəsi',
+        ru: 'Страница контактов',
+        descriptionAz: 'Əlaqə məlumatları və forma',
+        descriptionRu: 'Контакты и форма связи'
+    },
+    driverspage: {
+        az: 'Sürücülər səhifəsi',
+        ru: 'Страница пилотов',
+        descriptionAz: 'Pilot reytinqi və siyahı',
+        descriptionRu: 'Рейтинг и список пилотов'
+    },
+    eventspage: {
+        az: 'Tədbirlər səhifəsi',
+        ru: 'Страница событий',
+        descriptionAz: 'Yarış təqvimi və qeydiyyat',
+        descriptionRu: 'Календарь и регистрация'
+    },
+    footer: {
+        az: 'Footer',
+        ru: 'Футер',
+        descriptionAz: 'Alt hissə mətnləri',
+        descriptionRu: 'Тексты нижней части сайта'
+    },
+    gallerypage: {
+        az: 'Qalereya səhifəsi',
+        ru: 'Страница галереи',
+        descriptionAz: 'Foto və video arxiv',
+        descriptionRu: 'Фото и видео архив'
+    },
+    general: {
+        az: 'Ümumi',
+        ru: 'Общие',
+        descriptionAz: 'Qlobal açarlar və SEO',
+        descriptionRu: 'Глобальные ключи и SEO'
+    },
+    hero: {
+        az: 'Hero bloku',
+        ru: 'Hero-блок',
+        descriptionAz: 'Ana banner mətnləri',
+        descriptionRu: 'Тексты главного баннера'
+    },
+    marquee: {
+        az: 'Marquee',
+        ru: 'Бегущая строка',
+        descriptionAz: 'Üst hərəkətli yazı',
+        descriptionRu: 'Верхняя бегущая строка'
+    },
+    navbar: {
+        az: 'Naviqasiya paneli',
+        ru: 'Панель навигации',
+        descriptionAz: 'Baş menyu və linklər',
+        descriptionRu: 'Главное меню и ссылки'
+    },
+    news: {
+        az: 'Xəbərlər bölməsi',
+        ru: 'Блок новостей',
+        descriptionAz: 'Ana səhifə xəbər bloku',
+        descriptionRu: 'Новостной блок на главной'
+    },
+    newspage: {
+        az: 'Xəbər səhifəsi',
+        ru: 'Страница новости',
+        descriptionAz: 'Xəbər detallar səhifəsi',
+        descriptionRu: 'Страница деталей новости'
+    },
+    nextrace: {
+        az: 'Növbəti yarış',
+        ru: 'Следующая гонка',
+        descriptionAz: 'Növbəti yarış kartı',
+        descriptionRu: 'Карточка ближайшей гонки'
+    },
+    partners: {
+        az: 'Partnyorlar',
+        ru: 'Партнеры',
+        descriptionAz: 'Partnyor loqoları və adlar',
+        descriptionRu: 'Логотипы и названия партнеров'
+    },
+    privacypolicypage: {
+        az: 'Məxfilik siyasəti',
+        ru: 'Политика конфиденциальности',
+        descriptionAz: 'Hüquqi mətnlər (privacy)',
+        descriptionRu: 'Юридические тексты (privacy)'
+    },
+    rulespage: {
+        az: 'Qaydalar səhifəsi',
+        ru: 'Страница правил',
+        descriptionAz: 'Pilot və texniki qaydalar',
+        descriptionRu: 'Пилотные и технические правила'
+    },
+    termsofservicepage: {
+        az: 'Xidmət şərtləri',
+        ru: 'Условия использования',
+        descriptionAz: 'Hüquqi mətnlər (terms)',
+        descriptionRu: 'Юридические тексты (terms)'
+    },
+    videoarchive: {
+        az: 'Video arxiv',
+        ru: 'Видеоархив',
+        descriptionAz: 'Yarış video bölməsi',
+        descriptionRu: 'Раздел видеоматериалов'
+    },
+    whatisoffroad: {
+        az: 'Offroad nədir',
+        ru: 'Что такое offroad',
+        descriptionAz: 'Offroad izah bölməsi',
+        descriptionRu: 'Объяснение дисциплины offroad'
+    }
 };
 
 const normalizePayload = (raw: any): LocalizationPayload => {
@@ -102,9 +256,22 @@ const mergePayload = (base: LocalizationPayload, override: LocalizationPayload):
 const prettyPageName = (pageId: string) =>
     String(pageId || '')
         .replace(/[-_]+/g, ' ')
+        .replace(/(page)$/i, ' page')
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const getPageDisplayName = (pageId: string, language: AdminLanguage) => {
+    const meta = PAGE_META[String(pageId || '').trim().toLowerCase()];
+    if (!meta) return prettyPageName(pageId);
+    return language === 'ru' ? meta.ru : meta.az;
+};
+
+const getPageDisplayDescription = (pageId: string, language: AdminLanguage) => {
+    const meta = PAGE_META[String(pageId || '').trim().toLowerCase()];
+    if (!meta) return String(pageId || '').trim();
+    return language === 'ru' ? meta.descriptionRu : meta.descriptionAz;
+};
 
 const isUnderscorePlaceholder = (value: unknown) => {
     const text = String(value || '').trim();
@@ -112,20 +279,70 @@ const isUnderscorePlaceholder = (value: unknown) => {
     return /^[A-Za-z0-9_]+$/.test(text);
 };
 
+const isHeaderLikeKey = (key: string) => /^[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)+$/.test(key);
+
 const shouldHideTranslationEntry = (entry?: LocalizationEntry | null) => {
     if (!entry) return false;
     return [entry.AZ, entry.RU, entry.ENG].some((value) => isUnderscorePlaceholder(value));
 };
 
+const shouldHideTranslationKey = (key: string, entry?: LocalizationEntry | null) => {
+    const normalizedKey = String(key || '').trim();
+    if (!normalizedKey) return true;
+    if (isHeaderLikeKey(normalizedKey)) return true;
+    return shouldHideTranslationEntry(entry);
+};
+
+const normalizeUsagePayload = (raw: any): LocalizationUsageMap => {
+    if (!raw || typeof raw !== 'object') return {};
+    const pages = raw.pages && typeof raw.pages === 'object' ? raw.pages : {};
+    const normalized: LocalizationUsageMap = {};
+
+    for (const [rawPageId, rawPageUsage] of Object.entries(pages as Record<string, any>)) {
+        const pageId = String(rawPageId || '').trim().toLowerCase();
+        if (!pageId || !rawPageUsage || typeof rawPageUsage !== 'object') continue;
+
+        const rawKeys = Array.isArray((rawPageUsage as LocalizationUsagePage).keys)
+            ? (rawPageUsage as LocalizationUsagePage).keys
+            : [];
+        const rawPrefixes: string[] = Array.isArray((rawPageUsage as LocalizationUsagePage).prefixes)
+            ? ((rawPageUsage as LocalizationUsagePage).prefixes as string[])
+            : [];
+
+        normalized[pageId] = {
+            keys: new Set(
+                rawKeys
+                    .map((key) => String(key || '').trim())
+                    .filter(Boolean)
+            ),
+            prefixes: rawPrefixes
+                .map((prefix) => String(prefix || '').trim())
+                .filter(Boolean)
+        };
+    }
+
+    return normalized;
+};
+
+const isKeyActiveInPage = (usageMap: LocalizationUsageMap, pageId: string, key: string) => {
+    const usage = usageMap[String(pageId || '').trim().toLowerCase()];
+    if (!usage) return true;
+    if (usage.keys.has(key)) return true;
+    return usage.prefixes.some((prefix) => key.startsWith(prefix));
+};
+
 const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) => {
     const [payload, setPayload] = useState<LocalizationPayload>(DEFAULT_PAYLOAD);
+    const [usageMap, setUsageMap] = useState<LocalizationUsageMap>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [selectedPage, setSelectedPage] = useState('');
     const [selectedLang, setSelectedLang] = useState<SiteLanguage>(language === 'ru' ? 'RU' : 'AZ');
     const [search, setSearch] = useState('');
+    const [pageSearch, setPageSearch] = useState('');
     const [showOnlyMissing, setShowOnlyMissing] = useState(false);
+    const [showOnlyActiveKeys, setShowOnlyActiveKeys] = useState(false);
 
     const t = {
         title: getLocalizedText(language, 'Translations', 'Переводы'),
@@ -140,44 +357,112 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         key: getLocalizedText(language, 'Açar', 'Ключ'),
         value: getLocalizedText(language, 'Dəyər', 'Значение'),
         sourceAz: getLocalizedText(language, 'AZ mənbə mətni', 'Исходный текст AZ'),
+        pageSearch: getLocalizedText(language, 'Səhifə axtar...', 'Поиск страницы...'),
         search: getLocalizedText(language, 'Açar və ya mətn üzrə axtar...', 'Поиск по ключу или тексту...'),
         onlyMissing: getLocalizedText(language, 'Yalnız boş olanlar', 'Только пустые'),
+        onlyActiveKeys: getLocalizedText(language, 'Yalnız aktiv açarlar', 'Только активные ключи'),
         noData: getLocalizedText(language, 'Məlumat tapılmadı', 'Данные не найдены'),
         noPageSelected: getLocalizedText(language, 'Səhifə seçin', 'Выберите страницу'),
         changed: getLocalizedText(language, 'Dəyişikliklər var', 'Есть несохраненные изменения'),
         upToDate: getLocalizedText(language, 'Hamısı aktualdır', 'Все изменения сохранены'),
         fillMissing: getLocalizedText(language, 'Boş xanaları AZ ilə doldur', 'Заполнить пустые значения из AZ'),
-        countLabel: getLocalizedText(language, 'açar', 'ключей')
+        countLabel: getLocalizedText(language, 'açar', 'ключей'),
+        pageListInfo: getLocalizedText(language, 'səhifə', 'страниц'),
+        completionShort: getLocalizedText(language, 'tamamlanma', 'заполнено'),
+        idLabel: 'ID',
+        sessionExpired: getLocalizedText(language, 'Sessiya bitib. Yenidən daxil olun.', 'Сессия истекла. Войдите снова.')
     };
 
-    const pageIds = useMemo(
+    const allPageIds = useMemo(
         () => Object.keys(payload.pages || {}).sort((a, b) => a.localeCompare(b, 'en')),
         [payload]
     );
-
-    useEffect(() => {
-        if (!selectedPage && pageIds.length > 0) {
-            setSelectedPage(pageIds[0]);
-            return;
-        }
-        if (selectedPage && !pageIds.includes(selectedPage) && pageIds.length > 0) {
-            setSelectedPage(pageIds[0]);
-        }
-    }, [pageIds, selectedPage]);
 
     const currentEntries = useMemo(
         () => (selectedPage ? payload.pages[selectedPage] || {} : {}),
         [payload, selectedPage]
     );
 
+    const getPageVisibleKeys = (
+        entries: Record<string, LocalizationEntry>,
+        pageId: string,
+        activeOnly: boolean
+    ) =>
+        Object.keys(entries).filter((key) => {
+            const entry = entries[key];
+            if (!entry) return false;
+            if (shouldHideTranslationKey(key, entry)) return false;
+            if (activeOnly && !isKeyActiveInPage(usageMap, pageId, key)) return false;
+            return true;
+        });
+
+    const pageVisibleCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const pageId of allPageIds) {
+            const entries = payload.pages[pageId] || {};
+            counts[pageId] = getPageVisibleKeys(entries || {}, pageId, showOnlyActiveKeys).length;
+        }
+        return counts;
+    }, [allPageIds, payload.pages, showOnlyActiveKeys, usageMap]);
+
+    const pageCompletionById = useMemo(() => {
+        const completionById: Record<string, number> = {};
+        for (const pageId of allPageIds) {
+            const entries = payload.pages[pageId] || {};
+            const keys = getPageVisibleKeys(entries || {}, pageId, showOnlyActiveKeys);
+            if (!keys.length) {
+                completionById[pageId] = 0;
+                continue;
+            }
+            const translated = keys.filter((key) => String(entries[key]?.[selectedLang] || '').trim()).length;
+            completionById[pageId] = Math.round((translated / keys.length) * 100);
+        }
+        return completionById;
+    }, [allPageIds, payload.pages, selectedLang, showOnlyActiveKeys, usageMap]);
+
+    const pageCards = useMemo(() => {
+        const query = pageSearch.trim().toLowerCase();
+        const cards = allPageIds
+            .map((pageId) => {
+                const name = getPageDisplayName(pageId, language);
+                const description = getPageDisplayDescription(pageId, language);
+                const count = pageVisibleCounts[pageId] ?? 0;
+                const completionPercent = pageCompletionById[pageId] ?? 0;
+                return { pageId, name, description, count, completionPercent };
+            })
+            .filter((card) => card.count > 0);
+
+        if (!query) return cards;
+
+        return cards.filter((card) =>
+            `${card.pageId} ${card.name} ${card.description}`.toLowerCase().includes(query)
+        );
+    }, [allPageIds, language, pageCompletionById, pageSearch, pageVisibleCounts]);
+
+    const pageIds = useMemo(() => pageCards.map((card) => card.pageId), [pageCards]);
+    const pageVisibleTotalKeys = useMemo(
+        () => pageCards.reduce((sum, card) => sum + card.count, 0),
+        [pageCards]
+    );
+
+    useEffect(() => {
+        if (!pageIds.length) {
+            if (selectedPage) setSelectedPage('');
+            return;
+        }
+        if (!selectedPage || !pageIds.includes(selectedPage)) {
+            setSelectedPage(pageIds[0]);
+        }
+    }, [pageIds, selectedPage]);
+
     const visibleKeys = useMemo(() => {
         const query = search.trim().toLowerCase();
-        return Object.keys(currentEntries)
+        const keys = getPageVisibleKeys(currentEntries, selectedPage, showOnlyActiveKeys);
+        return keys
             .sort((a, b) => a.localeCompare(b, 'en'))
             .filter((key) => {
                 const entry = currentEntries[key];
                 if (!entry) return false;
-                if (shouldHideTranslationEntry(entry)) return false;
                 const currentValue = String(entry[selectedLang] || '').trim();
                 if (showOnlyMissing && currentValue) return false;
                 if (!query) return true;
@@ -193,26 +478,37 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
                 return haystack.includes(query);
             });
-    }, [currentEntries, search, selectedLang, showOnlyMissing]);
+    }, [currentEntries, search, selectedLang, selectedPage, showOnlyActiveKeys, showOnlyMissing, usageMap]);
 
     const completion = useMemo(() => {
-        const keys = Object.keys(currentEntries);
+        const keys = getPageVisibleKeys(currentEntries, selectedPage, showOnlyActiveKeys);
         if (!keys.length) return 0;
         const translated = keys.filter((key) => String(currentEntries[key]?.[selectedLang] || '').trim()).length;
         return Math.round((translated / keys.length) * 100);
-    }, [currentEntries, selectedLang]);
+    }, [currentEntries, selectedLang, selectedPage, showOnlyActiveKeys, usageMap]);
 
     const fetchLocalization = async () => {
         setLoading(true);
         try {
             const token = getAuthToken();
             let apiPayload = DEFAULT_PAYLOAD;
+            let usage: LocalizationUsageMap = {};
             const response = await fetch('/api/localization', {
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             });
             if (!response.ok) throw new Error('load_failed');
             const data = await response.json();
             apiPayload = normalizePayload(data);
+
+            try {
+                const usageResponse = await fetch('/api/localization-usage');
+                if (usageResponse.ok) {
+                    const usagePayload = await usageResponse.json();
+                    usage = normalizeUsagePayload(usagePayload);
+                }
+            } catch {
+                // optional usage source
+            }
 
             let staticPayload = DEFAULT_PAYLOAD;
             try {
@@ -230,6 +526,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                 : apiPayload;
 
             setPayload(merged);
+            setUsageMap(usage);
             setDirty(false);
         } catch (error) {
             console.error(error);
@@ -301,17 +598,31 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                 },
                 body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error('save_failed');
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    clearAdminSession();
+                    throw new Error('session_expired');
+                }
+                const details = await response.text().catch(() => '');
+                throw new Error(details || 'save_failed');
+            }
 
             const result = await response.json();
             if (result?.data) {
                 setPayload(normalizePayload(result.data));
             }
             setDirty(false);
+            const saveVersion = Date.now().toString();
+            localStorage.setItem(CONTENT_VERSION_KEY, saveVersion);
+            window.dispatchEvent(new CustomEvent('forsaj-localization-ready'));
             toast.success(t.saved);
         } catch (error) {
             console.error(error);
-            toast.error(t.saveError);
+            if (error instanceof Error && error.message === 'session_expired') {
+                toast.error(t.sessionExpired);
+            } else {
+                toast.error(t.saveError);
+            }
         } finally {
             setSaving(false);
         }
@@ -362,23 +673,42 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
             <div className="translations-body">
                 <aside className="translations-pages">
-                    <div className="panel-title">{t.page}</div>
+                    <div className="panel-title-row">
+                        <div className="panel-title">{t.page}</div>
+                        <span className="panel-pill">{pageCards.length}/{allPageIds.length} {t.pageListInfo}</span>
+                    </div>
+                    <div className="panel-subtitle">{pageVisibleTotalKeys} {t.countLabel}</div>
+                    <div className="page-search">
+                        <Search size={15} />
+                        <input
+                            value={pageSearch}
+                            onChange={(event) => setPageSearch(event.target.value)}
+                            placeholder={t.pageSearch}
+                        />
+                    </div>
                     <div className="page-list">
-                        {pageIds.map((pageId) => {
-                            const count = Object.keys(payload.pages[pageId] || {}).length;
+                        {pageCards.map((card) => {
                             return (
                                 <button
-                                    key={pageId}
+                                    key={card.pageId}
                                     type="button"
-                                    className={`page-item ${selectedPage === pageId ? 'active' : ''}`}
-                                    onClick={() => setSelectedPage(pageId)}
+                                    className={`page-item ${selectedPage === card.pageId ? 'active' : ''}`}
+                                    onClick={() => setSelectedPage(card.pageId)}
                                 >
-                                    <span className="page-item-name">{prettyPageName(pageId)}</span>
-                                    <span className="page-item-meta">{count} {t.countLabel}</span>
+                                    <span className="page-item-head">
+                                        <span className="page-item-name">{card.name}</span>
+                                        <span className="page-item-count">{card.count} {t.countLabel}</span>
+                                    </span>
+                                    <span className="page-item-meta">{card.description}</span>
+                                    <span className="page-item-id">{t.idLabel}: {card.pageId}</span>
+                                    <span className="page-item-progress" aria-hidden="true">
+                                        <span style={{ width: `${card.completionPercent}%` }} />
+                                    </span>
+                                    <span className="page-item-progress-text">{selectedLang}: {card.completionPercent}% {t.completionShort}</span>
                                 </button>
                             );
                         })}
-                        {!pageIds.length && <div className="empty-state">{t.noData}</div>}
+                        {!pageCards.length && <div className="empty-state">{t.noData}</div>}
                     </div>
                 </aside>
 
@@ -415,6 +745,14 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                                         onChange={(event) => setShowOnlyMissing(event.target.checked)}
                                     />
                                     <span>{t.onlyMissing}</span>
+                                </label>
+                                <label className="missing-toggle">
+                                    <input
+                                        type="checkbox"
+                                        checked={showOnlyActiveKeys}
+                                        onChange={(event) => setShowOnlyActiveKeys(event.target.checked)}
+                                    />
+                                    <span>{t.onlyActiveKeys}</span>
                                 </label>
                                 {selectedLang !== 'AZ' && (
                                     <button type="button" className="btn-secondary" onClick={fillMissingWithAz}>

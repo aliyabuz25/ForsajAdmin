@@ -823,6 +823,23 @@ const normalizePlainText = (value: string) => {
         .trim();
 };
 
+const normalizeMultilinePlainText = (value: string) => {
+    if (!value) return '';
+    let current = value;
+
+    for (let i = 0; i < 4; i++) {
+        const doc = new DOMParser().parseFromString(current, 'text/html');
+        const decoded = doc.body.textContent || '';
+        if (!decoded || decoded === current) break;
+        current = decoded;
+    }
+
+    const finalDoc = new DOMParser().parseFromString(current, 'text/html');
+    return (finalDoc.body.textContent || '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r\n?/g, '\n');
+};
+
 const toAbsoluteUrl = (rawValue: unknown) => {
     const value = String(rawValue ?? '').trim();
     if (!value) return '';
@@ -1942,7 +1959,7 @@ const VisualEditor: React.FC = () => {
                             if (section.type !== 'text') return section;
 
                             const forcePlain = shouldForcePlainText(section);
-                            const nextValue = forcePlain ? normalizePlainText(section.value || '') : (section.value || '').replace(/\u00a0/g, ' ');
+                            const nextValue = forcePlain ? normalizeMultilinePlainText(section.value || '') : (section.value || '').replace(/\u00a0/g, ' ');
                             const nextLabel = containsHtmlNoise(section.label || '') ? normalizePlainText(section.label || '') : section.label;
 
                             return {
@@ -2170,7 +2187,9 @@ const VisualEditor: React.FC = () => {
                 targetSection.id.startsWith('val-') ||
                 targetSection.id.startsWith('txt-');
 
-            if ((field === 'value' || field === 'label') && plainTextSection) {
+            if (field === 'value' && plainTextSection) {
+                nextValue = normalizeMultilinePlainText(value);
+            } else if (field === 'label' && plainTextSection) {
                 nextValue = normalizePlainText(value);
             }
 
@@ -2630,7 +2649,11 @@ const VisualEditor: React.FC = () => {
 
         const targetId = `val-${field}-${suffix}`;
         const sectionIdx = (current.sections || []).findIndex((s) => s.id === targetId);
-        const normalizedValue = field === 'icon' ? String(value || '').trim() : normalizePlainText(value);
+        const normalizedValue = field === 'icon'
+            ? String(value || '').trim()
+            : field === 'desc'
+                ? normalizeMultilinePlainText(value)
+                : normalizePlainText(value);
 
         if (sectionIdx !== -1) {
             current.sections[sectionIdx].value = normalizedValue;
@@ -3014,7 +3037,7 @@ const VisualEditor: React.FC = () => {
                 const itemNo = itemIndex + 1;
                 nextSections.push(
                     { id: `RULE_TAB_${tabNo}_ITEM_${itemNo}_TITLE`, type: 'text', label: `Sekmə ${tabNo} Maddə ${itemNo} Başlıq`, value: normalizePlainText(item.title || '') },
-                    { id: `RULE_TAB_${tabNo}_ITEM_${itemNo}_DESC`, type: 'text', label: `Sekmə ${tabNo} Maddə ${itemNo} Təsvir`, value: normalizePlainText(item.desc || '') }
+                    { id: `RULE_TAB_${tabNo}_ITEM_${itemNo}_DESC`, type: 'text', label: `Sekmə ${tabNo} Maddə ${itemNo} Təsvir`, value: normalizeMultilinePlainText(item.desc || '') }
                 );
             });
         });

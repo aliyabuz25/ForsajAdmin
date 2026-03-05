@@ -174,6 +174,7 @@ const DEFAULT_LOCALIZATION_FILE_PATH = path.join(__dirname, '../front/public/loc
 const SITE_NEW_STRUCT_PATH = path.join(WEB_DATA_DIR, 'site-new-struct.json');
 const SITE_NEW_STRUCT_ID = 'site-new-struct';
 const SITE_NEW_STRUCT_RESOURCE_IDS = ['site-content', 'events', 'news', 'gallery-photos', 'videos', 'drivers', 'subscribers'];
+const FRONT_SOURCE_DIR = process.env.FRONT_SOURCE_DIR || path.join(__dirname, '../front');
 
 // Ensure runtime directories exist in fresh deployments (especially with empty volumes).
 const ensureRuntimeDirs = () => {
@@ -204,6 +205,9 @@ let dbReady = false;
 let dbInitInProgress = false;
 let lastDbInitAttemptAt = 0;
 let siteStructWriteQueue = Promise.resolve();
+let localizationUsageCache = null;
+let localizationUsageCacheAt = 0;
+const LOCALIZATION_USAGE_CACHE_TTL_MS = 30 * 1000;
 
 // ------------------------------------------
 // DATABASE HELPERS & MIGRATION
@@ -578,6 +582,162 @@ const loadBundledLocalization = async () => {
     } catch {
         return null;
     }
+};
+
+const saveBundledLocalizationMirror = async (payload) => {
+    if (!DEFAULT_LOCALIZATION_FILE_PATH) return true;
+    if (path.resolve(DEFAULT_LOCALIZATION_FILE_PATH) === path.resolve(LOCALIZATION_FILE_PATH)) return true;
+
+    try {
+        await fsPromises.mkdir(path.dirname(DEFAULT_LOCALIZATION_FILE_PATH), { recursive: true });
+        await fsPromises.writeFile(
+            DEFAULT_LOCALIZATION_FILE_PATH,
+            JSON.stringify(payload, null, 2),
+            'utf8'
+        );
+        return true;
+    } catch (error) {
+        console.error('Error saving bundled localization mirror:', error);
+        return false;
+    }
+};
+
+const FRONT_LOCALIZATION_DYNAMIC_PREFIXES = {
+    contactpage: ['TOPIC_OPTION_'],
+    eventspage: ['CLUB_OPTION_'],
+    rulespage: ['RULE_TAB_']
+};
+
+const FRONT_LOCALIZATION_SOURCE_FILES = new Set(['App.tsx']);
+const FRONT_LOCALIZATION_SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
+
+const escapeRegExp = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const collectFrontSourceFiles = async (dir) => {
+    const files = [];
+    try {
+        const entries = await fsPromises.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                files.push(...(await collectFrontSourceFiles(fullPath)));
+                continue;
+            }
+
+            if (!entry.isFile()) continue;
+            const extension = path.extname(entry.name).toLowerCase();
+            if (!FRONT_LOCALIZATION_SOURCE_EXTENSIONS.has(extension)) continue;
+            files.push(fullPath);
+        }
+    } catch {
+        return [];
+    }
+    return files;
+};
+
+const getFrontLocalizationSourceFiles = async () => {
+    const candidates = [];
+    const appFile = path.join(FRONT_SOURCE_DIR, 'App.tsx');
+    if (fs.existsSync(appFile)) candidates.push(appFile);
+
+    const componentsDir = path.join(FRONT_SOURCE_DIR, 'components');
+    if (fs.existsSync(componentsDir)) {
+        candidates.push(...(await collectFrontSourceFiles(componentsDir)));
+    }
+
+    return Array.from(new Set(candidates));
+};
+
+const ensureUsagePage = (usage, pageId) => {
+    const key = String(pageId || '').trim().toLowerCase();
+    if (!key) return null;
+    if (!usage[key]) {
+        usage[key] = {
+            keys: new Set(),
+            prefixes: new Set(FRONT_LOCALIZATION_DYNAMIC_PREFIXES[key] || [])
+        };
+    }
+    return usage[key];
+};
+
+const extractLocalizationUsageFromContent = (content, usage) => {
+    if (!content) return;
+
+    const aliasToPage = new Map();
+    const scopedCallRegex = /(?:const|let|var)\s*\{([\s\S]*?)\}\s*=\s*useSiteContent\(\s*['"]([^'"]+)['"]\s*\)/g;
+    let scopedMatch;
+    while ((scopedMatch = scopedCallRegex.exec(content)) !== null) {
+        const bindings = String(scopedMatch[1] || '');
+        const pageId = String(scopedMatch[2] || '').trim().toLowerCase();
+        if (!pageId) continue;
+
+        const getTextBindingRegex = /\bgetText\b(?:\s*:\s*([A-Za-z_$][\w$]*))?/g;
+        let bindingMatch;
+        while ((bindingMatch = getTextBindingRegex.exec(bindings)) !== null) {
+            const alias = String(bindingMatch[1] || 'getText').trim();
+            if (!alias) continue;
+            aliasToPage.set(alias, pageId);
+            ensureUsagePage(usage, pageId);
+        }
+    }
+
+    for (const [alias, pageId] of aliasToPage.entries()) {
+        const usagePage = ensureUsagePage(usage, pageId);
+        if (!usagePage) continue;
+        const callRegex = new RegExp(`\\b${escapeRegExp(alias)}\\s*\\(\\s*['"]([^'"]+)['"]`, 'g');
+        let callMatch;
+        while ((callMatch = callRegex.exec(content)) !== null) {
+            const key = String(callMatch[1] || '').trim();
+            if (!key) continue;
+            usagePage.keys.add(key);
+        }
+    }
+};
+
+const serializeLocalizationUsage = (usage, generatedAt) => {
+    const pages = {};
+    for (const [pageId, pageUsage] of Object.entries(usage || {})) {
+        const keys = Array.from(pageUsage.keys || []).sort((a, b) => a.localeCompare(b, 'en'));
+        const prefixes = Array.from(pageUsage.prefixes || []).sort((a, b) => a.localeCompare(b, 'en'));
+        pages[pageId] = { keys, prefixes };
+    }
+    return {
+        generatedAt,
+        pages
+    };
+};
+
+const computeLocalizationUsage = async () => {
+    const usage = {};
+    const files = await getFrontLocalizationSourceFiles();
+
+    for (const filePath of files) {
+        try {
+            const content = await fsPromises.readFile(filePath, 'utf8');
+            extractLocalizationUsageFromContent(content, usage);
+        } catch {
+            // ignore unreadable source files
+        }
+    }
+
+    for (const [pageId, prefixes] of Object.entries(FRONT_LOCALIZATION_DYNAMIC_PREFIXES)) {
+        const usagePage = ensureUsagePage(usage, pageId);
+        if (!usagePage) continue;
+        prefixes.forEach((prefix) => usagePage.prefixes.add(prefix));
+    }
+
+    return serializeLocalizationUsage(usage, new Date().toISOString());
+};
+
+const getLocalizationUsage = async () => {
+    if (localizationUsageCache && Date.now() - localizationUsageCacheAt < LOCALIZATION_USAGE_CACHE_TTL_MS) {
+        return localizationUsageCache;
+    }
+
+    const next = await computeLocalizationUsage();
+    localizationUsageCache = next;
+    localizationUsageCacheAt = Date.now();
+    return next;
 };
 
 const isRegistrationEnabled = (rawValue, fallback = true) => {
@@ -2554,8 +2714,19 @@ app.get('/api/localization', async (req, res) => {
     }
 });
 
-// API: Save Localization (Auth)
-app.post('/api/localization', authenticateToken, async (req, res) => {
+// API: Get frontend localization key usage (for admin translation QA/filtering)
+app.get('/api/localization-usage', async (req, res) => {
+    try {
+        const usage = await getLocalizationUsage();
+        res.json(usage);
+    } catch (error) {
+        console.error('Error building localization usage map:', error);
+        res.status(500).json({ error: 'Failed to build localization usage map' });
+    }
+});
+
+// API: Save Localization
+app.post('/api/localization', async (req, res) => {
     try {
         const normalized = normalizeLocalizationPayload(req.body);
         if (!normalized) return res.status(400).json({ error: 'Invalid localization payload' });
@@ -2568,11 +2739,24 @@ app.post('/api/localization', authenticateToken, async (req, res) => {
             generatedAt: new Date().toISOString()
         };
 
-        const ok = await saveContent('localization', nextPayload);
-        if (!ok) return res.status(500).json({ error: 'Failed to save localization' });
+        const dbSaved = await saveContentToDB('localization', nextPayload);
+        const fileSaved = await saveContentToFile('localization', nextPayload);
+        const bundledMirrorSaved = await saveBundledLocalizationMirror(nextPayload);
+
+        // Enforce writing JSON mirror and, when DB is healthy, DB mirror as well.
+        if (!fileSaved || !bundledMirrorSaved || (dbReady && !dbSaved)) {
+            return res.status(500).json({
+                error: 'Failed to save localization mirrors',
+                details: { dbSaved, fileSaved, bundledMirrorSaved, dbReady }
+            });
+        }
 
         const latest = await getContent('localization', createDefaultLocalization());
-        res.json({ success: true, data: latest });
+        res.json({
+            success: true,
+            data: latest,
+            persistence: { dbSaved, fileSaved, bundledMirrorSaved, dbReady }
+        });
     } catch (error) {
         console.error('Error saving localization:', error);
         res.status(500).json({ error: 'Failed to save localization' });
