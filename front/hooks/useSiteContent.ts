@@ -414,6 +414,25 @@ const findSectionByFallback = (sections: ContentSection[], fallbackValue: string
     );
 };
 
+const findSectionByKeyHint = (sections: ContentSection[], key: string | number) => {
+    if (typeof key === 'number') return undefined;
+    const normalizedKey = normalizeToken(stripLanguageAffixes(key));
+    if (!normalizedKey) return undefined;
+
+    return sections.find((section) => {
+        const idToken = normalizeToken(section.id || '');
+        const labelToken = normalizeToken(section.label || '');
+        if (!idToken.includes(normalizedKey) && !labelToken.includes(normalizedKey)) return false;
+
+        const value = String(section.value || '').trim();
+        if (!value) return false;
+
+        // Skip pure placeholder rows that only store the same key token.
+        if (isKeyLikeValue(value) && normalizeToken(value) === normalizedKey) return false;
+        return true;
+    });
+};
+
 const fetchSiteContentOnce = async (): Promise<PageContent[]> => {
     if (siteContentCache && Date.now() - siteContentCacheAt < CACHE_TTL_MS) return siteContentCache;
     if (siteContentInFlight) return siteContentInFlight;
@@ -654,13 +673,32 @@ export const useSiteContent = (scopePageId?: string) => {
             ? sections[sectionIdOrIndex]
             : findSectionByKey(sections, sectionIdOrIndex, language);
 
+        const keyCandidates = typeof sectionIdOrIndex === 'number'
+            ? []
+            : buildLanguageCandidates(sectionIdOrIndex, language).map(v => v.toUpperCase());
+
+        if (typeof sectionIdOrIndex !== 'number') {
+            const sectionValue = String(section?.value || '').trim();
+            const sectionLooksLikePlaceholder = Boolean(
+                section && (
+                    !sectionValue ||
+                    (isKeyLikeValue(sectionValue) && keyCandidates.includes(sectionValue.toUpperCase()))
+                )
+            );
+
+            if (sectionLooksLikePlaceholder) {
+                const hinted = findSectionByKeyHint(sections, sectionIdOrIndex);
+                if (hinted) section = hinted;
+            }
+        }
+
         if (!section && typeof sectionIdOrIndex !== 'number' && defaultValue) {
-            section = findSectionByFallback(sections, defaultValue);
+            const hinted = findSectionByKeyHint(sections, sectionIdOrIndex);
+            section = hinted || findSectionByFallback(sections, defaultValue);
         }
 
         if (!section) return normalizeTextLineBreaks(localizedValue || defaultValue);
         const value = String(section.value || '');
-        const keyCandidates = buildLanguageCandidates(sectionIdOrIndex, language).map(v => v.toUpperCase());
         const resolved = isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase())
             ? defaultValue
             : (value || defaultValue);
@@ -743,8 +781,18 @@ export const useSiteContent = (scopePageId?: string) => {
         const section = typeof sectionIdOrIndex === 'number'
             ? sections[sectionIdOrIndex]
             : findSectionByKey(sections, sectionIdOrIndex, language);
+        if (section?.url) return section.url;
 
-        return section?.url || defaultUrl;
+        if (typeof sectionIdOrIndex !== 'number') {
+            const hinted = findSectionByKeyHint(sections, sectionIdOrIndex);
+            if (hinted?.url) return hinted.url;
+            if (defaultUrl) {
+                const byFallback = findSectionByFallback(sections, defaultUrl);
+                if (byFallback?.url) return byFallback.url;
+            }
+        }
+
+        return defaultUrl;
     };
 
     const setSiteLanguage = (next: SiteLang) => {
