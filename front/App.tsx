@@ -4,11 +4,11 @@ import Marquee from './components/Marquee';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Footer from './components/Footer';
+import NewsPage from './components/NewsPage';
+import EventsPage from './components/EventsPage';
 import { useSiteContent } from './hooks/useSiteContent';
 
 const About = lazy(() => import('./components/About'));
-const NewsPage = lazy(() => import('./components/NewsPage'));
-const EventsPage = lazy(() => import('./components/EventsPage'));
 const DriversPage = lazy(() => import('./components/DriversPage'));
 const RulesPage = lazy(() => import('./components/RulesPage'));
 const ContactPage = lazy(() => import('./components/ContactPage'));
