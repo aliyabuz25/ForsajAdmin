@@ -158,6 +158,8 @@ const EVENT_LANGUAGE_TABS: Array<{ code: EventLanguageCode; label: string }> = [
     { code: 'ENG', label: 'ENG' }
 ];
 const EVENT_LOCALIZED_FIELDS: EventLocalizedField[] = ['title', 'location', 'category', 'description', 'rules'];
+const EVENT_AUTO_TRANSLATE_TEXT_FIELDS: EventLocalizedField[] = ['title', 'location', 'category'];
+const EVENT_AUTO_TRANSLATE_HTML_FIELDS: EventLocalizedField[] = ['description', 'rules'];
 
 const isObjectRecord = (value: unknown): value is Record<string, any> =>
     !!value && typeof value === 'object' && !Array.isArray(value);
@@ -302,6 +304,64 @@ const applyEventLocalizedFieldUpdate = (
 };
 
 const NEWS_LOCALIZED_FIELDS: NewsLocalizedField[] = ['title', 'category', 'description'];
+const NEWS_AUTO_TRANSLATE_TEXT_FIELDS: NewsLocalizedField[] = ['title', 'category'];
+const NEWS_AUTO_TRANSLATE_HTML_FIELDS: NewsLocalizedField[] = ['description'];
+
+const LANGUAGE_TO_TRANSLATE_CODE: Record<EventLanguageCode, string> = {
+    AZ: 'az',
+    RU: 'ru',
+    ENG: 'en'
+};
+
+const translateWithoutApiKey = async (
+    sourceLang: EventLanguageCode,
+    targetLang: EventLanguageCode,
+    values: string[],
+    format: 'text' | 'html'
+): Promise<{ values: string[]; usedFallback: boolean }> => {
+    const normalizedInput = values.map((value) => String(value ?? ''));
+    if (sourceLang === targetLang) {
+        return { values: normalizedInput, usedFallback: false };
+    }
+    if (!normalizedInput.some((value) => value.trim())) {
+        return { values: normalizedInput, usedFallback: false };
+    }
+
+    try {
+        const response = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                q: normalizedInput,
+                source: LANGUAGE_TO_TRANSLATE_CODE[sourceLang],
+                target: LANGUAGE_TO_TRANSLATE_CODE[targetLang],
+                format
+            })
+        });
+
+        if (!response.ok) {
+            return { values: normalizedInput, usedFallback: true };
+        }
+
+        const payload = await response.json().catch(() => ({}));
+        const translatedRaw = payload?.translatedText;
+        const translatedList = Array.isArray(translatedRaw)
+            ? translatedRaw.map((item: unknown) => String(item ?? ''))
+            : (typeof translatedRaw === 'string' ? [translatedRaw] : normalizedInput);
+
+        const translated = normalizedInput.map((original, index) => {
+            const nextValue = translatedList[index];
+            return typeof nextValue === 'string' ? nextValue : original;
+        });
+
+        return {
+            values: translated,
+            usedFallback: Boolean(payload?.fallback)
+        };
+    } catch {
+        return { values: normalizedInput, usedFallback: true };
+    }
+};
 
 const createEmptyNewsLocalizedFields = (): NewsLocalizedFields => ({
     title: '',
@@ -1006,12 +1066,14 @@ const VisualEditor: React.FC = () => {
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
     const [eventForm, setEventForm] = useState<Partial<EventItem>>({});
     const [eventFormLanguage, setEventFormLanguage] = useState<EventLanguageCode>('AZ');
+    const [isAutoTranslatingEvent, setIsAutoTranslatingEvent] = useState(false);
 
     // News Mode State
     const [news, setNews] = useState<NewsItem[]>([]);
     const [selectedNewsId, setSelectedNewsId] = useState<number | null>(null);
     const [newsForm, setNewsForm] = useState<Partial<NewsItem>>({});
     const [newsFormLanguage, setNewsFormLanguage] = useState<EventLanguageCode>('AZ');
+    const [isAutoTranslatingNews, setIsAutoTranslatingNews] = useState(false);
 
     // Video Mode State
     const [videos, setVideos] = useState<VideoItem[]>([]);
@@ -3313,6 +3375,64 @@ const VisualEditor: React.FC = () => {
         });
     };
 
+    const autoFillEventLanguages = async (sourceLang: EventLanguageCode, targetId?: number) => {
+        const activeId = targetId || selectedEventId;
+        if (!activeId || isAutoTranslatingEvent) return;
+
+        const sourceEvent = events.find((item) => item.id === activeId);
+        if (!sourceEvent) return;
+
+        const normalizedSourceEvent = syncEventWithAzTranslations(sourceEvent);
+        const sourceTextValues = EVENT_AUTO_TRANSLATE_TEXT_FIELDS.map((field) =>
+            getEventLocalizedFieldValue(normalizedSourceEvent, field, sourceLang, false)
+        );
+        const sourceHtmlValues = EVENT_AUTO_TRANSLATE_HTML_FIELDS.map((field) =>
+            getEventLocalizedFieldValue(normalizedSourceEvent, field, sourceLang, false)
+        );
+        const hasSourceContent = [...sourceTextValues, ...sourceHtmlValues].some((value) => String(value || '').trim());
+        if (!hasSourceContent) {
+            toast.error('Əvvəlcə seçilmiş dildə məzmun daxil edin');
+            return;
+        }
+
+        setIsAutoTranslatingEvent(true);
+        try {
+            let usedFallback = false;
+            let nextEvent = normalizedSourceEvent;
+
+            for (const targetLang of EVENT_LANGUAGE_CODES) {
+                if (targetLang === sourceLang) continue;
+
+                const translatedText = await translateWithoutApiKey(sourceLang, targetLang, sourceTextValues, 'text');
+                const translatedHtml = await translateWithoutApiKey(sourceLang, targetLang, sourceHtmlValues, 'html');
+                usedFallback = usedFallback || translatedText.usedFallback || translatedHtml.usedFallback;
+
+                EVENT_AUTO_TRANSLATE_TEXT_FIELDS.forEach((field, index) => {
+                    nextEvent = applyEventLocalizedFieldUpdate(nextEvent, field, targetLang, translatedText.values[index] || '');
+                });
+                EVENT_AUTO_TRANSLATE_HTML_FIELDS.forEach((field, index) => {
+                    nextEvent = applyEventLocalizedFieldUpdate(nextEvent, field, targetLang, translatedHtml.values[index] || '');
+                });
+            }
+
+            setEvents((prev) => prev.map((item) => (item.id === activeId ? nextEvent : item)));
+            if (selectedEventId === activeId) {
+                setEventForm(nextEvent);
+            }
+
+            if (usedFallback) {
+                toast.success('Dillər dolduruldu (fallback rejimi işlədildi)');
+            } else {
+                toast.success('Digər dillər avtomatik dolduruldu');
+            }
+        } catch (error) {
+            console.error('Event auto translate failed:', error);
+            toast.error('Avtomatik doldurma zamanı xəta baş verdi');
+        } finally {
+            setIsAutoTranslatingEvent(false);
+        }
+    };
+
     const addNewEvent = () => {
         const newId = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 1;
         const newEvent: EventItem = syncEventWithAzTranslations({
@@ -3402,6 +3522,64 @@ const VisualEditor: React.FC = () => {
 
             return updatedForm;
         });
+    };
+
+    const autoFillNewsLanguages = async (sourceLang: EventLanguageCode, targetId?: number) => {
+        const activeId = targetId || selectedNewsId;
+        if (!activeId || isAutoTranslatingNews) return;
+
+        const sourceNews = news.find((item) => item.id === activeId);
+        if (!sourceNews) return;
+
+        const normalizedSourceNews = syncNewsWithAzTranslations(sourceNews);
+        const sourceTextValues = NEWS_AUTO_TRANSLATE_TEXT_FIELDS.map((field) =>
+            getNewsLocalizedFieldValue(normalizedSourceNews, field, sourceLang, false)
+        );
+        const sourceHtmlValues = NEWS_AUTO_TRANSLATE_HTML_FIELDS.map((field) =>
+            getNewsLocalizedFieldValue(normalizedSourceNews, field, sourceLang, false)
+        );
+        const hasSourceContent = [...sourceTextValues, ...sourceHtmlValues].some((value) => String(value || '').trim());
+        if (!hasSourceContent) {
+            toast.error('Əvvəlcə seçilmiş dildə məzmun daxil edin');
+            return;
+        }
+
+        setIsAutoTranslatingNews(true);
+        try {
+            let usedFallback = false;
+            let nextNews = normalizedSourceNews;
+
+            for (const targetLang of EVENT_LANGUAGE_CODES) {
+                if (targetLang === sourceLang) continue;
+
+                const translatedText = await translateWithoutApiKey(sourceLang, targetLang, sourceTextValues, 'text');
+                const translatedHtml = await translateWithoutApiKey(sourceLang, targetLang, sourceHtmlValues, 'html');
+                usedFallback = usedFallback || translatedText.usedFallback || translatedHtml.usedFallback;
+
+                NEWS_AUTO_TRANSLATE_TEXT_FIELDS.forEach((field, index) => {
+                    nextNews = applyNewsLocalizedFieldUpdate(nextNews, field, targetLang, translatedText.values[index] || '');
+                });
+                NEWS_AUTO_TRANSLATE_HTML_FIELDS.forEach((field, index) => {
+                    nextNews = applyNewsLocalizedFieldUpdate(nextNews, field, targetLang, translatedHtml.values[index] || '');
+                });
+            }
+
+            setNews((prev) => prev.map((item) => (item.id === activeId ? nextNews : item)));
+            if (selectedNewsId === activeId) {
+                setNewsForm(nextNews);
+            }
+
+            if (usedFallback) {
+                toast.success('Dillər dolduruldu (fallback rejimi işlədildi)');
+            } else {
+                toast.success('Digər dillər avtomatik dolduruldu');
+            }
+        } catch (error) {
+            console.error('News auto translate failed:', error);
+            toast.error('Avtomatik doldurma zamanı xəta baş verdi');
+        } finally {
+            setIsAutoTranslatingNews(false);
+        }
     };
 
     const addNewNews = () => {
@@ -5291,26 +5469,37 @@ const VisualEditor: React.FC = () => {
                                     </p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-                                    {EVENT_LANGUAGE_TABS.map((tab) => {
-                                        const isActive = newsFormLanguage === tab.code;
-                                        return (
-                                            <button
-                                                key={tab.code}
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => setNewsFormLanguage(tab.code)}
-                                                style={{
-                                                    minWidth: '72px',
-                                                    background: isActive ? '#FF4D00' : '#111',
-                                                    color: isActive ? '#000' : '#fff',
-                                                    border: isActive ? '1px solid #FF4D00' : '1px solid #e2e8f0'
-                                                }}
-                                            >
-                                                {tab.label}
-                                            </button>
-                                        );
-                                    })}
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {EVENT_LANGUAGE_TABS.map((tab) => {
+                                            const isActive = newsFormLanguage === tab.code;
+                                            return (
+                                                <button
+                                                    key={tab.code}
+                                                    type="button"
+                                                    className="btn-secondary"
+                                                    onClick={() => setNewsFormLanguage(tab.code)}
+                                                    style={{
+                                                        minWidth: '72px',
+                                                        background: isActive ? '#FF4D00' : '#111',
+                                                        color: isActive ? '#000' : '#fff',
+                                                        border: isActive ? '1px solid #FF4D00' : '1px solid #e2e8f0'
+                                                    }}
+                                                >
+                                                    {tab.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => void autoFillNewsLanguages(newsFormLanguage, newsForm.id)}
+                                        disabled={isAutoTranslatingNews}
+                                        style={{ minWidth: '240px' }}
+                                    >
+                                        {isAutoTranslatingNews ? 'Doldurulur...' : 'Digər dilləri avtomatik doldur'}
+                                    </button>
                                 </div>
 
                                 <div className="edit-grid grid-2">
@@ -5521,26 +5710,37 @@ const VisualEditor: React.FC = () => {
                                     </p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-                                    {EVENT_LANGUAGE_TABS.map((tab) => {
-                                        const isActive = eventFormLanguage === tab.code;
-                                        return (
-                                            <button
-                                                key={tab.code}
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => setEventFormLanguage(tab.code)}
-                                                style={{
-                                                    minWidth: '72px',
-                                                    background: isActive ? '#FF4D00' : '#111',
-                                                    color: isActive ? '#000' : '#fff',
-                                                    border: isActive ? '1px solid #FF4D00' : '1px solid #e2e8f0'
-                                                }}
-                                            >
-                                                {tab.label}
-                                            </button>
-                                        );
-                                    })}
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {EVENT_LANGUAGE_TABS.map((tab) => {
+                                            const isActive = eventFormLanguage === tab.code;
+                                            return (
+                                                <button
+                                                    key={tab.code}
+                                                    type="button"
+                                                    className="btn-secondary"
+                                                    onClick={() => setEventFormLanguage(tab.code)}
+                                                    style={{
+                                                        minWidth: '72px',
+                                                        background: isActive ? '#FF4D00' : '#111',
+                                                        color: isActive ? '#000' : '#fff',
+                                                        border: isActive ? '1px solid #FF4D00' : '1px solid #e2e8f0'
+                                                    }}
+                                                >
+                                                    {tab.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => void autoFillEventLanguages(eventFormLanguage, eventForm.id)}
+                                        disabled={isAutoTranslatingEvent}
+                                        style={{ minWidth: '240px' }}
+                                    >
+                                        {isAutoTranslatingEvent ? 'Doldurulur...' : 'Digər dilləri avtomatik doldur'}
+                                    </button>
                                 </div>
 
                                 <div className="edit-grid grid-2">
