@@ -52,6 +52,27 @@ const setGoogleTranslateCookie = (targetLang: string) => {
   }
 };
 
+const clearGoogleTranslateCookie = () => {
+  document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  const host = window.location.hostname;
+  if (host && host !== 'localhost' && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+    const baseDomain = host.startsWith('.') ? host : `.${host}`;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${baseDomain}`;
+  }
+};
+
+const resetGoogleTranslateUi = () => {
+  const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo');
+  if (combo) {
+    combo.value = '';
+    combo.dispatchEvent(new Event('change'));
+  }
+
+  document.documentElement.lang = 'az';
+  document.documentElement.classList.remove('translated-ltr', 'translated-rtl');
+  document.body.classList.remove('translated-ltr', 'translated-rtl');
+};
+
 const applyGoogleTranslateLanguage = (lang: AdminLanguage) => {
   const googleLang = toGoogleLang(lang);
   setGoogleTranslateCookie(googleLang);
@@ -60,8 +81,8 @@ const applyGoogleTranslateLanguage = (lang: AdminLanguage) => {
   const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo');
   if (!combo) return false;
   if (googleLang === 'az') {
-    combo.value = '';
-    combo.dispatchEvent(new Event('change'));
+    clearGoogleTranslateCookie();
+    resetGoogleTranslateUi();
     return true;
   }
   if (combo.value === googleLang) return true;

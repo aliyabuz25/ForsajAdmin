@@ -137,6 +137,7 @@ const App: React.FC = () => {
   const [sitemap, setSitemap] = useState<SidebarItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [translateResetKey, setTranslateResetKey] = useState(0);
   const [adminLanguage, setAdminLanguage] = useState<AdminLanguage>(() => getStoredAdminLanguage());
   const sitemapSignatureRef = useRef('');
 
@@ -146,6 +147,11 @@ const App: React.FC = () => {
   };
 
   const handleLanguageChange = (lang: AdminLanguage) => {
+    if (adminLanguage !== lang && lang === 'az') {
+      // Force a clean re-mount of translatable admin content when returning to AZ.
+      // This removes stale Google Translate DOM wrappers without a full page reload.
+      setTranslateResetKey((prev) => prev + 1);
+    }
     setAdminLanguage((prev) => (prev === lang ? prev : lang));
     setStoredAdminLanguage(lang);
     if (typeof window !== 'undefined') {
@@ -437,7 +443,12 @@ const App: React.FC = () => {
               clearAdminSession();
               setUser(null);
             }} language={adminLanguage} onLanguageChange={handleLanguageChange} />
-            <main className="main-content admin-translatable" translate="yes" data-admin-translatable-root="true">
+            <main
+              key={`admin-main-${translateResetKey}`}
+              className="main-content admin-translatable"
+              translate="yes"
+              data-admin-translatable-root="true"
+            >
               <Header user={user} language={adminLanguage} />
               <div className="content-body" translate="yes">
                 <Routes>
