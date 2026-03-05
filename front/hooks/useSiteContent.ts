@@ -632,8 +632,9 @@ export const useSiteContent = (scopePageId?: string) => {
 
         if (!pageId) return defaultValue;
 
+        let localizedValue = '';
         if (typeof sectionIdOrIndex !== 'number') {
-            const localized = resolveLocalizedText(
+            localizedValue = resolveLocalizedText(
                 localization,
                 localizationValueIndex,
                 pageId,
@@ -641,11 +642,12 @@ export const useSiteContent = (scopePageId?: string) => {
                 language,
                 defaultValue
             );
-            if (localized) return normalizeTextLineBreaks(localized);
+            // RU/ENG must stay driven by Translations first.
+            if (localizedValue && language !== 'AZ') return normalizeTextLineBreaks(localizedValue);
         }
 
         const page = getPage(pageId);
-        if (!page) return normalizeTextLineBreaks(defaultValue);
+        if (!page) return normalizeTextLineBreaks(localizedValue || defaultValue);
         const sections = Array.isArray(page.sections) ? page.sections : [];
 
         let section = typeof sectionIdOrIndex === 'number'
@@ -656,12 +658,20 @@ export const useSiteContent = (scopePageId?: string) => {
             section = findSectionByFallback(sections, defaultValue);
         }
 
-        if (!section) return normalizeTextLineBreaks(defaultValue);
+        if (!section) return normalizeTextLineBreaks(localizedValue || defaultValue);
         const value = String(section.value || '');
         const keyCandidates = buildLanguageCandidates(sectionIdOrIndex, language).map(v => v.toUpperCase());
         const resolved = isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase())
             ? defaultValue
             : (value || defaultValue);
+
+        if (language === 'AZ') {
+            // AZ should reflect Site Content editor values immediately when a concrete section value exists.
+            const hasConcreteSectionValue = !!value.trim() && !(isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase()));
+            if (hasConcreteSectionValue) return normalizeTextLineBreaks(resolved);
+            if (localizedValue) return normalizeTextLineBreaks(localizedValue);
+            return normalizeTextLineBreaks(defaultValue);
+        }
 
         if (language !== 'AZ') {
             const byValue = localizationValueIndex[normalizeToken(resolved)];
