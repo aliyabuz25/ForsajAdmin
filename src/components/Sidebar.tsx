@@ -162,13 +162,16 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
         };
     }, []);
 
-    const getLocalizedSidebarUiLabel = (key: SidebarUiLabelKey) =>
-        getAdminSidebarLocalizedText(
+    const getLocalizedSidebarUiLabel = (key: SidebarUiLabelKey) => {
+        const fallback = getSidebarUiLabel(language, key);
+        if (language === 'az') return fallback;
+        return getAdminSidebarLocalizedText(
             sidebarLocalization,
             SIDEBAR_UI_LOCALIZATION_KEYS[key],
             language,
-            getSidebarUiLabel(language, key)
+            fallback
         );
+    };
 
     const normalizePath = (path?: string) => {
         if (!path) return path;
@@ -389,7 +392,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                                     const effectivePath = item.path || fallbackChildPath;
                                     const translatedTitle = translateSidebarTitle(item.title, effectivePath, language);
                                     const localizationKey = getSidebarItemLocalizationKey(item.title, effectivePath);
-                                    const localizedTitle = localizationKey
+                                    const localizedTitle = localizationKey && language !== 'az'
                                         ? getAdminSidebarLocalizedText(sidebarLocalization, localizationKey, language, translatedTitle)
                                         : translatedTitle;
                                     return (
