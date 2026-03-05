@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import AdminAutoTranslate from './components/AdminAutoTranslate';
 import VisualEditor from './pages/VisualEditor';
 import UsersManager from './pages/UsersManager';
 import SetupGuide from './components/SetupGuide';
@@ -15,8 +14,6 @@ import type { SidebarItem } from './types/navigation';
 import { ADMIN_USER_KEY, clearAdminSession, getAuthToken, SESSION_EXPIRED_EVENT } from './utils/session';
 import { getStoredAdminLanguage, setStoredAdminLanguage, type AdminLanguage } from './utils/adminLanguage';
 import './index.css';
-
-const ADMIN_LANGUAGE_APPLY_EVENT = 'forsaj:admin-language-apply';
 
 const normalizeText = (value: string) =>
   value
@@ -137,7 +134,6 @@ const App: React.FC = () => {
   const [sitemap, setSitemap] = useState<SidebarItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [translateResetKey, setTranslateResetKey] = useState(0);
   const [adminLanguage, setAdminLanguage] = useState<AdminLanguage>(() => getStoredAdminLanguage());
   const sitemapSignatureRef = useRef('');
 
@@ -147,16 +143,8 @@ const App: React.FC = () => {
   };
 
   const handleLanguageChange = (lang: AdminLanguage) => {
-    if (lang === 'az') {
-      // Force a clean re-mount of translatable admin content when returning to AZ.
-      // This removes stale Google Translate DOM wrappers without a full page reload.
-      setTranslateResetKey((prev) => prev + 1);
-    }
     setAdminLanguage((prev) => (prev === lang ? prev : lang));
     setStoredAdminLanguage(lang);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent<AdminLanguage>(ADMIN_LANGUAGE_APPLY_EVENT, { detail: lang }));
-    }
   };
 
   useEffect(() => {
@@ -433,7 +421,6 @@ const App: React.FC = () => {
   return (
     <Router basename={import.meta.env.PROD ? '/admin' : '/'}>
       <div className="app-container">
-        <AdminAutoTranslate language={adminLanguage} />
         <Toaster containerStyle={{ zIndex: 10001 }} position="top-right" reverseOrder={false} />
         {!user ? (
           <Login onLogin={setUser} language={adminLanguage} onLanguageChange={handleLanguageChange} />
@@ -443,14 +430,9 @@ const App: React.FC = () => {
               clearAdminSession();
               setUser(null);
             }} language={adminLanguage} onLanguageChange={handleLanguageChange} />
-            <main
-              key={`admin-main-${adminLanguage}-${translateResetKey}`}
-              className="main-content admin-translatable"
-              translate="yes"
-              data-admin-translatable-root="true"
-            >
+            <main className="main-content">
               <Header user={user} language={adminLanguage} />
-              <div className="content-body" translate="yes">
+              <div className="content-body">
                 <Routes>
                   {isSitemapEmpty ? (
                     <Route path="*" element={<SetupGuide language={adminLanguage} />} />
