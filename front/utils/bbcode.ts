@@ -1,10 +1,21 @@
 /**
  * Simple BBCode to HTML parser
  */
+const decodeHtmlEntities = (value: string) =>
+    String(value || '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'");
+
 export const bbcodeToHtml = (bbcode: string) => {
     if (!bbcode) return '';
 
-    let html = bbcode;
+    // Some legacy/admin payloads arrive as HTML-escaped strings (&lt;p&gt;...).
+    // Decode first so both real HTML and BBCode render correctly.
+    let html = decodeHtmlEntities(bbcode);
 
     // Handle escaped bracket forms coming from JSON/editor like \[/B] or \\[/B]
     html = html.replace(/\\+\[/g, '[').replace(/\\+\]/g, ']');

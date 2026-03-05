@@ -24,16 +24,20 @@ const normalizeRichTextSpacing = (value: unknown) =>
     .replace(/&nbsp;/gi, ' ')
     .replace(/\u00a0/g, ' ');
 
-const toPlainText = (value: unknown) =>
-  String(value ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\[[^\]]+\]/g, ' ')
+const decodeHtmlEntities = (value: string) =>
+  String(value || '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
+    .replace(/&#39;/gi, "'");
+
+const toPlainText = (value: unknown) =>
+  decodeHtmlEntities(String(value ?? ''))
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

@@ -23,16 +23,20 @@ const normalizeRichTextSpacing = (value: unknown) =>
     .replace(/&nbsp;/gi, ' ')
     .replace(/\u00a0/g, ' ');
 
-const toPlainText = (value: unknown) =>
-  String(value ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\[[^\]]+\]/g, ' ')
+const decodeHtmlEntities = (value: string) =>
+  String(value || '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
+    .replace(/&#39;/gi, "'");
+
+const toPlainText = (value: unknown) =>
+  decodeHtmlEntities(String(value ?? ''))
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -65,15 +69,18 @@ const NewsPage: React.FC = () => {
             .filter((item: any) => item.status === 'published')
             .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-          const mapped = filtered.map((item: any) => ({
-            ...normalizeNewsWithLocalization(item || {}),
-            id: item.id,
-            date: item.date,
-            img: item.img,
-            title: getLocalizedNewsField(item, 'title', newsLanguage),
-            desc: normalizeRichTextSpacing(getLocalizedNewsField(item, 'description', newsLanguage)),
-            content: normalizeRichTextSpacing(getLocalizedNewsField(item, 'description', newsLanguage))
-          }));
+          const mapped = filtered.map((item: any) => {
+            const localizedDescription = normalizeRichTextSpacing(getLocalizedNewsField(item, 'description', newsLanguage));
+            return {
+              ...normalizeNewsWithLocalization(item || {}),
+              id: item.id,
+              date: item.date,
+              img: item.img,
+              title: getLocalizedNewsField(item, 'title', newsLanguage),
+              desc: getShareExcerpt(localizedDescription, 280),
+              content: localizedDescription
+            };
+          });
           setNewsData(mapped);
 
           let requestedNews: NewsItem | null = null;
