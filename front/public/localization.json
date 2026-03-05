@@ -380,7 +380,7 @@
       "LEADER_TITLE_SUFFIX": {
         "AZ": "LİDERİ",
         "RU": "ЛИДЕР",
-        "ENG": "THE LEADER"
+        "ENG": "LEADER"
       },
       "SCORE_LABEL": {
         "AZ": "XAL",
@@ -400,7 +400,7 @@
       "VIEW_ALL_BTN": {
         "AZ": "BÜTÜN REYTİNG",
         "RU": "ВСЕ РЕЙТИНГИ",
-        "ENG": "ALL RATING"
+        "ENG": "ALL RANKINGS"
       }
     },
     "contactpage": {

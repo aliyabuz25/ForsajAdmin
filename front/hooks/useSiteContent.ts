@@ -105,6 +105,11 @@ const COMMON_TRANSLATION_PAIRS: CommonTranslationPair[] = [
     { AZ: 'QALEREYA', RU: 'ГАЛЕРЕЯ', ENG: 'GALLERY' },
     { AZ: 'QAYDALAR', RU: 'ПРАВИЛА', ENG: 'RULES' },
     { AZ: 'ƏLAQƏ', RU: 'КОНТАКТЫ', ENG: 'CONTACT' },
+    { AZ: 'KATEQORİYA LİDƏRLƏRİ', RU: 'ЛИДЕРЫ КАТЕГОРИЙ', ENG: 'CATEGORY LEADERS' },
+    { AZ: 'HƏR KLASS ÜZRƏ MÖVSÜMÜN ƏN GÜCLÜ PİLOTLARI', RU: 'СИЛЬНЕЙШИЕ ПИЛОТЫ СЕЗОНА В КАЖДОМ КЛАССЕ', ENG: "SEASON'S STRONGEST DRIVERS IN EACH CLASS" },
+    { AZ: 'BÜTÜN REYTİNG', RU: 'ВСЕ РЕЙТИНГИ', ENG: 'ALL RANKINGS' },
+    { AZ: 'LİDERİ', RU: 'ЛИДЕР', ENG: 'LEADER' },
+    { AZ: 'XAL', RU: 'ОЧКИ', ENG: 'POINTS' },
     { AZ: 'HAMISI', RU: 'ВСЕ', ENG: 'ALL' },
     { AZ: 'HAMISINA BAX', RU: 'СМОТРЕТЬ ВСЕ', ENG: 'VIEW ALL' },
     { AZ: 'BÜTÜN XƏBƏRLƏR', RU: 'ВСЕ НОВОСТИ', ENG: 'ALL NEWS' },
@@ -604,6 +609,16 @@ export const useSiteContent = (scopePageId?: string) => {
         const resolved = isKeyLikeValue(value) && keyCandidates.includes(value.toUpperCase())
             ? defaultValue
             : (value || defaultValue);
+
+        if (language !== 'AZ') {
+            const byValue = localizationValueIndex[normalizeToken(resolved)];
+            if (byValue) {
+                const preferred = String((language === 'RU' ? byValue.RU : byValue.ENG) || '').trim();
+                if (preferred && normalizeToken(preferred) !== normalizeToken(resolved)) {
+                    return preferred;
+                }
+            }
+        }
 
         const commonFallback = translateCommonAzText(language, resolved) || translateCommonAzText(language, defaultValue);
         if (commonFallback) return commonFallback;
