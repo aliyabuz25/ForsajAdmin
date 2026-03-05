@@ -56,7 +56,7 @@ const RulesPage: React.FC = () => {
         const field = tabMatch[2];
         const current = tabsMap.get(tabNo) || { items: new Map<number, { subtitle?: string; description?: string }>() };
         if (field === 'ID') current.id = section.value || '';
-        if (field === 'TITLE') current.title = section.value || '';
+        if (field === 'TITLE') current.title = getText(section.id, section.value || '') || section.value || '';
         if (field === 'ICON') current.icon = section.value || '';
         tabsMap.set(tabNo, current);
         return;
@@ -69,8 +69,8 @@ const RulesPage: React.FC = () => {
         const field = itemMatch[3];
         const current = tabsMap.get(tabNo) || { items: new Map<number, { subtitle?: string; description?: string }>() };
         const item = current.items.get(itemNo) || {};
-        if (field === 'TITLE') item.subtitle = section.value || '';
-        if (field === 'DESC') item.description = section.value || '';
+        if (field === 'TITLE') item.subtitle = getText(section.id, section.value || '') || section.value || '';
+        if (field === 'DESC') item.description = getText(section.id, section.value || '') || section.value || '';
         current.items.set(itemNo, item);
         tabsMap.set(tabNo, current);
       }

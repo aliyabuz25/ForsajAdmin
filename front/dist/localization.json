@@ -177,6 +177,96 @@
         "AZ": "50+",
         "RU": "50+",
         "ENG": "50+"
+      },
+      "ABOUT_READ_MORE_BTN": {
+        "AZ": "ƏTRAFLI OXU",
+        "RU": "ПОДРОБНЕЕ",
+        "ENG": "READ MORE"
+      },
+      "ABOUT_KICKER": {
+        "AZ": "EST. 2018 // MOTORSPORT MƏRKƏZİ",
+        "RU": "EST. 2018 // ЦЕНТР МОТОСПОРТА",
+        "ENG": "EST. 2018 // MOTORSPORT CENTER"
+      },
+      "ABOUT_HEADLINE": {
+        "AZ": "\"FORSAJ CLUB\" AZƏRBAYCANIN OFFROAD MƏDƏNİYYƏTİNİ PEŞƏKAR SƏVİYYƏYƏ ÇATDIRMAQ ÜÇÜN YARADILMIŞDIR.",
+        "RU": "«FORSAJ CLUB» СОЗДАН ДЛЯ ТОГО, ЧТОБЫ ПОДНЯТЬ OFFROAD-КУЛЬТУРУ АЗЕРБАЙДЖАНА НА ПРОФЕССИОНАЛЬНЫЙ УРОВЕНЬ.",
+        "ENG": "\"FORSAJ CLUB\" WAS CREATED TO ELEVATE AZERBAIJAN'S OFFROAD CULTURE TO A PROFESSIONAL LEVEL."
+      },
+      "ABOUT_DESCRIPTION": {
+        "AZ": "Klubumuz sadəcə bir həvəskar qrupu deyil, ölkəmizi beynəlxalq ralli xəritəsinə daxil etməyi hədəfləyən rəsmi və peşəkar bir platformadır. 2018-ci ildən bəri biz 50-dən çox rəsmi yarış, 100-dən çox ekspedisiya və saysız-hesabsız adrenalin dolu anlar yaşamışıq.",
+        "RU": "Наш клуб — это не просто любительская группа, а официальная и профессиональная платформа, цель которой — вывести нашу страну на международную раллийную карту. С 2018 года мы провели более 50 официальных гонок, более 100 экспедиций и пережили бесчисленное количество адреналиновых моментов.",
+        "ENG": "Our club is not just an amateur group, but an official and professional platform aiming to place our country on the international rally map. Since 2018, we have held over 50 official races, over 100 expeditions, and countless adrenaline-filled moments."
+      },
+      "txt-est-2018-motorsp-949": {
+        "AZ": "EST. 2018 // MOTORSPORT MƏRKƏZİ",
+        "RU": "EST. 2018 // ЦЕНТР МОТОСПОРТА",
+        "ENG": "EST. 2018 // MOTORSPORT CENTER"
+      },
+      "txt-forsaj-club-az-rba-66": {
+        "AZ": "\"FORSAJ CLUB\" AZƏRBAYCANIN OFFROAD MƏDƏNİYYƏTİNİ PEŞƏKAR SƏVİYYƏYƏ ÇATDIRMAQ ÜÇÜN YARADILMIŞDIR.",
+        "RU": "«FORSAJ CLUB» СОЗДАН ДЛЯ ТОГО, ЧТОБЫ ПОДНЯТЬ OFFROAD-КУЛЬТУРУ АЗЕРБАЙДЖАНА НА ПРОФЕССИОНАЛЬНЫЙ УРОВЕНЬ.",
+        "ENG": "\"FORSAJ CLUB\" WAS CREATED TO ELEVATE AZERBAIJAN'S OFFROAD CULTURE TO A PROFESSIONAL LEVEL."
+      },
+      "txt-klubumuz-sad-c-bir-552": {
+        "AZ": "Klubumuz sadəcə bir həvəskar qrupu deyil, ölkəmizi beynəlxalq ralli xəritəsinə daxil etməyi hədəfləyən rəsmi və peşəkar bir platformadır. 2018-ci ildən bəri biz 50-dən çox rəsmi yarış, 100-dən çox ekspedisiya və saysız-hesabsız adrenalin dolu anlar yaşamışıq.",
+        "RU": "Наш клуб — это не просто любительская группа, а официальная и профессиональная платформа, цель которой — вывести нашу страну на международную раллийную карту. С 2018 года мы провели более 50 официальных гонок, более 100 экспедиций и пережили бесчисленное количество адреналиновых моментов.",
+        "ENG": "Our club is not just an amateur group, but an official and professional platform aiming to place our country on the international rally map. Since 2018, we have held over 50 official races, over 100 expeditions, and countless adrenaline-filled moments."
+      },
+      "txt-val-safety-title-123": {
+        "AZ": "TƏHLÜKƏSİZLİK",
+        "RU": "БЕЗОПАСНОСТЬ",
+        "ENG": "SAFETY"
+      },
+      "txt-val-safety-desc-123": {
+        "AZ": "EKSTREMAL İDMANDA CAN SAĞLIĞI BİZİM BİR NÖMRƏLİ QAYDAMIZDIR. BÜTÜN TEXNİKALARIMIZ FIA STANDARTLARINA UYĞUN YOXLANILIR.",
+        "RU": "В ЭКСТРЕМАЛЬНОМ СПОРТЕ БЕЗОПАСНОСТЬ — НАШ ПРИОРИТЕТ №1. Вся техника проходит проверку по стандартам FIA.",
+        "ENG": "In extreme sports, safety is our number one rule. All our equipment is checked according to FIA standards."
+      },
+      "txt-val-community-title-123": {
+        "AZ": "İCMA RUHU",
+        "RU": "КОМАНДНЫЙ ДУХ",
+        "ENG": "TEAM SPIRIT"
+      },
+      "txt-val-community-desc-123": {
+        "AZ": "FORSAJ BİR KLUBDAN DAHA ÇOX, SADİQ VƏ BÖYÜK BİR AİLƏDİR. BİRİMİZ HAMIMIZ, HAMIMIZ BİRİMİZ ÜÇÜN!",
+        "RU": "FORSAJ — ЭТО БОЛЬШЕ, ЧЕМ КЛУБ. ЭТО ВЕРНАЯ И БОЛЬШАЯ СЕМЬЯ. ОДИН ЗА ВСЕХ, И ВСЕ ЗА ОДНОГО!",
+        "ENG": "FORSAJ is more than a club. It is a loyal and big family. One for all and all for one!"
+      },
+      "txt-val-nature-title-123": {
+        "AZ": "TƏBİƏTİ QORU",
+        "RU": "ЗАЩИТА ПРИРОДЫ",
+        "ENG": "PROTECT NATURE"
+      },
+      "txt-val-nature-desc-123": {
+        "AZ": "BİZ OFFROAD EDƏRKƏN TƏBİƏTƏ ZƏRƏR VERMƏMƏYİ ÖZÜMÜZƏ BORC BİLİRİK. EKOLOJİ BALANS BİZİM ÜÇÜN MÜQƏDDƏSDİR.",
+        "RU": "Мы считаем своим долгом не вредить природе во время offroad. Экологический баланс для нас священен.",
+        "ENG": "We see it as our duty not to harm nature while driving offroad. Ecological balance is sacred for us."
+      },
+      "txt-val-excellence-title-123": {
+        "AZ": "MÜKƏMMƏLLİK",
+        "RU": "СОВЕРШЕНСТВО",
+        "ENG": "EXCELLENCE"
+      },
+      "txt-val-excellence-desc-123": {
+        "AZ": "HƏR YARIŞDA, HƏR DÖNGƏDƏ DAHA YAXŞI OLMAĞA ÇALIŞIRIQ. TƏLİMLƏRİMİZ PEŞƏKAR İNSTRUKTORLAR TƏRƏFİNDƏN İDARƏ OLUNUR.",
+        "RU": "В каждой гонке и на каждом повороте мы стремимся становиться лучше. Тренировки ведут профессиональные инструкторы.",
+        "ENG": "In every race and every turn, we strive to be better. Our trainings are led by professional instructors."
+      },
+      "txt-pi-lotlar-label-123": {
+        "AZ": "PİLOTLAR",
+        "RU": "ПИЛОТЫ",
+        "ENG": "DRIVERS"
+      },
+      "txt-yari-lar-label-123": {
+        "AZ": "YARIŞLAR",
+        "RU": "СОРЕВНОВАНИЯ",
+        "ENG": "RACES"
+      },
+      "txt-g-ncl-r-label-123": {
+        "AZ": "GƏNCLƏR",
+        "RU": "МОЛОДЕЖЬ",
+        "ENG": "YOUTH"
       }
     },
     "app": {
@@ -389,7 +479,7 @@
       },
       "SECTION_SUBTITLE": {
         "AZ": "HƏR KLASS ÜZRƏ MÖVSÜMÜN ƏN GÜCLÜ PİLOTLARI",
-        "RU": "СИЛЬНЕЙШИЕ ПИОНЕРЫ СЕЗОНА В КАЖДОМ КЛАССЕ",
+        "RU": "СИЛЬНЕЙШИЕ ПИЛОТЫ СЕЗОНА В КАЖДОМ КЛАССЕ",
         "ENG": "SEASON'S STRONGEST DRIVERS IN EACH CLASS"
       },
       "SECTION_TITLE": {

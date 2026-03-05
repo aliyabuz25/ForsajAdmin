@@ -110,6 +110,15 @@ const COMMON_TRANSLATION_PAIRS: CommonTranslationPair[] = [
     { AZ: 'BÜTÜN REYTİNG', RU: 'ВСЕ РЕЙТИНГИ', ENG: 'ALL RANKINGS' },
     { AZ: 'LİDERİ', RU: 'ЛИДЕР', ENG: 'LEADER' },
     { AZ: 'XAL', RU: 'ОЧКИ', ENG: 'POINTS' },
+    { AZ: 'ƏTRAFLI OXU', RU: 'ПОДРОБНЕЕ', ENG: 'READ MORE' },
+    { AZ: 'PİLOT PROTOKOLU', RU: 'ПИЛОТНЫЙ ПРОТОКОЛ', ENG: 'PILOT PROTOCOL' },
+    { AZ: 'TEXNİKİ NORMARTİVLƏR', RU: 'ТЕХНИЧЕСКИЙ РЕГЛАМЕНТ', ENG: 'TECHNICAL REGULATIONS' },
+    { AZ: 'TƏHLÜKƏSİZLİK QAYDALARI', RU: 'ПРАВИЛА БЕЗОПАСНОСТИ', ENG: 'SAFETY RULES' },
+    { AZ: 'EKOLOJİ MƏSULİYYƏT', RU: 'ЭКОЛОГИЧЕСКАЯ ОТВЕТСТВЕННОСТЬ', ENG: 'ENVIRONMENTAL RESPONSIBILITY' },
+    { AZ: 'TƏHLÜKƏSİZLİK', RU: 'БЕЗОПАСНОСТЬ', ENG: 'SAFETY' },
+    { AZ: 'İCMA RUHU', RU: 'КОМАНДНЫЙ ДУХ', ENG: 'TEAM SPIRIT' },
+    { AZ: 'TƏBİƏTİ QORU', RU: 'ЗАЩИТА ПРИРОДЫ', ENG: 'PROTECT NATURE' },
+    { AZ: 'MÜKƏMMƏLLİK', RU: 'СОВЕРШЕНСТВО', ENG: 'EXCELLENCE' },
     { AZ: 'HAMISI', RU: 'ВСЕ', ENG: 'ALL' },
     { AZ: 'HAMISINA BAX', RU: 'СМОТРЕТЬ ВСЕ', ENG: 'VIEW ALL' },
     { AZ: 'BÜTÜN XƏBƏRLƏR', RU: 'ВСЕ НОВОСТИ', ENG: 'ALL NEWS' },
@@ -126,14 +135,23 @@ for (const pair of COMMON_TRANSLATION_PAIRS) {
     if (!key || COMMON_TRANSLATION_INDEX.has(key)) continue;
     COMMON_TRANSLATION_INDEX.set(key, pair);
 }
+const COMMON_TRANSLATION_INDEX_ENTRIES = Array.from(COMMON_TRANSLATION_INDEX.entries()).sort((a, b) => b[0].length - a[0].length);
 
 const translateCommonAzText = (lang: SiteLang, value: string) => {
     if (lang === 'AZ') return '';
     const key = normalizeToken(value || '');
     if (!key) return '';
     const pair = COMMON_TRANSLATION_INDEX.get(key);
-    if (!pair) return '';
-    return lang === 'RU' ? pair.RU : pair.ENG;
+    if (pair) return lang === 'RU' ? pair.RU : pair.ENG;
+
+    // Accept noisy values that contain a known Azerbaijani phrase (e.g. appended debug suffixes).
+    for (const [knownKey, knownPair] of COMMON_TRANSLATION_INDEX_ENTRIES) {
+        if (knownKey.length < 6) continue;
+        if (!key.startsWith(knownKey) && !key.includes(knownKey)) continue;
+        return lang === 'RU' ? knownPair.RU : knownPair.ENG;
+    }
+
+    return '';
 };
 
 const stripLanguageAffixes = (rawKey: string | number) => {

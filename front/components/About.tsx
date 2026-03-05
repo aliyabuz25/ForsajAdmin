@@ -23,6 +23,13 @@ const buildPreviewText = (content: string, sentenceLimit = 2, maxChars = 190) =>
 const normalizeLookupToken = (value: string) =>
   (value || '')
     .toLocaleLowerCase('az')
+    .replace(/ə/g, 'e')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ü/g, 'u')
+    .replace(/ğ/g, 'g')
+    .replace(/ş/g, 's')
+    .replace(/ç/g, 'c')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '');
@@ -85,7 +92,9 @@ const About: React.FC = () => {
     }
 
     const hinted = findSectionByTokens(tokenHints);
-    const hintedValue = toPlainText(hinted?.value || '');
+    const hintedValue = toPlainText(
+      hinted ? getText(hinted.id || '', hinted.value || '') : ''
+    );
     if (hintedValue && !isKeyLike(hintedValue)) return hintedValue;
 
     return toPlainText(fallback);
@@ -96,21 +105,30 @@ const About: React.FC = () => {
 
   if (page?.sections) {
     const getStatSuffix = (id: string) => (id.split('label-stat-')[1] || id.split('value-stat-')[1] || '').trim();
-    const statBySuffix = new Map<string, { label?: string; value?: string }>();
+    const statBySuffix = new Map<string, { label?: string; value?: string; labelKey?: string; valueKey?: string }>();
 
     page.sections.forEach((section) => {
       if (!section.id.includes('label-stat') && !section.id.includes('value-stat')) return;
       const suffix = getStatSuffix(section.id) || section.id;
       const current = statBySuffix.get(suffix) || {};
 
-      if (section.id.includes('label-stat')) current.label = section.value;
-      if (section.id.includes('value-stat')) current.value = section.value;
+      if (section.id.includes('label-stat')) {
+        current.label = section.value;
+        current.labelKey = section.id;
+      }
+      if (section.id.includes('value-stat')) {
+        current.value = section.value;
+        current.valueKey = section.id;
+      }
       statBySuffix.set(suffix, current);
     });
 
     Array.from(statBySuffix.values()).forEach((stat) => {
       if (stat.label && stat.value) {
-        dynamicStats.push({ label: toPlainText(stat.label), value: toPlainText(stat.value) });
+        dynamicStats.push({
+          label: toPlainText(getText(stat.labelKey || stat.label, stat.label)),
+          value: toPlainText(getText(stat.valueKey || stat.value, stat.value))
+        });
       }
     });
 
@@ -125,8 +143,8 @@ const About: React.FC = () => {
       const current = valueBySuffix.get(suffix) || {};
 
       if (section.id.includes('val-icon-')) current.icon = section.value;
-      if (section.id.includes('val-title-')) current.title = toPlainText(section.value);
-      if (section.id.includes('val-desc-')) current.desc = toPlainText(section.value);
+      if (section.id.includes('val-title-')) current.title = toPlainText(getText(section.id, section.value || ''));
+      if (section.id.includes('val-desc-')) current.desc = toPlainText(getText(section.id, section.value || ''));
       valueBySuffix.set(suffix, current);
     });
 
