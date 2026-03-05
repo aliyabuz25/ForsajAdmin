@@ -149,7 +149,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    document.documentElement.lang = adminLanguage === 'ru' ? 'ru' : 'az';
+    document.documentElement.lang = adminLanguage === 'ru' ? 'ru' : adminLanguage === 'en' ? 'en' : 'az';
   }, [adminLanguage]);
 
   useEffect(() => {

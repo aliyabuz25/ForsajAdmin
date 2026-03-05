@@ -127,6 +127,11 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
     const userRole = user?.role || 'secondary';
     const location = useLocation();
     const [sidebarLocalization, setSidebarLocalization] = useState<SidebarLocalizationMap>({});
+    const languageOptions: Array<{ code: AdminLanguage; label: string; flag: string }> = [
+        { code: 'az', label: 'AZ', flag: 'https://flagcdn.com/w40/az.png' },
+        { code: 'ru', label: 'RU', flag: 'https://flagcdn.com/w40/ru.png' },
+        { code: 'en', label: 'EN', flag: 'https://flagcdn.com/w40/us.png' }
+    ];
     const normalizeText = (value: string) =>
         (value || '')
             .toLocaleLowerCase('az')
@@ -347,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
     }, [preparedItems]);
 
     return (
-        <aside className="sidebar">
+        <aside className="sidebar notranslate" translate="no">
             <div className="sidebar-header">
                 <div className="brand-logo">
                     <div className="logo-mark">
@@ -355,20 +360,18 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                     </div>
                 </div>
                 <div className="sidebar-lang-switch" aria-label="Admin language switch">
-                    <button
-                        type="button"
-                        className={`sidebar-lang-btn ${language === 'az' ? 'active' : ''}`}
-                        onClick={() => onLanguageChange('az')}
-                    >
-                        AZ
-                    </button>
-                    <button
-                        type="button"
-                        className={`sidebar-lang-btn ${language === 'ru' ? 'active' : ''}`}
-                        onClick={() => onLanguageChange('ru')}
-                    >
-                        RU
-                    </button>
+                    {languageOptions.map((option) => (
+                        <button
+                            key={option.code}
+                            type="button"
+                            translate="no"
+                            className={`sidebar-lang-btn ${language === option.code ? 'active' : ''}`}
+                            onClick={() => onLanguageChange(option.code)}
+                        >
+                            <img src={option.flag} alt={option.label} />
+                            <span className="notranslate" translate="no">{option.label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
 

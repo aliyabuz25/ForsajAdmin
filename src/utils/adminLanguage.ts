@@ -1,4 +1,4 @@
-export type AdminLanguage = 'az' | 'ru';
+export type AdminLanguage = 'az' | 'ru' | 'en';
 
 export const ADMIN_LANGUAGE_STORAGE_KEY = 'forsaj_admin_language';
 
@@ -32,6 +32,14 @@ const sidebarUiLabels = {
     groupManagement: 'УПРАВЛЕНИЕ',
     emptyMenu: 'Меню пустое',
     logout: 'Выход',
+  },
+  en: {
+    primaryNavigation: 'MAIN NAVIGATION',
+    groupContent: 'SITE CONTENT',
+    groupLegal: 'LEGAL PAGES',
+    groupManagement: 'MANAGEMENT',
+    emptyMenu: 'Menu is empty',
+    logout: 'Logout',
   },
 } as const;
 
@@ -78,6 +86,27 @@ const titleMapAz: Record<string, string> = {
   sosyal: 'Sosial Media',
 };
 
+const titleMapEn: Record<string, string> = {
+  'ana sehife': 'Home',
+  'ana sehife / naviqasiya / footer': 'Home / Navigation / Footer',
+  haqqimizda: 'About',
+  xeberler: 'News',
+  tedbirler: 'Events',
+  suruculer: 'Drivers',
+  qalereya: 'Gallery',
+  qaydalar: 'Rules',
+  elaqe: 'Contact',
+  'istifadeci idaresi': 'User Management',
+  'sistem ayarlari': 'System Settings',
+  'whatsapp integration': 'WhatsApp Integration',
+  sosyal: 'Social Media',
+  'sosial media': 'Social Media',
+  muracietler: 'Applications',
+  'privacy policy': 'Privacy Policy',
+  'terms of service': 'Terms of Service',
+  translations: 'Translations',
+};
+
 const pathMapRu: Record<string, string> = {
   '/applications': 'Заявки',
   '/users-management': 'Управление пользователями',
@@ -105,6 +134,24 @@ const pathMapAz: Record<string, string> = {
   '/general-settings?tab=social': 'Sosial Media',
   '/general-settings?tab=whatsapp': 'WhatsApp Integration',
   '/translations': 'Translations',
+};
+
+const pathMapEn: Record<string, string> = {
+  '/applications': 'Applications',
+  '/users-management': 'User Management',
+  '/general-settings?tab=general': 'System Settings',
+  '/?page=contactpage': 'Contact',
+  '/?page=rulespage': 'Rules',
+  '/?page=newspage': 'News',
+  '/?page=eventspage': 'Events',
+  '/?page=drivers': 'Drivers',
+  '/?page=about': 'About',
+  '/?page=gallerypage': 'Gallery',
+  '/general-settings?tab=social': 'Social Media',
+  '/general-settings?tab=whatsapp': 'WhatsApp Integration',
+  '/translations': 'Translations',
+  '/?page=privacypolicypage': 'Privacy Policy',
+  '/?page=termsofservicepage': 'Terms of Service',
 };
 
 const normalizeSidebarPathKey = (path?: string) => {
@@ -235,6 +282,7 @@ export const getLocalizedText = (lang: AdminLanguage, azText: string, ruText: st
   lang === 'ru' ? ruText : azText;
 
 export const translateAdminUiText = (lang: AdminLanguage, value: string): string => {
+  if (lang === 'en') return String(value ?? '');
   const input = String(value ?? '');
   if (!input) return input;
   const match = input.match(/^(\s*)([\s\S]*?)(\s*)$/);
@@ -247,12 +295,14 @@ export const translateAdminUiText = (lang: AdminLanguage, value: string): string
 };
 
 export const getAdminLanguageLabel = (lang: AdminLanguage) =>
-  lang === 'ru' ? 'Русский' : 'Azərbaycan';
+  lang === 'ru' ? 'Русский' : (lang === 'en' ? 'English' : 'Azərbaycan');
 
 export const getStoredAdminLanguage = (): AdminLanguage => {
   if (typeof window === 'undefined') return 'az';
   const saved = window.localStorage.getItem(ADMIN_LANGUAGE_STORAGE_KEY);
-  return saved === 'ru' ? 'ru' : 'az';
+  if (saved === 'ru') return 'ru';
+  if (saved === 'en') return 'en';
+  return 'az';
 };
 
 export const setStoredAdminLanguage = (lang: AdminLanguage) => {
@@ -273,6 +323,14 @@ export const translateSidebarTitle = (title: string, path: string | undefined, l
     const byPath = pathMapRu[normalizedPath];
     if (byPath) return byPath;
     const byTitle = titleMapRu[normalizedTitle];
+    if (byTitle) return byTitle;
+    return title;
+  }
+
+  if (lang === 'en') {
+    const byPath = pathMapEn[normalizedPath];
+    if (byPath) return byPath;
+    const byTitle = titleMapEn[normalizedTitle];
     if (byTitle) return byTitle;
     return title;
   }

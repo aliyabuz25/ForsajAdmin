@@ -70,7 +70,7 @@ export const parseAdminSidebarLocalization = (payload: unknown): SidebarLocaliza
 };
 
 const toSiteLanguage = (lang: AdminLanguage): keyof SidebarLocalizationEntry =>
-  lang === 'ru' ? 'RU' : 'AZ';
+  lang === 'ru' ? 'RU' : (lang === 'en' ? 'ENG' : 'AZ');
 
 export const getAdminSidebarLocalizedText = (
   map: SidebarLocalizationMap,
