@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Calendar, Facebook, Send, Twitter, MessageCircle } from 'lucide-react';
 import { useSiteContent } from '../hooks/useSiteContent';
 import { bbcodeToHtml } from '../utils/bbcode';
-import { getLocalizedNewsField, normalizeNewsWithLocalization, type NewsLanguageCode, type NewsTranslations } from '../utils/newsLocalization';
+import {
+  getLocalizedNewsField,
+  normalizeNewsTranslations,
+  normalizeNewsWithLocalization,
+  type NewsLanguageCode,
+  type NewsTranslations
+} from '../utils/newsLocalization';
 
 interface NewsItem {
   id: number;
@@ -56,6 +62,45 @@ const getShareExcerpt = (value: unknown, limit = 140) => {
   return plain.length > limit ? `${plain.slice(0, limit - 1).trimEnd()}…` : plain;
 };
 
+const toTranslateLang = (lang: NewsLanguageCode) => {
+  if (lang === 'RU') return 'ru';
+  if (lang === 'ENG') return 'en';
+  return 'az';
+};
+
+const translateBatch = async (
+  values: string[],
+  sourceLang: 'az',
+  targetLang: 'ru' | 'en',
+  format: 'text' | 'html'
+) => {
+  if (!values.length) return values;
+  try {
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: values,
+        source: sourceLang,
+        target: targetLang,
+        format
+      })
+    });
+    if (!response.ok) return values;
+    const payload = await response.json().catch(() => ({} as any));
+    const rawTranslated = payload?.translatedText;
+    if (Array.isArray(rawTranslated)) {
+      return values.map((source, index) => String(rawTranslated[index] ?? source));
+    }
+    if (typeof rawTranslated === 'string') {
+      return values.map(() => rawTranslated);
+    }
+    return values;
+  } catch {
+    return values;
+  }
+};
+
 const NewsPage: React.FC = () => {
   const { getText, language } = useSiteContent('newspage');
   const newsLanguage: NewsLanguageCode = language === 'RU' ? 'RU' : language === 'ENG' ? 'ENG' : 'AZ';
@@ -78,16 +123,61 @@ const NewsPage: React.FC = () => {
             .filter((item: any) => item.status === 'published')
             .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+          const autoTitleById = new Map<number, string>();
+          const autoDescriptionById = new Map<number, string>();
+
+          if (newsLanguage !== 'AZ') {
+            const missingTitleItems: Array<{ id: number; value: string }> = [];
+            const missingDescriptionItems: Array<{ id: number; value: string }> = [];
+
+            filtered.forEach((item: any) => {
+              const normalized = normalizeNewsWithLocalization(item || {});
+              const translations = normalizeNewsTranslations(item || {});
+              const azTitle = String(translations.AZ?.title || normalized.title || '').trim();
+              const azDescription = normalizeRichTextSpacing(String(translations.AZ?.description || normalized.description || ''));
+              const hasCurrentTitle = String(translations[newsLanguage]?.title || '').trim().length > 0;
+              const hasCurrentDescription = String(translations[newsLanguage]?.description || '').trim().length > 0;
+
+              if (!hasCurrentTitle && azTitle) {
+                missingTitleItems.push({ id: normalized.id, value: azTitle });
+              }
+              if (!hasCurrentDescription && azDescription.trim()) {
+                missingDescriptionItems.push({ id: normalized.id, value: azDescription });
+              }
+            });
+
+            const targetLang = toTranslateLang(newsLanguage) as 'ru' | 'en';
+            const [translatedTitles, translatedDescriptions] = await Promise.all([
+              translateBatch(missingTitleItems.map((entry) => entry.value), 'az', targetLang, 'text'),
+              translateBatch(missingDescriptionItems.map((entry) => entry.value), 'az', targetLang, 'html')
+            ]);
+
+            missingTitleItems.forEach((entry, index) => {
+              autoTitleById.set(entry.id, translatedTitles[index] || entry.value);
+            });
+            missingDescriptionItems.forEach((entry, index) => {
+              autoDescriptionById.set(entry.id, translatedDescriptions[index] || entry.value);
+            });
+          }
+
           const mapped = filtered.map((item: any) => {
+            const normalized = normalizeNewsWithLocalization(item || {});
+            const localizedTitle = getLocalizedNewsField(item, 'title', newsLanguage);
             const localizedDescription = normalizeRichTextSpacing(getLocalizedNewsField(item, 'description', newsLanguage));
+            const fallbackAutoTitle = autoTitleById.get(normalized.id) || '';
+            const fallbackAutoDescription = autoDescriptionById.get(normalized.id) || '';
+
+            const finalTitle = (localizedTitle || '').trim() || fallbackAutoTitle || normalized.title || '';
+            const finalDescription = (localizedDescription || '').trim() || fallbackAutoDescription || normalized.description || '';
+
             return {
-              ...normalizeNewsWithLocalization(item || {}),
+              ...normalized,
               id: item.id,
               date: item.date,
               img: item.img,
-              title: getLocalizedNewsField(item, 'title', newsLanguage),
-              desc: getShareExcerpt(localizedDescription, 280),
-              content: localizedDescription
+              title: finalTitle,
+              desc: getShareExcerpt(finalDescription, 280),
+              content: finalDescription
             };
           });
           setNewsData(mapped);
