@@ -5701,6 +5701,7 @@ const VisualEditor: React.FC = () => {
                                                     if (eventsPageIndex < 0) return;
                                                     handleSectionChange(eventsPageIndex, 'SIDEBAR_QUESTION_DESC', 'value', e.target.value);
                                                 }}
+                                                onKeyDown={(e) => e.stopPropagation()}
                                                 placeholder="Kart təsviri"
                                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: 1.4, resize: 'vertical' }}
                                             />
@@ -6953,6 +6954,7 @@ const VisualEditor: React.FC = () => {
                                                                                                 rows={3}
                                                                                                 value={item.desc}
                                                                                                 onChange={(e) => updateRulesTabItemField(rowIndex, itemIndex, 'desc', e.target.value, pageIdx)}
+                                                                                                onKeyDown={(e) => e.stopPropagation()}
                                                                                                 placeholder="Maddə təsviri"
                                                                                                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', lineHeight: 1.4, resize: 'vertical' }}
                                                                                             />
@@ -7338,6 +7340,7 @@ const VisualEditor: React.FC = () => {
                                                                             rows={5}
                                                                             value={row.bodySection?.value || ''}
                                                                             onChange={(e) => updateLegalSectionFieldValue(row.sectionNo, 'BODY', e.target.value)}
+                                                                            onKeyDown={(e) => e.stopPropagation()}
                                                                             placeholder="Bölmə mətni"
                                                                             style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: 1.45, resize: 'vertical' }}
                                                                         />
@@ -7463,6 +7466,7 @@ const VisualEditor: React.FC = () => {
                                                                 rows={3}
                                                                 value={row.desc}
                                                                 onChange={(e) => updateCoreValueField(row.suffix, 'desc', e.target.value)}
+                                                                onKeyDown={(e) => e.stopPropagation()}
                                                                 placeholder="Dəyər təsviri"
                                                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: 1.4, resize: 'vertical' }}
                                                             />
@@ -7619,6 +7623,7 @@ const VisualEditor: React.FC = () => {
                                                                             rows={3}
                                                                             value={item.desc}
                                                                             onChange={(e) => updateRulesTabItemField(rowIndex, itemIndex, 'desc', e.target.value)}
+                                                                            onKeyDown={(e) => e.stopPropagation()}
                                                                             placeholder="Maddə təsviri"
                                                                             style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', lineHeight: 1.4, resize: 'vertical' }}
                                                                         />
