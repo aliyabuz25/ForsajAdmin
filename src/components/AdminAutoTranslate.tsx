@@ -16,6 +16,9 @@ declare global {
 const GOOGLE_TRANSLATE_SCRIPT_ID = 'forsaj-admin-google-translate-script';
 const GOOGLE_TRANSLATE_CONTAINER_ID = 'forsaj-admin-google-translate-element';
 const GOOGLE_TRANSLATE_INNER_ID = `${GOOGLE_TRANSLATE_CONTAINER_ID}-inner`;
+const ADMIN_LANGUAGE_APPLY_EVENT = 'forsaj:admin-language-apply';
+const APPLY_RETRY_MAX_MS = 15000;
+const APPLY_RETRY_INTERVAL_MS = 250;
 
 const toGoogleLang = (lang: AdminLanguage) => {
   if (lang === 'ru') return 'ru';
@@ -93,6 +96,7 @@ const initGoogleTranslate = (language: AdminLanguage) => {
 const AdminAutoTranslate: React.FC<AdminAutoTranslateProps> = ({ language }) => {
   const location = useLocation();
   const retriesRef = useRef<number[]>([]);
+  const applyAttemptRef = useRef(0);
   const currentLanguageRef = useRef<AdminLanguage>(language);
   const isInitializedRef = useRef(false);
 
@@ -105,19 +109,33 @@ const AdminAutoTranslate: React.FC<AdminAutoTranslateProps> = ({ language }) => 
 
   const scheduleApplyLanguage = (lang: AdminLanguage) => {
     clearRetries();
+    const attemptId = ++applyAttemptRef.current;
+    const startedAt = Date.now();
 
-    const retrySteps = [0, 120, 300, 600, 1000, 1600, 2400, 3400, 4800];
-    retrySteps.forEach((delay) => {
-      const timerId = window.setTimeout(() => {
-        if (window.google?.translate?.TranslateElement) {
-          initGoogleTranslate(lang);
-          applyGoogleTranslateLanguage(lang);
-          return;
-        }
-        applyGoogleTranslateLanguage(lang);
-      }, delay);
+    const tick = () => {
+      if (attemptId !== applyAttemptRef.current) return;
+
+      if (window.google?.translate?.TranslateElement) {
+        initGoogleTranslate(lang);
+      }
+
+      const applied = applyGoogleTranslateLanguage(lang);
+      if (applied) {
+        const settleTimer = window.setTimeout(() => {
+          if (attemptId === applyAttemptRef.current) {
+            applyGoogleTranslateLanguage(lang);
+          }
+        }, 180);
+        retriesRef.current.push(settleTimer);
+        return;
+      }
+
+      if (Date.now() - startedAt >= APPLY_RETRY_MAX_MS) return;
+      const timerId = window.setTimeout(tick, APPLY_RETRY_INTERVAL_MS);
       retriesRef.current.push(timerId);
-    });
+    };
+
+    tick();
   };
 
   useEffect(() => {
@@ -155,6 +173,22 @@ const AdminAutoTranslate: React.FC<AdminAutoTranslateProps> = ({ language }) => 
     scheduleApplyLanguage(language);
     return () => clearRetries();
   }, [language, location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    const handleManualApply = (event: Event) => {
+      const nextLang = (event as CustomEvent<AdminLanguage>).detail;
+      if (nextLang === 'az' || nextLang === 'ru' || nextLang === 'en') {
+        scheduleApplyLanguage(nextLang);
+        return;
+      }
+      scheduleApplyLanguage(currentLanguageRef.current);
+    };
+
+    window.addEventListener(ADMIN_LANGUAGE_APPLY_EVENT, handleManualApply as EventListener);
+    return () => {
+      window.removeEventListener(ADMIN_LANGUAGE_APPLY_EVENT, handleManualApply as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     if (language === 'az') return;

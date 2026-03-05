@@ -16,6 +16,8 @@ import { ADMIN_USER_KEY, clearAdminSession, getAuthToken, SESSION_EXPIRED_EVENT 
 import { getStoredAdminLanguage, setStoredAdminLanguage, type AdminLanguage } from './utils/adminLanguage';
 import './index.css';
 
+const ADMIN_LANGUAGE_APPLY_EVENT = 'forsaj:admin-language-apply';
+
 const normalizeText = (value: string) =>
   value
     .toLocaleLowerCase('az')
@@ -144,8 +146,11 @@ const App: React.FC = () => {
   };
 
   const handleLanguageChange = (lang: AdminLanguage) => {
-    setAdminLanguage(lang);
+    setAdminLanguage((prev) => (prev === lang ? prev : lang));
     setStoredAdminLanguage(lang);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent<AdminLanguage>(ADMIN_LANGUAGE_APPLY_EVENT, { detail: lang }));
+    }
   };
 
   useEffect(() => {
