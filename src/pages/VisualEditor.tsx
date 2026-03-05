@@ -2207,6 +2207,31 @@ const VisualEditor: React.FC = () => {
         }
     };
 
+    const handleSectionTextareaKeyDown = (
+        e: React.KeyboardEvent<HTMLTextAreaElement>,
+        pageIdx: number,
+        sectionId: string
+    ) => {
+        e.stopPropagation();
+        if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+
+        e.preventDefault();
+        const textarea = e.currentTarget;
+        const start = textarea.selectionStart ?? textarea.value.length;
+        const end = textarea.selectionEnd ?? textarea.value.length;
+        const nextValue = `${textarea.value.slice(0, start)}\n${textarea.value.slice(end)}`;
+        const cursor = start + 1;
+
+        handleSectionChange(pageIdx, sectionId, 'value', nextValue);
+        requestAnimationFrame(() => {
+            try {
+                textarea.setSelectionRange(cursor, cursor);
+            } catch {
+                // no-op
+            }
+        });
+    };
+
     const normalizeSectionUrl = (pageIdx: number, sectionId: string) => {
         const page = pages[pageIdx];
         if (!page) return;
@@ -4672,7 +4697,7 @@ const VisualEditor: React.FC = () => {
                             <textarea
                                 value={section.value || ''}
                                 onChange={(e) => handleSectionChange(pageIdx, section.id, 'value', e.target.value)}
-                                onKeyDown={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => handleSectionTextareaKeyDown(e, pageIdx, section.id)}
                                 disabled={!editableValue}
                                 rows={coreValueFieldType === 'desc' ? 3 : textAreaRows}
                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: '1.4', resize: 'vertical' }}
