@@ -1176,6 +1176,11 @@ const VisualEditor: React.FC = () => {
     }, [mode, pageParam]);
 
     useEffect(() => {
+        // Keep search scoped to the currently visible workspace to avoid stale cross-mode filtering.
+        setSearchTerm('');
+    }, [editorMode, eventManagementTab]);
+
+    useEffect(() => {
         if (editorMode !== 'extract') return;
         const homeGroupKey = pageParam ? PAGE_TO_TAB_GROUP[pageParam] : null;
         if (pageParam && (pageParam === 'home' || homeGroupKey === 'home')) {
@@ -1244,6 +1249,32 @@ const VisualEditor: React.FC = () => {
     const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
     const [driverForm, setDriverForm] = useState<Partial<DriverItem>>({});
     const [isSendingRankingNotice, setIsSendingRankingNotice] = useState(false);
+
+    useEffect(() => {
+        if (driverCategories.length === 0) {
+            if (selectedCatId !== null) setSelectedCatId(null);
+            if (selectedDriverId !== null) setSelectedDriverId(null);
+            if (Object.keys(driverForm).length > 0) setDriverForm({});
+            return;
+        }
+
+        const hasSelectedCategory = !!selectedCatId && driverCategories.some((cat) => cat.id === selectedCatId);
+        if (!hasSelectedCategory) {
+            setSelectedCatId(driverCategories[0].id);
+            setSelectedDriverId(null);
+            setDriverForm({});
+            return;
+        }
+
+        if (selectedDriverId !== null) {
+            const currentCategory = driverCategories.find((cat) => cat.id === selectedCatId);
+            const hasSelectedDriver = !!currentCategory?.drivers?.some((driver) => driver.id === selectedDriverId);
+            if (!hasSelectedDriver) {
+                setSelectedDriverId(null);
+                setDriverForm({});
+            }
+        }
+    }, [driverCategories, selectedCatId, selectedDriverId, driverForm]);
 
     const loadContent = async () => {
         try {
@@ -5524,9 +5555,21 @@ const VisualEditor: React.FC = () => {
                         <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
                             {filteredNews.length === 0 ? (
                                 <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem', border: '1px dashed #e2e8f0', borderRadius: '8px' }}>
-                                    {searchQuery
-                                        ? 'Axtarışa uyğun xəbər tapılmadı.'
-                                        : 'Hələ heç bir xəbər yoxdur. Yeni xəbər yaratmaq üçün yuxarıdakı "+" düyməsini basın.'}
+                                    {searchQuery ? (
+                                        <>
+                                            <div style={{ marginBottom: '10px' }}>Axtarışa uyğun xəbər tapılmadı.</div>
+                                            <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                onClick={() => setSearchTerm('')}
+                                                style={{ fontSize: '12px' }}
+                                            >
+                                                Filtri təmizlə
+                                            </button>
+                                        </>
+                                    ) : (
+                                        'Hələ heç bir xəbər yoxdur. Yeni xəbər yaratmaq üçün yuxarıdakı "+" düyməsini basın.'
+                                    )}
                                 </div>
                             ) : (
                                 filteredNews.map((item) => (
@@ -5766,9 +5809,21 @@ const VisualEditor: React.FC = () => {
                         <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
                             {filteredEvents.length === 0 ? (
                                 <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem', border: '1px dashed #e2e8f0', borderRadius: '8px' }}>
-                                    {searchQuery
-                                        ? 'Axtarışa uyğun tədbir tapılmadı.'
-                                        : 'Hələ heç bir tədbir yoxdur. Yeni tədbir yaratmaq üçün yuxarıdakı "+" düyməsini basın.'}
+                                    {searchQuery ? (
+                                        <>
+                                            <div style={{ marginBottom: '10px' }}>Axtarışa uyğun tədbir tapılmadı.</div>
+                                            <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                onClick={() => setSearchTerm('')}
+                                                style={{ fontSize: '12px' }}
+                                            >
+                                                Filtri təmizlə
+                                            </button>
+                                        </>
+                                    ) : (
+                                        'Hələ heç bir tədbir yoxdur. Yeni tədbir yaratmaq üçün yuxarıdakı "+" düyməsini basın.'
+                                    )}
                                 </div>
                             ) : (
                                 filteredEvents.map((evt) => (
@@ -6088,7 +6143,21 @@ const VisualEditor: React.FC = () => {
                                 matchesSearch(d.name, d.license, d.team, d.rank, d.points, d.wins)
                             ).length === 0 ? (
                                 <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
-                                    {searchQuery ? 'Axtarışa uyğun sürücü tapılmadı.' : 'Bu kateqoriyada sürücü yoxdur.'}
+                                    {searchQuery ? (
+                                        <>
+                                            <div style={{ marginBottom: '10px' }}>Axtarışa uyğun sürücü tapılmadı.</div>
+                                            <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                onClick={() => setSearchTerm('')}
+                                                style={{ fontSize: '12px' }}
+                                            >
+                                                Filtri təmizlə
+                                            </button>
+                                        </>
+                                    ) : (
+                                        'Bu kateqoriyada sürücü yoxdur.'
+                                    )}
                                 </div>
                             ) : (
                                 (driverCategories.find(c => c.id === selectedCatId)?.drivers || [])

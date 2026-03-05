@@ -7,7 +7,7 @@ import { resolveSocialLinks } from '../utils/socialLinks';
 const ContactPage: React.FC = () => {
   const { getPage, getText } = useSiteContent('contactpage');
   const { getText: getGeneralText } = useSiteContent('general');
-  const { getText: getFooterText } = useSiteContent('footer');
+  const { getPage: getFooterPage, getText: getFooterText } = useSiteContent('footer');
   const normalizeComparable = (value: string) =>
     (value || '')
       .toLocaleLowerCase('az')
@@ -37,6 +37,48 @@ const ContactPage: React.FC = () => {
     const firstNonEmpty = values.find((value) => String(value || '').trim());
     return String(firstNonEmpty || defaultValue || '').trim();
   };
+  const looksLikeKeyToken = (value: string) => /^[A-Z0-9_]+$/.test(String(value || '').trim());
+  const footerAddressLine1FromSections = (() => {
+    const footerSections = getFooterPage('footer')?.sections || [];
+    const matchesAddressHint = (value: string) => {
+      const token = normalizeComparable(value);
+      return (
+        token.includes('addressline1') ||
+        token.includes('contactaddress1') ||
+        token.includes('unvan') ||
+        token.includes('adres')
+      );
+    };
+    const looksLikeAddressValue = (value: string) => {
+      const token = normalizeComparable(value);
+      if (!token) return false;
+      if (looksLikeKeyToken(value)) return false;
+      if (token.length < 6 || token.length > 90) return false;
+      const hasCityHint = token.includes('azadliq') || token.includes('baki') || token.includes('baku');
+      const hasStreetLikeShape =
+        /[0-9]/.test(value) &&
+        (/[,/\\-]/.test(value) || token.includes('sektor') || token.includes('prospekt') || token.includes('kuc'));
+      return (
+        hasCityHint ||
+        hasStreetLikeShape
+      );
+    };
+
+    const explicitAddressSection = footerSections.find((section) => {
+      const value = String(section?.value || '').trim();
+      if (!value || looksLikeKeyToken(value)) return false;
+      return matchesAddressHint(String(section?.id || '')) || matchesAddressHint(String(section?.label || ''));
+    });
+    if (explicitAddressSection) {
+      return String(explicitAddressSection.value || '').trim();
+    }
+
+    const inferredAddressSection = footerSections.find((section) => {
+      const value = String(section?.value || '').trim();
+      return looksLikeAddressValue(value);
+    });
+    return String(inferredAddressSection?.value || '').trim();
+  })();
   const onlineLabel = getText('ONLINE_STATUS_LABEL', 'ONLINE');
   const formStatusLabel = getText('FORM_STATUS_LABEL', 'STATUS: ONLINE');
   const requiredFieldsToast = getText('FORM_TOAST_REQUIRED', 'Zəhmət olmasa bütün sahələri doldurun.');
@@ -101,7 +143,8 @@ const ContactPage: React.FC = () => {
     [
       getText('ADDRESS_LINE_1', ''),
       getText('CONTACT_ADDRESS_1', ''),
-      getFooterText('CONTACT_ADDRESS_1', defaultAddressLine1)
+      getFooterText('CONTACT_ADDRESS_1', ''),
+      footerAddressLine1FromSections
     ],
     defaultAddressLine1
   );
