@@ -823,19 +823,27 @@ const normalizePlainText = (value: string) => {
         .trim();
 };
 
-const normalizeMultilinePlainText = (value: string) => {
+const normalizeMultilinePlainText = (
+    value: string,
+    options: { decodeEntities?: boolean } = {}
+) => {
     if (!value) return '';
+    const decodeEntities = options.decodeEntities !== false;
     let current = value;
 
-    for (let i = 0; i < 4; i++) {
-        const doc = new DOMParser().parseFromString(current, 'text/html');
-        const decoded = doc.body.textContent || '';
-        if (!decoded || decoded === current) break;
-        current = decoded;
+    if (decodeEntities) {
+        for (let i = 0; i < 4; i++) {
+            const doc = new DOMParser().parseFromString(current, 'text/html');
+            const decoded = doc.body.textContent || '';
+            if (!decoded || decoded === current) break;
+            current = decoded;
+        }
+
+        const finalDoc = new DOMParser().parseFromString(current, 'text/html');
+        current = finalDoc.body.textContent || '';
     }
 
-    const finalDoc = new DOMParser().parseFromString(current, 'text/html');
-    return (finalDoc.body.textContent || '')
+    return current
         .replace(/\u00a0/g, ' ')
         .replace(/\r\n?/g, '\n');
 };
@@ -2188,7 +2196,8 @@ const VisualEditor: React.FC = () => {
                 targetSection.id.startsWith('txt-');
 
             if (field === 'value' && plainTextSection) {
-                nextValue = normalizeMultilinePlainText(value);
+                // Keep user-entered spaces/newlines during typing.
+                nextValue = normalizeMultilinePlainText(value, { decodeEntities: false });
             } else if (field === 'label' && plainTextSection) {
                 nextValue = normalizePlainText(value);
             }
@@ -4663,6 +4672,7 @@ const VisualEditor: React.FC = () => {
                             <textarea
                                 value={section.value || ''}
                                 onChange={(e) => handleSectionChange(pageIdx, section.id, 'value', e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
                                 disabled={!editableValue}
                                 rows={coreValueFieldType === 'desc' ? 3 : textAreaRows}
                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: '1.4', resize: 'vertical' }}
