@@ -6,13 +6,21 @@ interface CategoryLeadersProps {
   onViewChange: (view: 'home' | 'about' | 'news' | 'events' | 'drivers' | 'rules' | 'contact', category?: string) => void;
 }
 
+interface LeaderCard {
+  id: string;
+  categoryName: string;
+  name: string;
+  team: string;
+  score: number;
+  img: string;
+}
 
 const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
   const { getText } = useSiteContent('categoryleaders');
   const leaderSuffix = getText('LEADER_TITLE_SUFFIX', 'LİDERİ');
   const emptyName = getText('EMPTY_DRIVER_NAME', '---');
   const emptyTeam = getText('EMPTY_DRIVER_TEAM', '---');
-  const [leaders, setLeaders] = React.useState<any[]>([]);
+  const [leaders, setLeaders] = React.useState<LeaderCard[]>([]);
 
   React.useEffect(() => {
     const loadLeaders = async () => {
@@ -24,12 +32,12 @@ const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
         const data = await response.json();
 
         if (data) {
-          const topLeaders = data.map((cat: any) => {
+          const topLeaders: LeaderCard[] = data.map((cat: any) => {
             const drivers = Array.isArray(cat.drivers) ? cat.drivers : [];
             const topDriver = [...drivers].sort((a: any, b: any) => a.rank - b.rank)[0];
             return {
               id: cat.id,
-              title: `${cat.name} ${leaderSuffix}`,
+              categoryName: String(cat.name || '').trim(),
               name: topDriver?.name || emptyName,
               team: topDriver?.team || emptyTeam,
               score: topDriver?.points || 0,
@@ -43,7 +51,7 @@ const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
       }
     };
     loadLeaders();
-  }, []);
+  }, [emptyName, emptyTeam]);
 
   return (
     <section className="py-24 px-6 lg:px-20 bg-[#0A0A0A]">
@@ -71,9 +79,9 @@ const CategoryLeaders: React.FC<CategoryLeadersProps> = ({ onViewChange }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {leaders.map((leader) => (
-          <div key={leader.title} className="flex flex-col group">
+          <div key={`${leader.id}-${leader.name}`} className="flex flex-col group">
             <div className="text-center mb-6">
-              <h4 className="text-gray-500 font-black italic text-xs tracking-[0.2em] uppercase group-hover:text-[#FF4D00] transition-colors">{leader.title}</h4>
+              <h4 className="text-gray-500 font-black italic text-xs tracking-[0.2em] uppercase group-hover:text-[#FF4D00] transition-colors">{leader.categoryName} {leaderSuffix}</h4>
             </div>
 
             <div

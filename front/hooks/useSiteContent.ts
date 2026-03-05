@@ -42,6 +42,7 @@ let localizationInFlight: Promise<LocalizationMap> | null = null;
 const CACHE_TTL_MS = 60000;
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
 const SITE_LANG_KEY = 'forsaj_site_lang';
+const LOCALIZATION_READY_EVENT = 'forsaj-localization-ready';
 type SiteLang = 'AZ' | 'RU' | 'ENG';
 const FETCH_OPTIONS: RequestInit = {
     cache: 'default'
@@ -487,6 +488,9 @@ const fetchLocalizationOnce = async (): Promise<LocalizationMap> => {
 
             localizationCache = normalized;
             localizationValueIndexCache = buildLocalizationValueIndex(normalized);
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent(LOCALIZATION_READY_EVENT));
+            }
             return normalized;
         } catch {
             return {};
@@ -554,6 +558,12 @@ export const useSiteContent = (scopePageId?: string) => {
             setLanguage(normalizeSiteLanguage(localStorage.getItem(SITE_LANG_KEY)));
         };
 
+        const onLocalizationReady = () => {
+            if (!isMounted) return;
+            if (localizationCache) setLocalization(localizationCache);
+            if (localizationValueIndexCache) setLocalizationValueIndex(localizationValueIndexCache);
+        };
+
         const onVisibility = () => {
             if (document.visibilityState !== 'visible') return;
             const staleFor = Date.now() - siteContentCacheAt;
@@ -564,11 +574,13 @@ export const useSiteContent = (scopePageId?: string) => {
 
         window.addEventListener('storage', onStorage);
         window.addEventListener('forsaj-language-changed', onLangChange as EventListener);
+        window.addEventListener(LOCALIZATION_READY_EVENT, onLocalizationReady as EventListener);
         document.addEventListener('visibilitychange', onVisibility);
         return () => {
             isMounted = false;
             window.removeEventListener('storage', onStorage);
             window.removeEventListener('forsaj-language-changed', onLangChange as EventListener);
+            window.removeEventListener(LOCALIZATION_READY_EVENT, onLocalizationReady as EventListener);
             document.removeEventListener('visibilitychange', onVisibility);
         };
     }, []);
