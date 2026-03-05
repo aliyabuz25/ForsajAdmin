@@ -14,6 +14,7 @@ declare global {
 
 const GOOGLE_TRANSLATE_SCRIPT_ID = 'forsaj-admin-google-translate-script';
 const GOOGLE_TRANSLATE_CONTAINER_ID = 'forsaj-admin-google-translate-element';
+const GOOGLE_TRANSLATE_INNER_ID = `${GOOGLE_TRANSLATE_CONTAINER_ID}-inner`;
 
 const toGoogleLang = (lang: AdminLanguage) => {
   if (lang === 'ru') return 'ru';
@@ -70,9 +71,9 @@ const initGoogleTranslate = (language: AdminLanguage) => {
   const translateElement = window.google?.translate?.TranslateElement;
   if (!translateElement) return false;
 
-  if (!document.getElementById(`${GOOGLE_TRANSLATE_CONTAINER_ID}-inner`)) {
+  if (!document.getElementById(GOOGLE_TRANSLATE_INNER_ID)) {
     const inner = document.createElement('div');
-    inner.id = `${GOOGLE_TRANSLATE_CONTAINER_ID}-inner`;
+    inner.id = GOOGLE_TRANSLATE_INNER_ID;
     ensureTranslateContainer().appendChild(inner);
     new window.google.translate.TranslateElement(
       {
@@ -90,35 +91,48 @@ const initGoogleTranslate = (language: AdminLanguage) => {
 
 const AdminAutoTranslate: React.FC<AdminAutoTranslateProps> = ({ language }) => {
   const retriesRef = useRef<number[]>([]);
+  const currentLanguageRef = useRef<AdminLanguage>(language);
+  const isInitializedRef = useRef(false);
+
+  currentLanguageRef.current = language;
+
+  const clearRetries = () => {
+    retriesRef.current.forEach((id) => window.clearTimeout(id));
+    retriesRef.current = [];
+  };
+
+  const scheduleApplyLanguage = (lang: AdminLanguage) => {
+    clearRetries();
+
+    const retrySteps = [0, 120, 300, 600, 1000, 1600, 2400, 3400, 4800];
+    retrySteps.forEach((delay) => {
+      const timerId = window.setTimeout(() => {
+        if (window.google?.translate?.TranslateElement) {
+          initGoogleTranslate(lang);
+          applyGoogleTranslateLanguage(lang);
+          return;
+        }
+        applyGoogleTranslateLanguage(lang);
+      }, delay);
+      retriesRef.current.push(timerId);
+    });
+  };
 
   useEffect(() => {
     ensureTranslateContainer();
-
-    const applyWithRetry = () => {
-      retriesRef.current.forEach((id) => window.clearTimeout(id));
-      retriesRef.current = [];
-
-      const retrySteps = [0, 100, 300, 700, 1200, 2000];
-      retrySteps.forEach((delay) => {
-        const timerId = window.setTimeout(() => {
-          applyGoogleTranslateLanguage(language);
-        }, delay);
-        retriesRef.current.push(timerId);
-      });
-    };
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
 
     if (window.google?.translate?.TranslateElement) {
-      initGoogleTranslate(language);
-      applyWithRetry();
-      return () => {
-        retriesRef.current.forEach((id) => window.clearTimeout(id));
-        retriesRef.current = [];
-      };
+      initGoogleTranslate(currentLanguageRef.current);
+      scheduleApplyLanguage(currentLanguageRef.current);
+      return () => clearRetries();
     }
 
     window.googleTranslateElementInitAdmin = () => {
-      initGoogleTranslate(language);
-      applyWithRetry();
+      const lang = currentLanguageRef.current;
+      initGoogleTranslate(lang);
+      scheduleApplyLanguage(lang);
     };
 
     const existingScript = document.getElementById(GOOGLE_TRANSLATE_SCRIPT_ID);
@@ -131,33 +145,22 @@ const AdminAutoTranslate: React.FC<AdminAutoTranslateProps> = ({ language }) => 
     }
 
     return () => {
-      retriesRef.current.forEach((id) => window.clearTimeout(id));
-      retriesRef.current = [];
+      clearRetries();
     };
   }, []);
 
   useEffect(() => {
-    const apply = () => {
-      const done = applyGoogleTranslateLanguage(language);
-      if (!done) {
-        const tid = window.setTimeout(() => applyGoogleTranslateLanguage(language), 220);
-        retriesRef.current.push(tid);
-      }
-    };
-    apply();
-    return () => {
-      retriesRef.current.forEach((id) => window.clearTimeout(id));
-      retriesRef.current = [];
-    };
+    scheduleApplyLanguage(language);
+    return () => clearRetries();
   }, [language]);
 
   useEffect(() => {
     return () => {
-      retriesRef.current.forEach((id) => window.clearTimeout(id));
-      retriesRef.current = [];
+      clearRetries();
       if (window.googleTranslateElementInitAdmin) {
         delete window.googleTranslateElementInitAdmin;
       }
+      isInitializedRef.current = false;
     };
   }, []);
 
