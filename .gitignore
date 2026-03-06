@@ -9,3 +9,4 @@ front/.env
 .vite/
 front/.vite/
 server.log
+.data/
