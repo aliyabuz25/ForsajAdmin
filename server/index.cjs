@@ -1422,7 +1422,7 @@ const normalizeOptionalLocaleCode = (value) => {
     return trimmed ? normalizeLocaleCode(trimmed) : '';
 };
 
-const getPublicSiteBaseUrl = (fallback = 'http://localhost:3005') => {
+const getPublicSiteBaseUrl = (fallback = 'https://forsaj.octotech.az') => {
     const raw = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim();
     return (raw || fallback).replace(/\/+$/, '');
 };
