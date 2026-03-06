@@ -63,6 +63,11 @@ interface TranslationEntryGroup {
     entry: LocalizationEntry;
 }
 
+interface TranslationEntryBucket {
+    signature: string;
+    keys: string[];
+}
+
 const DEFAULT_PAYLOAD: LocalizationPayload = {
     schemaVersion: 1,
     generatedAt: '',
@@ -396,6 +401,12 @@ const normalizeComparableText = (value: unknown) =>
         .trim()
         .toLocaleLowerCase('az');
 
+const normalizeSourceComparisonText = (value: unknown) =>
+    normalizeComparableText(value)
+        .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
 const collapseRepeatedSourceText = (value: unknown) => {
     const compact = String(value || '')
         .replace(/\s+/g, ' ')
@@ -435,7 +446,44 @@ const collapseRepeatedSourceText = (value: unknown) => {
 const isGeneratedTranslationKey = (key: string) => GENERATED_TRANSLATION_KEY_REGEX.test(String(key || '').trim());
 const isBusinessTranslationKey = (key: string) => BUSINESS_KEY_REGEX.test(String(key || '').trim()) && !isGeneratedTranslationKey(key);
 const getEntrySourceSignature = (entry?: LocalizationEntry | null) =>
-    normalizeComparableText(collapseRepeatedSourceText(entry?.AZ || ''));
+    normalizeSourceComparisonText(collapseRepeatedSourceText(entry?.AZ || ''));
+
+const getNearDuplicateSourceSignatures = (signature: string) => {
+    const variants = new Set<string>();
+    let current = String(signature || '').trim();
+    if (!current) return variants;
+    variants.add(current);
+
+    for (let index = 0; index < 2; index += 1) {
+        const next = current.replace(/\s+\p{L}{1,8}$/u, '').trim();
+        if (!next || next === current) break;
+        if (current.length - next.length > 12) break;
+        if (next.length < 18) break;
+        variants.add(next);
+        current = next;
+    }
+
+    return variants;
+};
+
+const areSourceSignaturesEquivalent = (left: string, right: string) => {
+    const leftValue = String(left || '').trim();
+    const rightValue = String(right || '').trim();
+    if (!leftValue || !rightValue) return false;
+    if (leftValue === rightValue) return true;
+
+    const [shorter, longer] = leftValue.length <= rightValue.length
+        ? [leftValue, rightValue]
+        : [rightValue, leftValue];
+
+    if (shorter.length < 18) return false;
+    if (!longer.startsWith(shorter)) return false;
+
+    const suffix = longer.slice(shorter.length).trim();
+    if (!suffix) return true;
+    if (suffix.length > 12) return false;
+    return suffix.split(' ').filter(Boolean).length <= 2;
+};
 
 const getTranslationKeyPriority = (key: string) => {
     const normalizedKey = String(key || '').trim();
@@ -552,21 +600,36 @@ const getPageVisibleGroups = (
     usageMap: LocalizationUsageMap,
     activeOnly: boolean
 ): TranslationEntryGroup[] => {
-    const grouped = new Map<string, string[]>();
+    const buckets: TranslationEntryBucket[] = [];
 
-    Object.keys(entries).forEach((key) => {
+    sortTranslationKeys(Object.keys(entries)).forEach((key) => {
         const entry = entries[key];
         if (!entry) return;
         if (shouldHideTranslationKey(key, entry)) return;
 
         const signature = getEntrySourceSignature(entry) || `key:${key}`;
-        const existingKeys = grouped.get(signature) || [];
-        existingKeys.push(key);
-        grouped.set(signature, existingKeys);
+        const signatureVariants = getNearDuplicateSourceSignatures(signature);
+        const existingBucket = buckets.find((bucket) =>
+            Array.from(signatureVariants).some((variant) => areSourceSignaturesEquivalent(bucket.signature, variant))
+        );
+
+        if (existingBucket) {
+            existingBucket.keys.push(key);
+            if (signature.length < existingBucket.signature.length) {
+                existingBucket.signature = signature;
+            }
+            return;
+        }
+
+        buckets.push({
+            signature,
+            keys: [key]
+        });
     });
 
-    return Array.from(grouped.values())
-        .map((keys) => {
+    return buckets
+        .map((bucket) => {
+            const keys = bucket.keys;
             const sortedKeys = sortTranslationKeys(keys);
             const activeKeys = sortedKeys.filter((key) => isKeyActiveInPage(usageMap, pageId, key));
             if (activeOnly && !activeKeys.length) return null;
