@@ -30,6 +30,7 @@ interface ArchiveVideoItem {
 
 const GALLERY_VERSION_KEY = 'forsaj_gallery_version';
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const ARCHIVE_REFRESH_INTERVAL_MS = 12000;
 
 const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
@@ -145,6 +146,9 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
         loadVideos();
       }
     };
+    const onContentReady = () => {
+      loadVideos();
+    };
     const onFocus = () => {
       loadVideos();
     };
@@ -157,6 +161,7 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
 
     loadVideos();
     window.addEventListener('storage', onStorage);
+    window.addEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -164,6 +169,7 @@ const VideoArchive: React.FC<VideoArchiveProps> = ({ onViewChange }) => {
       mounted = false;
       window.clearInterval(intervalId);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };

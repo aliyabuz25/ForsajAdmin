@@ -42,6 +42,7 @@ let localizationInFlight: Promise<LocalizationMap> | null = null;
 let localizationCacheAt = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const SITE_LANG_KEY = 'forsaj_site_lang';
 const LOCALIZATION_READY_EVENT = 'forsaj-localization-ready';
 type SiteLang = 'AZ' | 'RU' | 'ENG';
@@ -603,6 +604,10 @@ export const useSiteContent = (scopePageId?: string) => {
             setLanguage(normalizeSiteLanguage(localStorage.getItem(SITE_LANG_KEY)));
         };
 
+        const onSiteContentReady = () => {
+            refresh();
+        };
+
         const onLocalizationReady = () => {
             if (!isMounted) return;
             if (localizationCache) setLocalization(localizationCache);
@@ -616,12 +621,14 @@ export const useSiteContent = (scopePageId?: string) => {
 
         window.addEventListener('storage', onStorage);
         window.addEventListener('forsaj-language-changed', onLangChange as EventListener);
+        window.addEventListener(SITE_CONTENT_READY_EVENT, onSiteContentReady as EventListener);
         window.addEventListener(LOCALIZATION_READY_EVENT, onLocalizationReady as EventListener);
         document.addEventListener('visibilitychange', onVisibility);
         return () => {
             isMounted = false;
             window.removeEventListener('storage', onStorage);
             window.removeEventListener('forsaj-language-changed', onLangChange as EventListener);
+            window.removeEventListener(SITE_CONTENT_READY_EVENT, onSiteContentReady as EventListener);
             window.removeEventListener(LOCALIZATION_READY_EVENT, onLocalizationReady as EventListener);
             document.removeEventListener('visibilitychange', onVisibility);
         };

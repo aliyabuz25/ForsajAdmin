@@ -30,6 +30,13 @@ http:
       service: forsaj-local-frontend
       priority: 500
 
+    kagent:
+      entryPoints:
+        - web
+      rule: "Host(`kagent.octotech.az`)"
+      service: kagent
+      priority: 700
+
   middlewares:
     forsaj-local-dbadmin-strip:
       stripPrefix:
@@ -56,3 +63,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://host.docker.internal:3010"
+
+    kagent:
+      loadBalancer:
+        servers:
+          - url: "http://kagent:3000"

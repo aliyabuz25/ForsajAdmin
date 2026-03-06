@@ -22,6 +22,7 @@ interface NewsItem {
 
 const SELECTED_NEWS_ID_KEY = 'forsaj_selected_news_id';
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const NEWS_REFRESH_INTERVAL_MS = 12000;
 
 const normalizeRichTextSpacing = (value: unknown) =>
@@ -221,6 +222,9 @@ const NewsPage: React.FC = () => {
         void loadNews();
       }
     };
+    const onContentReady = () => {
+      void loadNews();
+    };
     const onFocus = () => {
       void loadNews();
     };
@@ -233,6 +237,7 @@ const NewsPage: React.FC = () => {
 
     void loadNews();
     window.addEventListener('storage', onStorage);
+    window.addEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -240,6 +245,7 @@ const NewsPage: React.FC = () => {
       mounted = false;
       window.clearInterval(intervalId);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };

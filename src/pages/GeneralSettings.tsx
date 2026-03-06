@@ -5,6 +5,8 @@ import { useLocation } from 'react-router-dom';
 import './GeneralSettings.css';
 
 const HIDDEN_SETTINGS_STORAGE_KEY = 'forsaj_general_hidden_cards';
+const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const PAGE_DEFAULT_TITLES: Record<string, string> = {
     general: 'SİSTEM AYARLARI',
     marquee: 'MARQUEE'
@@ -292,6 +294,9 @@ const GeneralSettings: React.FC = () => {
                 body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error('save-content failed');
+            const saveVersion = Date.now().toString();
+            localStorage.setItem(CONTENT_VERSION_KEY, saveVersion);
+            window.dispatchEvent(new CustomEvent(SITE_CONTENT_READY_EVENT));
             toast.success('Ayarlar qeyd edildi!', { id: toastId });
         } catch (err) {
             toast.error('Xəta baş verdi', { id: toastId });

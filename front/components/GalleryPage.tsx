@@ -42,6 +42,7 @@ const isNamedAlbum = (value: string) => {
 };
 const GALLERY_REFRESH_MS = 3000;
 const GALLERY_VERSION_KEY = 'forsaj_gallery_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 
 const GalleryPage: React.FC = () => {
   const [activeType, setActiveType] = useState<'photos' | 'videos'>('photos');
@@ -208,15 +209,20 @@ const GalleryPage: React.FC = () => {
         loadGallery();
       }
     };
+    const onContentReady = () => {
+      loadGallery();
+    };
 
     loadGallery();
     const refreshInterval = window.setInterval(loadGallery, GALLERY_REFRESH_MS);
     window.addEventListener('storage', onStorage);
+    window.addEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
 
     return () => {
       mounted = false;
       window.clearInterval(refreshInterval);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
     };
   }, []);
 

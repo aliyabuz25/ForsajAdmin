@@ -1168,25 +1168,26 @@ const resolveSmtpSettings = async () => {
     };
 };
 
-const formatApplicationMailContent = (content) => {
+const formatApplicationMailContent = (content, locale) => {
+    const mailCopy = getApplicationMailLocaleStrings(locale);
     const trimmed = String(content || '').trim();
     if (!trimmed) {
         return {
-            text: 'Məzmun boşdur.',
-            html: '<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">Məzmun boşdur.</p>'
+            text: mailCopy.emptyContent,
+            html: `<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(mailCopy.emptyContent)}</p>`
         };
     }
 
     const toParagraphHtml = (value) => {
         const lines = String(value || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-        if (!lines.length) return '<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">Məzmun boşdur.</p>';
+        if (!lines.length) return `<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(mailCopy.emptyContent)}</p>`;
         return lines
             .map((line) => `<p style="margin:0 0 8px;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(line)}</p>`)
             .join('');
     };
 
     const toKeyValueTable = (entries) => {
-        if (!entries.length) return '<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">Məzmun boşdur.</p>';
+        if (!entries.length) return `<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(mailCopy.emptyContent)}</p>`;
         const rows = entries.map(([key, value]) => {
             const safeKey = escapeHtml(String(key));
             const safeValue = escapeHtml(String(value ?? '-'));
@@ -1201,19 +1202,23 @@ const formatApplicationMailContent = (content) => {
             if (Array.isArray(parsed)) {
                 if (!parsed.length) {
                     return {
-                        text: 'Məzmun boşdur.',
-                        html: '<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">Məzmun boşdur.</p>'
+                        text: mailCopy.emptyContent,
+                        html: `<p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(mailCopy.emptyContent)}</p>`
                     };
                 }
 
                 const normalizedTextLines = [];
                 const itemBlocks = parsed.map((item, index) => {
                     if (isPlainObject(item)) {
-                        const entries = Object.entries(item);
+                        const entries = localizeApplicationMailEntries(Object.entries(item), locale);
+                        if (!entries.length) {
+                            normalizedTextLines.push(`${index + 1}. ${mailCopy.emptyContent}`);
+                            return `<div style="margin:0 0 12px;padding:14px;border:1px solid #374151;border-radius:10px;background:#0b1220;"><div style="margin:0 0 10px;color:#f97316;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(mailCopy.itemLabel)} ${index + 1}</div><p style="margin:0;color:#d1d5db;font-size:14px;line-height:1.7;">${escapeHtml(mailCopy.emptyContent)}</p></div>`;
+                        }
                         normalizedTextLines.push(`${index + 1}.`);
                         entries.forEach(([key, value]) => normalizedTextLines.push(`${key}: ${String(value ?? '')}`));
                         const itemTable = toKeyValueTable(entries);
-                        return `<div style="margin:0 0 12px;padding:14px;border:1px solid #374151;border-radius:10px;background:#0b1220;"><div style="margin:0 0 10px;color:#f97316;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">Maddə ${index + 1}</div>${itemTable}</div>`;
+                        return `<div style="margin:0 0 12px;padding:14px;border:1px solid #374151;border-radius:10px;background:#0b1220;"><div style="margin:0 0 10px;color:#f97316;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(mailCopy.itemLabel)} ${index + 1}</div>${itemTable}</div>`;
                     }
                     const lineText = String(item ?? '').trim();
                     normalizedTextLines.push(`${index + 1}. ${lineText}`);
@@ -1226,10 +1231,13 @@ const formatApplicationMailContent = (content) => {
                 };
             }
             if (isPlainObject(parsed)) {
-                const text = Object.entries(parsed).map(([key, value]) => `${key}: ${String(value ?? '')}`).join('\n');
+                const entries = localizeApplicationMailEntries(Object.entries(parsed), locale);
+                const text = entries.length
+                    ? entries.map(([key, value]) => `${key}: ${String(value ?? '')}`).join('\n')
+                    : mailCopy.emptyContent;
                 return {
                     text,
-                    html: toKeyValueTable(Object.entries(parsed))
+                    html: toKeyValueTable(entries)
                 };
             }
             const text = String(parsed);
@@ -1250,7 +1258,7 @@ const formatApplicationMailContent = (content) => {
     };
 };
 
-const sendApplicationNotificationEmail = async ({ name, contact, type, content }) => {
+const sendApplicationNotificationEmail = async ({ name, contact, type, content, locale }) => {
     const smtp = await resolveSmtpSettings();
     if (!smtp.enabled) return { sent: false, reason: 'smtp_disabled' };
     if (!smtp.host || !smtp.toList.length) return { sent: false, reason: 'smtp_not_configured' };
@@ -1262,19 +1270,21 @@ const sendApplicationNotificationEmail = async ({ name, contact, type, content }
         auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined
     });
 
-    const formattedContent = formatApplicationMailContent(content);
-    const createdAt = new Date().toISOString();
-    const subject = `[${smtp.siteName || 'Forsaj'}] Yeni müraciət: ${type}`;
+    const mailCopy = getApplicationMailLocaleStrings(locale);
+    const formattedContent = formatApplicationMailContent(content, locale);
+    const createdAt = new Date();
+    const formattedCreatedAt = formatNotificationDate(createdAt, locale);
+    const subject = `[${smtp.siteName || 'Forsaj'}] ${mailCopy.mailSubjectPrefix}: ${type}`;
 
     const textBody = [
-        `${smtp.siteName || 'Forsaj Club'} - Yeni form müraciəti`,
+        `${smtp.siteName || 'Forsaj Club'} - ${mailCopy.mailTitle}`,
         '',
-        `Ad: ${name}`,
-        `Əlaqə: ${contact}`,
-        `Növ: ${type}`,
-        `Tarix: ${createdAt}`,
+        `${mailCopy.nameLabel}: ${name}`,
+        `${mailCopy.contactLabel}: ${contact}`,
+        `${mailCopy.typeLabel}: ${type}`,
+        `${mailCopy.dateLabel}: ${formattedCreatedAt}`,
         '',
-        'Məzmun:',
+        `${mailCopy.contentLabel}:`,
         formattedContent.text
     ].join('\n');
 
@@ -1282,7 +1292,7 @@ const sendApplicationNotificationEmail = async ({ name, contact, type, content }
     const safeName = escapeHtml(name);
     const safeContact = escapeHtml(contact);
     const safeType = escapeHtml(type);
-    const safeDate = escapeHtml(createdAt);
+    const safeDate = escapeHtml(formattedCreatedAt);
     const safeSiteName = escapeHtml(smtp.siteName || 'Forsaj Club');
     const safeSiteUrl = escapeHtml(siteUrlText);
     const hasPublicSiteUrl = /^https?:\/\//i.test(siteUrlText);
@@ -1292,7 +1302,7 @@ const sendApplicationNotificationEmail = async ({ name, contact, type, content }
         : `<div style="font-size:22px;font-weight:900;letter-spacing:0.02em;color:#f9fafb;">${safeSiteName}</div>`;
 
     const htmlBody = `
-      <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safeSiteName} yeni form müraciəti bildirişi</div>
+      <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safeSiteName} ${escapeHtml(mailCopy.previewText)}</div>
       <div style="background:#020617;padding:28px 0;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
         <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:720px;margin:0 auto;background:#0b1220;border-radius:16px;overflow:hidden;border:1px solid #1e293b;">
           <tr>
@@ -1305,31 +1315,31 @@ const sendApplicationNotificationEmail = async ({ name, contact, type, content }
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td>${headerLogo}</td>
-                  <td style="text-align:right;color:#f97316;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Yeni Form Müraciəti</td>
+                  <td style="text-align:right;color:#f97316;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(mailCopy.headerBadge)}</td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
             <td style="padding:30px;">
-              <h2 style="margin:0 0 18px;font-size:24px;line-height:1.3;color:#f9fafb;">Yeni müraciət daxil oldu</h2>
-              <p style="margin:0 0 22px;color:#94a3b8;font-size:13px;line-height:1.6;">Bu bildiriş sayt formundan avtomatik yaradılıb. Aşağıdakı məlumatlar birbaşa istifadəçi müraciətindən götürülüb.</p>
+              <h2 style="margin:0 0 18px;font-size:24px;line-height:1.3;color:#f9fafb;">${escapeHtml(mailCopy.heroTitle)}</h2>
+              <p style="margin:0 0 22px;color:#94a3b8;font-size:13px;line-height:1.6;">${escapeHtml(mailCopy.heroText)}</p>
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:18px;">
-                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">Ad Soyad</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeName}</td></tr>
-                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">Əlaqə</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeContact}</td></tr>
-                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">Form Növü</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeType}</td></tr>
-                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">Tarix</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeDate}</td></tr>
+                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(mailCopy.nameLabel)}</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeName}</td></tr>
+                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(mailCopy.contactLabel)}</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeContact}</td></tr>
+                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(mailCopy.typeLabel)}</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeType}</td></tr>
+                <tr><td style="padding:8px 0;color:#9ca3af;font-size:12px;width:140px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(mailCopy.dateLabel)}</td><td style="padding:8px 0;color:#f9fafb;font-size:14px;font-weight:700;">${safeDate}</td></tr>
               </table>
 
               <div style="margin-top:8px;border:1px solid #1f2937;border-radius:12px;padding:16px;background:#111827;">
-                <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:#f97316;text-transform:uppercase;margin-bottom:12px;">Müraciət Məzmunu</div>
+                <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:#f97316;text-transform:uppercase;margin-bottom:12px;">${escapeHtml(mailCopy.contentLabel)}</div>
                 ${formattedContent.html}
               </div>
             </td>
           </tr>
           <tr>
             <td style="background:#050505;border-top:1px solid #1f2937;padding:14px 30px;color:#9ca3af;font-size:12px;">
-              ${safeSiteName}${hasPublicSiteUrl ? ` • <a href="${safeSiteUrl}" style="color:#f97316;text-decoration:none;">${safeSiteUrl}</a>` : ''} • Professional Notification
+              ${safeSiteName}${hasPublicSiteUrl ? ` • <a href="${safeSiteUrl}" style="color:#f97316;text-decoration:none;">${safeSiteUrl}</a>` : ''} • ${escapeHtml(mailCopy.footerLabel)}
             </td>
           </tr>
         </table>
@@ -1405,6 +1415,123 @@ const normalizeLocaleCode = (value) => {
     if (locale === 'RU') return 'RU';
     if (locale === 'EN' || locale === 'ENG') return 'EN';
     return 'AZ';
+};
+
+const normalizeOptionalLocaleCode = (value) => {
+    const trimmed = String(value || '').trim();
+    return trimmed ? normalizeLocaleCode(trimmed) : '';
+};
+
+const getPublicSiteBaseUrl = (fallback = 'http://localhost:3005') => {
+    const raw = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim();
+    return (raw || fallback).replace(/\/+$/, '');
+};
+
+const APPLICATION_MAIL_FIELD_LABELS = {
+    message: { AZ: 'Mesaj', RU: 'Сообщение', EN: 'Message' },
+    source: { AZ: 'Mənbə', RU: 'Источник', EN: 'Source' },
+    email: { AZ: 'E-poçt', RU: 'Email', EN: 'Email' },
+    whatsapp: { AZ: 'WhatsApp', RU: 'WhatsApp', EN: 'WhatsApp' },
+    car: { AZ: 'Avtomobil marka/modeli', RU: 'Марка/модель автомобиля', EN: 'Car make/model' },
+    tire: { AZ: 'Təkər ölçüsü', RU: 'Размер шин', EN: 'Tire size' },
+    engine: { AZ: 'Mühərrik həcmi', RU: 'Объем двигателя', EN: 'Engine size' },
+    club: { AZ: 'Klub', RU: 'Клуб', EN: 'Club' },
+    event: { AZ: 'Tədbir', RU: 'Событие', EN: 'Event' },
+    eventId: { AZ: 'Tədbir ID', RU: 'ID события', EN: 'Event ID' }
+};
+
+const getApplicationMailLocaleStrings = (locale) => {
+    const lang = normalizeLocaleCode(locale);
+
+    if (lang === 'RU') {
+        return {
+            emptyContent: 'Содержимое пусто.',
+            itemLabel: 'Пункт',
+            mailSubjectPrefix: 'Новая заявка',
+            mailTitle: 'Новая заявка с формы',
+            previewText: 'Уведомление о новой заявке с формы',
+            headerBadge: 'Новая заявка',
+            heroTitle: 'Получена новая заявка',
+            heroText: 'Это уведомление создано автоматически из формы сайта. Данные ниже взяты напрямую из заявки пользователя.',
+            nameLabel: 'Имя',
+            contactLabel: 'Контакт',
+            typeLabel: 'Тип формы',
+            dateLabel: 'Дата',
+            contentLabel: 'Содержимое заявки',
+            footerLabel: 'Professional Notification'
+        };
+    }
+
+    if (lang === 'EN') {
+        return {
+            emptyContent: 'Content is empty.',
+            itemLabel: 'Item',
+            mailSubjectPrefix: 'New application',
+            mailTitle: 'New form submission',
+            previewText: 'New form submission notification',
+            headerBadge: 'New submission',
+            heroTitle: 'A new application has been received',
+            heroText: 'This notification was created automatically from the site form. The details below were taken directly from the user submission.',
+            nameLabel: 'Name',
+            contactLabel: 'Contact',
+            typeLabel: 'Form type',
+            dateLabel: 'Date',
+            contentLabel: 'Application content',
+            footerLabel: 'Professional Notification'
+        };
+    }
+
+    return {
+        emptyContent: 'Məzmun boşdur.',
+        itemLabel: 'Maddə',
+        mailSubjectPrefix: 'Yeni müraciət',
+        mailTitle: 'Yeni form müraciəti',
+        previewText: 'yeni form müraciəti bildirişi',
+        headerBadge: 'Yeni Form Müraciəti',
+        heroTitle: 'Yeni müraciət daxil oldu',
+        heroText: 'Bu bildiriş sayt formundan avtomatik yaradılıb. Aşağıdakı məlumatlar birbaşa istifadəçi müraciətindən götürülüb.',
+        nameLabel: 'Ad Soyad',
+        contactLabel: 'Əlaqə',
+        typeLabel: 'Form Növü',
+        dateLabel: 'Tarix',
+        contentLabel: 'Müraciət Məzmunu',
+        footerLabel: 'Professional Notification'
+    };
+};
+
+const getApplicationMailFieldLabel = (key, locale) => {
+    const normalizedKey = String(key || '').trim();
+    const lang = normalizeLocaleCode(locale);
+    const localized = APPLICATION_MAIL_FIELD_LABELS[normalizedKey];
+    if (localized?.[lang]) return localized[lang];
+    return normalizedKey;
+};
+
+const localizeApplicationMailEntries = (entries, locale) => {
+    const list = Array.isArray(entries) ? entries : [];
+    return list
+        .filter(([key, value]) => {
+            const normalizedKey = String(key || '').trim();
+            if (!normalizedKey) return false;
+            if (normalizedKey.toLowerCase() === 'locale') return false;
+            return String(value ?? '').trim() !== '';
+        })
+        .map(([key, value]) => [getApplicationMailFieldLabel(key, locale), value]);
+};
+
+const formatNotificationDate = (value, locale) => {
+    const date = value instanceof Date ? value : new Date(value);
+    const lang = normalizeLocaleCode(locale);
+    const dateLocale = lang === 'RU' ? 'ru-RU' : lang === 'EN' ? 'en-US' : 'az-AZ';
+
+    try {
+        return new Intl.DateTimeFormat(dateLocale, {
+            dateStyle: 'medium',
+            timeStyle: 'medium'
+        }).format(date);
+    } catch {
+        return date.toISOString();
+    }
 };
 
 const normalizeWhatsAppNumber = (value) => {
@@ -1576,14 +1703,24 @@ const sanitizeSubscribers = (items) => {
     for (const item of list) {
         const email = normalizeSubscriberEmail(item?.email);
         if (!email) continue;
+        const locale = normalizeOptionalLocaleCode(item?.locale);
         const normalized = {
             email,
             name: String(item?.name || '').trim(),
             source: String(item?.source || '').trim() || 'site',
             active: item?.active !== false,
-            subscribed_at: String(item?.subscribed_at || '').trim() || new Date().toISOString()
+            subscribed_at: String(item?.subscribed_at || '').trim() || new Date().toISOString(),
+            locale
         };
-        dedupe.set(email, normalized);
+        const existing = dedupe.get(email);
+        dedupe.set(email, {
+            email,
+            name: normalized.name || existing?.name || '',
+            source: normalized.source || existing?.source || 'site',
+            active: normalized.active !== false && existing?.active !== false,
+            subscribed_at: existing?.subscribed_at || normalized.subscribed_at,
+            locale: normalized.locale || existing?.locale || 'AZ'
+        });
     }
 
     return Array.from(dedupe.values());
@@ -1599,24 +1736,82 @@ const saveSubscribers = async (subscribers) => {
     return saveContent('subscribers', normalized);
 };
 
-const upsertSubscriber = async ({ email, name = '', source = 'site' }) => {
+const upsertSubscriber = async ({ email, name = '', source = 'site', locale = '' }) => {
     const normalizedEmail = normalizeSubscriberEmail(email);
     if (!normalizedEmail) return { ok: false, reason: 'invalid_email' };
 
     const current = await getStoredSubscribers();
     const byEmail = new Map(current.map((subscriber) => [subscriber.email, subscriber]));
     const existing = byEmail.get(normalizedEmail);
+    const normalizedLocale = normalizeOptionalLocaleCode(locale);
 
     byEmail.set(normalizedEmail, {
         email: normalizedEmail,
         name: String(name || existing?.name || '').trim(),
         source: String(source || existing?.source || 'site').trim() || 'site',
         active: true,
-        subscribed_at: existing?.subscribed_at || new Date().toISOString()
+        subscribed_at: existing?.subscribed_at || new Date().toISOString(),
+        locale: normalizedLocale || existing?.locale || 'AZ'
     });
 
     const ok = await saveSubscribers(Array.from(byEmail.values()));
     return { ok, email: normalizedEmail };
+};
+
+const deactivateSubscriber = async ({ email, locale = '' }) => {
+    const normalizedEmail = normalizeSubscriberEmail(email);
+    if (!normalizedEmail) return { ok: false, reason: 'invalid_email' };
+
+    const [stored, legacy] = await Promise.all([
+        getStoredSubscribers(),
+        getLegacyNewsletterSubscribersFromApplications()
+    ]);
+    const byEmail = new Map((stored || []).map((subscriber) => [subscriber.email, subscriber]));
+    const existing = byEmail.get(normalizedEmail)
+        || (legacy || []).find((subscriber) => subscriber.email === normalizedEmail)
+        || null;
+    const nextLocale = normalizeOptionalLocaleCode(locale) || existing?.locale || 'AZ';
+
+    byEmail.set(normalizedEmail, {
+        email: normalizedEmail,
+        name: String(existing?.name || '').trim(),
+        source: String(existing?.source || 'unsubscribe').trim() || 'unsubscribe',
+        active: false,
+        subscribed_at: existing?.subscribed_at || new Date().toISOString(),
+        locale: nextLocale
+    });
+
+    const ok = await saveSubscribers(Array.from(byEmail.values()));
+    return {
+        ok,
+        email: normalizedEmail,
+        wasActive: existing?.active !== false,
+        locale: normalizeLocaleCode(nextLocale)
+    };
+};
+
+const generateSubscriberUnsubscribeToken = ({ email, locale = '' }) => jwt.sign({
+    purpose: 'newsletter_unsubscribe',
+    email: normalizeSubscriberEmail(email),
+    locale: normalizeLocaleCode(locale || 'AZ')
+}, JWT_SECRET);
+
+const verifySubscriberUnsubscribeToken = (token) => {
+    const decoded = jwt.verify(String(token || '').trim(), JWT_SECRET);
+    if (!decoded || decoded.purpose !== 'newsletter_unsubscribe') {
+        throw new Error('invalid_unsubscribe_token');
+    }
+    const email = normalizeSubscriberEmail(decoded.email);
+    if (!email) throw new Error('invalid_unsubscribe_email');
+    return {
+        email,
+        locale: normalizeLocaleCode(decoded.locale || 'AZ')
+    };
+};
+
+const buildSubscriberUnsubscribeUrl = ({ baseUrl, email, locale = '' }) => {
+    const token = generateSubscriberUnsubscribeToken({ email, locale });
+    return `${String(baseUrl || getPublicSiteBaseUrl()).replace(/\/+$/, '')}/api/subscribers/unsubscribe?token=${encodeURIComponent(token)}`;
 };
 
 const getLegacyNewsletterSubscribersFromApplications = async () => {
@@ -1642,7 +1837,8 @@ const getLegacyNewsletterSubscribersFromApplications = async () => {
                     name: String(row?.name || '').trim(),
                     source: source || 'applications',
                     active: true,
-                    subscribed_at: new Date().toISOString()
+                    subscribed_at: new Date().toISOString(),
+                    locale: normalizeOptionalLocaleCode(parsed?.locale)
                 });
             }
         }
@@ -1654,23 +1850,81 @@ const getLegacyNewsletterSubscribersFromApplications = async () => {
     }
 };
 
-const getAllActiveSubscriberEmails = async () => {
+const getAllActiveSubscribers = async () => {
     const [stored, legacy] = await Promise.all([
         getStoredSubscribers(),
         getLegacyNewsletterSubscribersFromApplications()
     ]);
 
     const all = sanitizeSubscribers([...(stored || []), ...(legacy || [])]);
-    return Array.from(new Set(
-        all
-            .filter((subscriber) => subscriber.active !== false)
-            .map((subscriber) => normalizeSubscriberEmail(subscriber.email))
-            .filter(Boolean)
-    ));
+    return all
+        .filter((subscriber) => subscriber.active !== false)
+        .map((subscriber) => ({
+            ...subscriber,
+            email: normalizeSubscriberEmail(subscriber.email),
+            locale: normalizeLocaleCode(subscriber.locale || 'AZ')
+        }))
+        .filter((subscriber) => Boolean(subscriber.email));
 };
 
-const sendBulkSubscriberEmail = async ({ subject, introText, htmlContent, textContent }) => {
-    const recipients = await getAllActiveSubscriberEmails();
+const getBulkSubscriberMailLocaleStrings = (locale) => {
+    const lang = normalizeLocaleCode(locale);
+
+    if (lang === 'RU') {
+        return {
+            defaultSubject: 'Уведомление Forsaj Club',
+            defaultIntro: 'Новое уведомление',
+            badge: 'Уведомление',
+            unsubscribeLabel: 'Отписаться',
+            unsubscribeIntro: 'Если вы больше не хотите получать эти письма, используйте ссылку ниже.',
+            unsubscribeTextLine: 'Отписаться от рассылки',
+            unsubscribeSuccessTitle: 'Вы отписаны от рассылки',
+            unsubscribeSuccessText: 'Этот email больше не будет получать наши newsletter-письма.',
+            unsubscribeAlreadyTitle: 'Подписка уже отключена',
+            unsubscribeAlreadyText: 'Этот email уже исключен из нашей рассылки.',
+            unsubscribeInvalidTitle: 'Ссылка недействительна',
+            unsubscribeInvalidText: 'Похоже, ссылка для отписки недействительна или повреждена.',
+            backToSite: 'Вернуться на сайт'
+        };
+    }
+
+    if (lang === 'EN') {
+        return {
+            defaultSubject: 'Forsaj Club update',
+            defaultIntro: 'New update',
+            badge: 'Update',
+            unsubscribeLabel: 'Unsubscribe',
+            unsubscribeIntro: 'If you no longer want to receive these emails, use the link below.',
+            unsubscribeTextLine: 'Unsubscribe from these emails',
+            unsubscribeSuccessTitle: 'You have been unsubscribed',
+            unsubscribeSuccessText: 'This email address will no longer receive our newsletter messages.',
+            unsubscribeAlreadyTitle: 'Already unsubscribed',
+            unsubscribeAlreadyText: 'This email address is already removed from our newsletter list.',
+            unsubscribeInvalidTitle: 'Invalid link',
+            unsubscribeInvalidText: 'The unsubscribe link appears to be invalid or damaged.',
+            backToSite: 'Back to site'
+        };
+    }
+
+    return {
+        defaultSubject: 'Forsaj Club bildirişi',
+        defaultIntro: 'Yeni bildiriş',
+        badge: 'Bildiriş',
+        unsubscribeLabel: 'Abunəlikdən çıx',
+        unsubscribeIntro: 'Bu mailləri artıq almaq istəmirsinizsə, aşağıdakı linkdən istifadə edin.',
+        unsubscribeTextLine: 'Mail bildirişlərindən çıx',
+        unsubscribeSuccessTitle: 'Abunəlikdən çıxarıldınız',
+        unsubscribeSuccessText: 'Bu email artıq newsletter bildirişləri almayacaq.',
+        unsubscribeAlreadyTitle: 'Abunəlik artıq deaktivdir',
+        unsubscribeAlreadyText: 'Bu email artıq bildiriş siyahısından çıxarılıb.',
+        unsubscribeInvalidTitle: 'Link etibarsızdır',
+        unsubscribeInvalidText: 'Abunəlikdən çıxma linki etibarsız və ya zədələnmiş görünür.',
+        backToSite: 'Sayta qayıt'
+    };
+};
+
+const sendBulkSubscriberEmail = async ({ buildContent }) => {
+    const recipients = await getAllActiveSubscribers();
     if (!recipients.length) return { sent: false, reason: 'no_subscribers', recipients: 0 };
 
     const smtp = await resolveSmtpSettings();
@@ -1684,54 +1938,96 @@ const sendBulkSubscriberEmail = async ({ subject, introText, htmlContent, textCo
         auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined
     });
 
-    const safeSiteName = escapeHtml(smtp.siteName || 'Forsaj Club');
-    const safeSubject = escapeHtml(subject || `${smtp.siteName || 'Forsaj Club'} bildirişi`);
-    const safeIntro = escapeHtml(introText || 'Yeni bildiriş');
     const logoAsset = resolveInlineLogoAttachment(FORCED_MAIL_LOGO_URL || smtp.logoUrl);
-    const headerLogo = logoAsset.src
-        ? `<img src="${escapeHtml(logoAsset.src)}" alt="${safeSiteName}" style="height:44px;max-width:220px;width:auto;display:block;object-fit:contain;" />`
-        : `<div style="font-size:22px;font-weight:900;letter-spacing:0.02em;color:#f9fafb;">${safeSiteName}</div>`;
+    const safeSiteName = escapeHtml(smtp.siteName || 'Forsaj Club');
 
-    const htmlBody = `
-      <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safeSubject}</div>
-      <div style="background:#020617;padding:28px 0;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:720px;margin:0 auto;background:#0b1220;border-radius:16px;overflow:hidden;border:1px solid #1e293b;">
-          <tr><td style="background:#020617;padding:0;"><div style="height:4px;background:linear-gradient(90deg,#f97316,#fb923c,#fdba74);"></div></td></tr>
-          <tr>
-            <td style="background:#050505;padding:24px 30px;border-bottom:1px solid #1f2937;">
-              <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td>${headerLogo}</td><td style="text-align:right;color:#f97316;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Bildiriş</td></tr></table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:30px;">
-              <h2 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#f9fafb;">${safeSubject}</h2>
-              <p style="margin:0 0 18px;color:#94a3b8;font-size:13px;line-height:1.6;">${safeIntro}</p>
-              <div style="margin-top:8px;border:1px solid #1f2937;border-radius:12px;padding:16px;background:#111827;color:#d1d5db;">
-                ${htmlContent}
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    `;
+    const recipientsByLocale = recipients.reduce((acc, subscriber) => {
+        const locale = normalizeLocaleCode(subscriber.locale || 'AZ');
+        if (!acc[locale]) acc[locale] = [];
+        acc[locale].push(subscriber.email);
+        return acc;
+    }, {});
 
-    const batchSize = 50;
     let sentBatches = 0;
-    for (let index = 0; index < recipients.length; index += batchSize) {
-        const batch = recipients.slice(index, index + batchSize);
-        await transport.sendMail({
-            from: smtp.from || smtp.user,
-            to: smtp.from || smtp.user,
-            bcc: batch.join(', '),
-            subject,
-            text: textContent,
-            html: htmlBody,
-            attachments: logoAsset.attachments
-        });
-        sentBatches += 1;
+    const localeStats = [];
+
+    for (const [locale, localeRecipients] of Object.entries(recipientsByLocale)) {
+        if (!localeRecipients.length) continue;
+
+        const localized = typeof buildContent === 'function' ? buildContent(locale) : null;
+        if (!localized) continue;
+
+        const localeCopy = getBulkSubscriberMailLocaleStrings(locale);
+        const subject = String(localized.subject || localeCopy.defaultSubject).trim();
+        const introText = String(localized.introText || localeCopy.defaultIntro).trim();
+        const textContent = String(localized.textContent || '').trim();
+        const htmlContent = String(localized.htmlContent || '').trim();
+        const safeSubject = escapeHtml(subject);
+        const safeIntro = escapeHtml(introText);
+        const headerLogo = logoAsset.src
+            ? `<img src="${escapeHtml(logoAsset.src)}" alt="${safeSiteName}" style="height:44px;max-width:220px;width:auto;display:block;object-fit:contain;" />`
+            : `<div style="font-size:22px;font-weight:900;letter-spacing:0.02em;color:#f9fafb;">${safeSiteName}</div>`;
+
+        for (const recipientEmail of localeRecipients) {
+            const unsubscribeUrl = buildSubscriberUnsubscribeUrl({
+                baseUrl: getPublicSiteBaseUrl(smtp.siteUrl || 'http://localhost:3005'),
+                email: recipientEmail,
+                locale
+            });
+            const safeUnsubscribeUrl = escapeHtml(unsubscribeUrl);
+            const htmlBody = `
+              <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safeSubject}</div>
+              <div style="background:#020617;padding:28px 0;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:720px;margin:0 auto;background:#0b1220;border-radius:16px;overflow:hidden;border:1px solid #1e293b;">
+                  <tr><td style="background:#020617;padding:0;"><div style="height:4px;background:linear-gradient(90deg,#f97316,#fb923c,#fdba74);"></div></td></tr>
+                  <tr>
+                    <td style="background:#050505;padding:24px 30px;border-bottom:1px solid #1f2937;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td>${headerLogo}</td><td style="text-align:right;color:#f97316;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(localeCopy.badge)}</td></tr></table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:30px;">
+                      <h2 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#f9fafb;">${safeSubject}</h2>
+                      <p style="margin:0 0 18px;color:#94a3b8;font-size:13px;line-height:1.6;">${safeIntro}</p>
+                      <div style="margin-top:8px;border:1px solid #1f2937;border-radius:12px;padding:16px;background:#111827;color:#d1d5db;">
+                        ${htmlContent}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 30px 30px;">
+                      <div style="border-top:1px solid #1f2937;padding-top:18px;color:#94a3b8;font-size:12px;line-height:1.7;">
+                        <p style="margin:0 0 10px;">${escapeHtml(localeCopy.unsubscribeIntro)}</p>
+                        <a href="${safeUnsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color:#f97316;text-decoration:none;font-size:12px;font-weight:800;letter-spacing:0.02em;">${escapeHtml(localeCopy.unsubscribeLabel)}</a>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            `;
+            const textBody = [
+                textContent,
+                '',
+                `${localeCopy.unsubscribeTextLine}: ${unsubscribeUrl}`
+            ].join('\n');
+            await transport.sendMail({
+                from: smtp.from || smtp.user,
+                to: recipientEmail,
+                subject,
+                text: textBody,
+                html: htmlBody,
+                attachments: logoAsset.attachments,
+                headers: {
+                    'List-Unsubscribe': `<${unsubscribeUrl}>`
+                }
+            });
+            sentBatches += 1;
+        }
+
+        localeStats.push({ locale, recipients: localeRecipients.length });
     }
 
-    return { sent: true, recipients: recipients.length, batches: sentBatches };
+    return { sent: true, recipients: recipients.length, batches: sentBatches, locales: localeStats };
 };
 
 const extractNewEvents = (previousList, nextList) => {
@@ -1797,6 +2093,157 @@ const isPastEventForNewsletter = (event) => {
     return eventDate.getTime() < todayStart.getTime();
 };
 
+const getEventTranslationLanguageKey = (locale) => {
+    const lang = normalizeLocaleCode(locale);
+    return lang === 'EN' ? 'ENG' : lang;
+};
+
+const getLocalizedEventFieldForNewsletter = (event, field, locale) => {
+    const languageKey = getEventTranslationLanguageKey(locale);
+    const localized = toEventFieldString(event?.translations?.[languageKey]?.[field]);
+    if (localized) return localized;
+    return toEventFieldString(event?.[field]);
+};
+
+const buildNewEventsSubscriberMailContent = (events, baseUrl, locale) => {
+    const lang = normalizeLocaleCode(locale);
+    const label = (value) => String(value || '').trim();
+
+    const copy = lang === 'RU'
+        ? {
+            fallbackEvent: 'Событие',
+            singleHeadline: 'Добавлено новое событие',
+            multiHeadline: 'новых событий добавлено',
+            intro: 'Календарь событий обновлен. Новые события перечислены ниже.',
+            openEventPage: 'Открыть страницу события'
+        }
+        : lang === 'EN'
+            ? {
+                fallbackEvent: 'Event',
+                singleHeadline: 'New event added',
+                multiHeadline: 'new events added',
+                intro: 'The event calendar has been updated. The newly added events are listed below.',
+                openEventPage: 'Open event page'
+            }
+            : {
+                fallbackEvent: 'Tədbir',
+                singleHeadline: 'Yeni tədbir əlavə olundu',
+                multiHeadline: 'yeni tədbir əlavə olundu',
+                intro: 'Tədbir təqvimi yeniləndi. Əlavə olunan tədbirləri aşağıda görə bilərsiniz.',
+                openEventPage: 'Tədbir səhifəsini aç'
+            };
+
+    const headline = events.length === 1
+        ? `${copy.singleHeadline}: ${label(getLocalizedEventFieldForNewsletter(events[0], 'title', locale)) || copy.fallbackEvent}`
+        : `${events.length} ${copy.multiHeadline}`;
+
+    const eventLines = events.map((event) => {
+        const title = label(getLocalizedEventFieldForNewsletter(event, 'title', locale)) || copy.fallbackEvent;
+        const date = label(event?.date);
+        const location = label(getLocalizedEventFieldForNewsletter(event, 'location', locale));
+        const eventUrl = `${baseUrl}/?view=events&id=${encodeURIComponent(String(event?.id || ''))}`;
+        return `• ${title}${date ? ` — ${date}` : ''}${location ? ` (${location})` : ''}${event?.id ? `\n  ${eventUrl}` : ''}`;
+    });
+
+    const htmlList = events.map((event) => {
+        const title = escapeHtml(label(getLocalizedEventFieldForNewsletter(event, 'title', locale)) || copy.fallbackEvent);
+        const date = escapeHtml(label(event?.date));
+        const location = escapeHtml(label(getLocalizedEventFieldForNewsletter(event, 'location', locale)));
+        const eventUrl = `${baseUrl}/?view=events&id=${encodeURIComponent(String(event?.id || ''))}`;
+        const safeEventUrl = escapeHtml(eventUrl);
+        const linkHtml = event?.id
+            ? `<div style="margin-top:4px;"><a href="${safeEventUrl}" target="_blank" rel="noopener noreferrer" style="color:#f97316;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.02em;">${escapeHtml(copy.openEventPage)}</a></div>`
+            : '';
+        return `<li style="margin:0 0 10px;"><strong style="color:#f9fafb;">${title}</strong>${date ? ` — <span style="color:#fdba74;">${date}</span>` : ''}${location ? ` <span style="color:#9ca3af;">(${location})</span>` : ''}${linkHtml}</li>`;
+    }).join('');
+
+    return {
+        subject: headline,
+        introText: copy.intro,
+        htmlContent: `<ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlList}</ul>`,
+        textContent: [headline, '', ...eventLines].join('\n')
+    };
+};
+
+const buildDriversRankingSubscriberMailContent = (categories, driversUrl, note, locale) => {
+    const lang = normalizeLocaleCode(locale);
+    const copy = lang === 'RU'
+        ? {
+            fallbackCategory: 'Категория',
+            fallbackDriver: 'Пилот',
+            noData: 'Нет данных',
+            header: 'Обновление рейтинга пилотов',
+            noteLabel: 'Примечание',
+            intro: 'Рейтинг пилотов обновлен. Новый топ указан ниже.',
+            openAll: 'Открыть полный рейтинг'
+        }
+        : lang === 'EN'
+            ? {
+                fallbackCategory: 'Category',
+                fallbackDriver: 'Driver',
+                noData: 'No data',
+                header: 'Driver ranking update',
+                noteLabel: 'Note',
+                intro: 'The driver ranking has been updated. The new top positions are listed below.',
+                openAll: 'Open full rankings'
+            }
+            : {
+                fallbackCategory: 'Kateqoriya',
+                fallbackDriver: 'Sürücü',
+                noData: 'Məlumat yoxdur',
+                header: 'Pilot sıralamasında yenilənmə',
+                noteLabel: 'Qeyd',
+                intro: 'Sürücü reytinqində yenilənmə edildi. Yeni top sıralama aşağıdadır.',
+                openAll: 'Bütün reytinqi gör'
+            };
+
+    const summaryLines = categories.map((category) => {
+        const catName = String(category?.name || category?.id || copy.fallbackCategory).trim();
+        const topDrivers = (Array.isArray(category?.drivers) ? category.drivers : [])
+            .slice()
+            .sort((a, b) => Number(a?.rank || 9999) - Number(b?.rank || 9999))
+            .slice(0, 3)
+            .map((driver) => `#${driver?.rank || '-'} ${String(driver?.name || copy.fallbackDriver).trim()}`)
+            .join(', ');
+        return `• ${catName}: ${topDrivers || copy.noData}`;
+    });
+
+    const htmlRows = categories.map((category) => {
+        const catName = escapeHtml(String(category?.name || category?.id || copy.fallbackCategory).trim());
+        const topDrivers = (Array.isArray(category?.drivers) ? category.drivers : [])
+            .slice()
+            .sort((a, b) => Number(a?.rank || 9999) - Number(b?.rank || 9999))
+            .slice(0, 3)
+            .map((driver) => `<span style="display:inline-block;margin-right:6px;">#${escapeHtml(String(driver?.rank || '-'))} ${escapeHtml(String(driver?.name || copy.fallbackDriver).trim())}</span>`)
+            .join('');
+        return `<li style="margin:0 0 8px;"><strong style="color:#f9fafb;">${catName}</strong><div style="margin-top:4px;color:#d1d5db;">${topDrivers || escapeHtml(copy.noData)}</div></li>`;
+    }).join('');
+
+    const cleanNote = String(note || '').trim();
+    const textParts = [copy.header];
+    if (cleanNote) textParts.push(`${copy.noteLabel}: ${cleanNote}`);
+    textParts.push('', ...summaryLines, '', `${copy.openAll}: ${driversUrl}`);
+
+    return {
+        subject: copy.header,
+        introText: cleanNote || copy.intro,
+        htmlContent: `
+            <ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlRows}</ul>
+            <div style="margin-top:16px;">
+                <a
+                    href="${escapeHtml(driversUrl)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="display:inline-block;background:#f97316;color:#0b1220;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;letter-spacing:0.02em;"
+                >
+                    ${escapeHtml(copy.openAll)}
+                </a>
+            </div>
+        `,
+        textContent: textParts.join('\n')
+    };
+};
+
 const notifySubscribersAboutNewEvents = async (addedEvents, req = null) => {
     const events = Array.isArray(addedEvents) ? addedEvents : [];
     if (!events.length) return { sent: false, reason: 'no_new_events' };
@@ -1808,35 +2255,8 @@ const notifySubscribersAboutNewEvents = async (addedEvents, req = null) => {
         ? getRequestBaseUrl(req)
         : (String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim() || 'http://localhost:3005');
 
-    const headline = activeEvents.length === 1
-        ? `Yeni tədbir əlavə olundu: ${String(activeEvents[0]?.title || '').trim() || 'Tədbir'}`
-        : `${activeEvents.length} yeni tədbir əlavə olundu`;
-
-    const eventLines = activeEvents.map((event) => {
-        const title = String(event?.title || 'Tədbir').trim();
-        const date = String(event?.date || '').trim();
-        const location = String(event?.location || '').trim();
-        const eventUrl = `${baseUrl}/?view=events&id=${encodeURIComponent(String(event?.id || ''))}`;
-        return `• ${title}${date ? ` — ${date}` : ''}${location ? ` (${location})` : ''}${event?.id ? `\n  ${eventUrl}` : ''}`;
-    });
-
-    const htmlList = activeEvents.map((event) => {
-        const title = escapeHtml(String(event?.title || 'Tədbir').trim());
-        const date = escapeHtml(String(event?.date || '').trim());
-        const location = escapeHtml(String(event?.location || '').trim());
-        const eventUrl = `${baseUrl}/?view=events&id=${encodeURIComponent(String(event?.id || ''))}`;
-        const safeEventUrl = escapeHtml(eventUrl);
-        const linkHtml = event?.id
-            ? `<div style="margin-top:4px;"><a href="${safeEventUrl}" target="_blank" rel="noopener noreferrer" style="color:#f97316;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.02em;">Tədbir səhifəsini aç</a></div>`
-            : '';
-        return `<li style="margin:0 0 10px;"><strong style="color:#f9fafb;">${title}</strong>${date ? ` — <span style="color:#fdba74;">${date}</span>` : ''}${location ? ` <span style="color:#9ca3af;">(${location})</span>` : ''}${linkHtml}</li>`;
-    }).join('');
-
     return sendBulkSubscriberEmail({
-        subject: headline,
-        introText: 'Tədbir təqvimi yeniləndi. Əlavə olunan tədbirləri aşağıda görə bilərsiniz.',
-        htmlContent: `<ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlList}</ul>`,
-        textContent: [headline, '', ...eventLines].join('\n')
+        buildContent: (locale) => buildNewEventsSubscriberMailContent(activeEvents, baseUrl, locale)
     });
 };
 
@@ -1847,53 +2267,8 @@ const notifySubscribersAboutDriversRankingChange = async (note = '') => {
     const baseUrl = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim() || 'http://localhost:3005';
     const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
     const driversUrl = `${normalizedBaseUrl}/?view=drivers`;
-    const safeDriversUrl = escapeHtml(driversUrl);
-
-    const summaryLines = categories.map((category) => {
-        const catName = String(category?.name || category?.id || 'Kateqoriya').trim();
-        const topDrivers = (Array.isArray(category?.drivers) ? category.drivers : [])
-            .slice()
-            .sort((a, b) => Number(a?.rank || 9999) - Number(b?.rank || 9999))
-            .slice(0, 3)
-            .map((driver) => `#${driver?.rank || '-'} ${String(driver?.name || 'Sürücü').trim()}`)
-            .join(', ');
-        return `• ${catName}: ${topDrivers || 'Məlumat yoxdur'}`;
-    });
-
-    const htmlRows = categories.map((category) => {
-        const catName = escapeHtml(String(category?.name || category?.id || 'Kateqoriya').trim());
-        const topDrivers = (Array.isArray(category?.drivers) ? category.drivers : [])
-            .slice()
-            .sort((a, b) => Number(a?.rank || 9999) - Number(b?.rank || 9999))
-            .slice(0, 3)
-            .map((driver) => `<span style="display:inline-block;margin-right:6px;">#${escapeHtml(String(driver?.rank || '-'))} ${escapeHtml(String(driver?.name || 'Sürücü').trim())}</span>`)
-            .join('');
-        return `<li style="margin:0 0 8px;"><strong style="color:#f9fafb;">${catName}</strong><div style="margin-top:4px;color:#d1d5db;">${topDrivers || 'Məlumat yoxdur'}</div></li>`;
-    }).join('');
-
-    const cleanNote = String(note || '').trim();
-    const header = 'Pilot sıralamasında yenilənmə';
-    const textParts = [header];
-    if (cleanNote) textParts.push(`Qeyd: ${cleanNote}`);
-    textParts.push('', ...summaryLines, '', `Bütün reytinqi gör: ${driversUrl}`);
-
     return sendBulkSubscriberEmail({
-        subject: header,
-        introText: cleanNote || 'Sürücü reytinqində yenilənmə edildi. Yeni top sıralama aşağıdadır.',
-        htmlContent: `
-            <ul style="margin:0;padding-left:18px;line-height:1.7;">${htmlRows}</ul>
-            <div style="margin-top:16px;">
-                <a
-                    href="${safeDriversUrl}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style="display:inline-block;background:#f97316;color:#0b1220;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;letter-spacing:0.02em;"
-                >
-                    Bütün reytinqi gör
-                </a>
-            </div>
-        `,
-        textContent: textParts.join('\n')
+        buildContent: (locale) => buildDriversRankingSubscriberMailContent(categories, driversUrl, note, locale)
     });
 };
 
@@ -2291,15 +2666,72 @@ app.post('/api/subscribers', async (req, res) => {
         const email = normalizeSubscriberEmail(req.body?.email);
         const name = String(req.body?.name || '').trim();
         const source = String(req.body?.source || 'site').trim() || 'site';
+        const locale = req.body?.locale || req.headers['x-site-language'] || '';
         if (!email) return res.status(400).json({ error: 'Düzgün email daxil edin' });
 
-        const result = await upsertSubscriber({ email, name, source });
+        const result = await upsertSubscriber({ email, name, source, locale });
         if (!result.ok) return res.status(500).json({ error: 'Abunə saxlana bilmədi' });
-        res.json({ success: true, email: result.email });
+        res.json({ success: true, email: result.email, locale: normalizeLocaleCode(locale || 'AZ') });
     } catch (error) {
         console.error('Error subscribing newsletter:', error);
         res.status(500).json({ error: 'Abunə zamanı xəta baş verdi' });
     }
+});
+
+app.get('/api/subscribers/unsubscribe', async (req, res) => {
+    const token = String(req.query?.token || '').trim();
+    let locale = 'AZ';
+    let title = '';
+    let message = '';
+    let statusCode = 200;
+
+    try {
+        const payload = verifySubscriberUnsubscribeToken(token);
+        locale = payload.locale;
+        const mailCopy = getBulkSubscriberMailLocaleStrings(locale);
+        const result = await deactivateSubscriber({ email: payload.email, locale: payload.locale });
+
+        if (!result.ok) {
+            throw new Error(result.reason || 'unsubscribe_failed');
+        }
+
+        title = result.wasActive ? mailCopy.unsubscribeSuccessTitle : mailCopy.unsubscribeAlreadyTitle;
+        message = result.wasActive ? mailCopy.unsubscribeSuccessText : mailCopy.unsubscribeAlreadyText;
+    } catch (error) {
+        const fallbackLocale = normalizeLocaleCode(locale);
+        const mailCopy = getBulkSubscriberMailLocaleStrings(fallbackLocale);
+        title = mailCopy.unsubscribeInvalidTitle;
+        message = mailCopy.unsubscribeInvalidText;
+        statusCode = 400;
+    }
+
+    const pageCopy = getBulkSubscriberMailLocaleStrings(locale);
+    const siteUrl = `${getPublicSiteBaseUrl()}/`;
+    const html = `<!doctype html>
+<html lang="${escapeHtml(locale === 'RU' ? 'ru' : locale === 'EN' ? 'en' : 'az')}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(title)}</title>
+</head>
+<body style="margin:0;background:#020617;color:#f8fafc;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="max-width:560px;width:100%;background:#0b1220;border:1px solid #1e293b;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(2,6,23,0.45);">
+      <div style="height:4px;background:linear-gradient(90deg,#f97316,#fb923c,#fdba74);"></div>
+      <div style="padding:32px 28px;text-align:center;">
+        <div style="font-size:13px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#f97316;margin-bottom:14px;">Forsaj Club</div>
+        <h1 style="margin:0 0 12px;font-size:30px;line-height:1.15;">${escapeHtml(title)}</h1>
+        <p style="margin:0 0 24px;color:#94a3b8;font-size:15px;line-height:1.7;">${escapeHtml(message)}</p>
+        <a href="${escapeHtml(siteUrl)}" style="display:inline-block;background:#f97316;color:#0b1220;text-decoration:none;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:0.02em;">${escapeHtml(pageCopy.backToSite)}</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    res.status(statusCode);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
 });
 
 // API: List Subscribers (Auth)
@@ -2954,7 +3386,8 @@ app.post('/api/applications', async (req, res) => {
             const subResult = await upsertSubscriber({
                 email: candidateEmail,
                 name,
-                source: source || 'applications'
+                source: source || 'applications',
+                locale: parsedContent?.locale || req.body?.locale || req.headers['x-site-language'] || ''
             });
             if (!subResult.ok) {
                 console.warn('[applications] newsletter subscriber could not be saved:', candidateEmail);
@@ -2970,10 +3403,11 @@ app.post('/api/applications', async (req, res) => {
             [name, contact, type, content]
         );
 
+        const applicationLocale = normalizeLocaleCode(parsedContent?.locale || req.body?.locale || req.headers['x-site-language'] || 'AZ');
         let mailStatus = { sent: false, reason: 'not_attempted' };
         let whatsappStatus = { sent: false, reason: 'not_attempted' };
         try {
-            mailStatus = await sendApplicationNotificationEmail({ name, contact, type, content });
+            mailStatus = await sendApplicationNotificationEmail({ name, contact, type, content, locale: applicationLocale });
             if (!mailStatus.sent) {
                 console.warn('[applications] notification email skipped:', mailStatus.reason);
             }
@@ -2984,14 +3418,13 @@ app.post('/api/applications', async (req, res) => {
 
         if (isPilotType) {
             try {
-                const locale = normalizeLocaleCode(parsedContent?.locale || req.body?.locale || req.headers['x-site-language'] || 'AZ');
                 const eventTitle = String(parsedContent?.event || '').trim();
                 const whatsapp = String(parsedContent?.whatsapp || contact).trim();
                 whatsappStatus = await sendPilotApplicationWhatsAppNotifications({
                     name,
                     whatsapp,
                     eventTitle,
-                    locale
+                    locale: applicationLocale
                 });
                 if (!whatsappStatus.sent) {
                     console.warn('[applications] whatsapp notification skipped:', whatsappStatus.reason);
