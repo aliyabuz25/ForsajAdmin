@@ -72,6 +72,35 @@ const DEFAULT_PAYLOAD: LocalizationPayload = {
 const EDITABLE_LANGUAGES: EditableSiteLanguage[] = ['RU', 'ENG'];
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
 const HOME_AGGREGATE_PAGE_IDS = ['home', 'navbar', 'hero', 'marquee', 'categoryleaders', 'nextrace', 'news', 'partners', 'videoarchive', 'footer'];
+const PAGE_SORT_ORDER = [
+    'home',
+    'about',
+    'admin_sidebar',
+    'app',
+    'categoryleaders',
+    'contactpage',
+    'driverspage',
+    'eventspage',
+    'footer',
+    'gallerypage',
+    'general',
+    'hero',
+    'marquee',
+    'navbar',
+    'news',
+    'newspage',
+    'nextrace',
+    'partners',
+    'privacypolicypage',
+    'rulespage',
+    'termsofservicepage',
+    'videoarchive',
+    'whatisoffroad'
+] as const;
+const PAGE_SORT_INDEX = PAGE_SORT_ORDER.reduce<Record<string, number>>((acc, pageId, index) => {
+    acc[pageId] = index;
+    return acc;
+}, {});
 const PAGE_META: Record<string, PageLabelMeta> = {
     about: {
         az: 'Haqqımızda',
@@ -340,6 +369,18 @@ const getPageDisplayDescription = (
     return String(pageId || '').trim();
 };
 
+const comparePageIds = (left: string, right: string) => {
+    const leftIndex = PAGE_SORT_INDEX[left];
+    const rightIndex = PAGE_SORT_INDEX[right];
+
+    if (Number.isFinite(leftIndex) && Number.isFinite(rightIndex) && leftIndex !== rightIndex) {
+        return leftIndex - rightIndex;
+    }
+    if (Number.isFinite(leftIndex)) return -1;
+    if (Number.isFinite(rightIndex)) return 1;
+    return left.localeCompare(right, 'en');
+};
+
 const isUnderscorePlaceholder = (value: unknown) => {
     const text = String(value || '').trim();
     if (!text || !text.includes('_')) return false;
@@ -604,10 +645,8 @@ const buildDisplayPagesState = (pages: LocalizationPayload['pages']): DisplayPag
         }
     });
 
-    if (Object.keys(homeEntries).length > 0) {
-        displayPages.home = homeEntries;
-        origins.home = homeOrigins;
-    }
+    displayPages.home = homeEntries;
+    origins.home = homeOrigins;
 
     return { pages: displayPages, origins };
 };
@@ -661,7 +700,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     );
 
     const allPageIds = useMemo(
-        () => Object.keys(displayPagesState.pages || {}).sort((a, b) => a.localeCompare(b, 'en')),
+        () => Object.keys(displayPagesState.pages || {}).sort(comparePageIds),
         [displayPagesState]
     );
 
