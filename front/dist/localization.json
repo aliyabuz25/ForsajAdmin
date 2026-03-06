@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 314,
-  "generatedAt": "2026-03-05T18:15:01.219Z",
+  "schemaVersion": 315,
+  "generatedAt": "2026-03-05T18:40:53.981Z",
   "languages": [
     "AZ",
     "RU",
@@ -545,9 +545,9 @@
         "ENG": "GENERAL INQUIRIES AND ADMINISTRATION"
       },
       "DEPT_HQ_EMAIL": {
-        "AZ": "DEPT_HQ_EMAIL",
-        "RU": "DEPT_HQ_EMAIL",
-        "ENG": "DEPT_HQ_EMAIL"
+        "AZ": "HQ@FORSAJ.AZ",
+        "RU": "HQ@FORSAJ.AZ",
+        "ENG": "HQ@FORSAJ.AZ"
       },
       "DEPT_HQ_TITLE": {
         "AZ": "BAŞ OFİS",
@@ -560,9 +560,9 @@
         "ENG": "PRESS AND COOPERATION"
       },
       "DEPT_PR_EMAIL": {
-        "AZ": "DEPT_PR_EMAIL",
-        "RU": "DEPT_PR_EMAIL",
-        "ENG": "DEPT_PR_EMAIL"
+        "AZ": "PR@FORSAJ.AZ",
+        "RU": "PR@FORSAJ.AZ",
+        "ENG": "PR@FORSAJ.AZ"
       },
       "DEPT_PR_TITLE": {
         "AZ": "MEDİA VƏ PR",
@@ -575,9 +575,9 @@
         "ENG": "TECHNICAL ASSISTANCE FOR PILOTS"
       },
       "DEPT_TECH_EMAIL": {
-        "AZ": "DEPT_TECH_EMAIL",
-        "RU": "DEPT_TECH_EMAIL",
-        "ENG": "DEPT_TECH_EMAIL"
+        "AZ": "TECH@FORSAJ.AZ",
+        "RU": "TECH@FORSAJ.AZ",
+        "ENG": "TECH@FORSAJ.AZ"
       },
       "DEPT_TECH_TITLE": {
         "AZ": "TEXNİKİ DƏSTƏK",
