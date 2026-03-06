@@ -264,6 +264,37 @@ const ADMIN_TEXT_PAIRS: TranslationPair[] = [
   { az: 'Aktiv', ru: 'Активно' },
   { az: 'Deaktiv', ru: 'Неактивно' },
   { az: 'WhatsApp Integration', ru: 'Интеграция WhatsApp' },
+  { az: 'Admin Panel', ru: 'Панель администратора' },
+  { az: 'Komponentləri və məzmunu axtar...', ru: 'Поиск компонентов и контента...' },
+  { az: 'Geniş Rejim: Məcburi', ru: 'Широкий режим: обязателен' },
+  { az: 'Gizlədilənləri Aç', ru: 'Показать скрытые' },
+  { az: 'Saxla', ru: 'Сохранить' },
+  { az: 'Ana Səhifə', ru: 'Главная' },
+  { az: 'Tədbirlər', ru: 'События' },
+  { az: 'Tədbir İdarəetməsi', ru: 'Управление мероприятиями' },
+  { az: 'Tedbir Yönetimi', ru: 'Управление мероприятиями' },
+  { az: 'Xəbərlər', ru: 'Новости' },
+  { az: 'Sürücülər', ru: 'Пилоты' },
+  { az: 'Videolar', ru: 'Видео' },
+  { az: 'Fotolar', ru: 'Фото' },
+  { az: 'Geniş rejim məcburi aktivdir: texniki ID, sıralama, silmə və gizlətmə alətləri hər zaman görünür.', ru: 'Расширенный режим включен принудительно: технический ID, сортировка, удаление и скрытие всегда отображаются.' },
+  { az: 'Əlaqə Səhifəsi', ru: 'Страница контактов' },
+  { az: 'Əlaqə səhifəsində ofis, departament və form mətnləri.', ru: 'Тексты офиса, отделов и формы на странице контактов.' },
+  { az: 'VƏZİYYƏT:', ru: 'СИТУАЦИЯ:' },
+  { az: 'Müraciət İstiqaməti Seçimləri', ru: 'Варианты направления обращения' },
+  { az: 'Yeni Seçim', ru: 'Новый вариант' },
+  { az: 'Bu seçimlər əlaqə formundakı dropdown içində göstərilir.', ru: 'Эти варианты отображаются в выпадающем списке формы контакта.' },
+  { az: 'Mətn Sahələri', ru: 'Текстовые поля' },
+  { az: 'Mətn Əlavə Et', ru: 'Добавить текст' },
+  { az: 'Səhifə və Sistem', ru: 'Страница и система' },
+  { az: 'Səhifə başlığı, status və sistem mesajları', ru: 'Заголовок страницы, статус и системные сообщения' },
+  { az: 'Səhifənin ən üstündə görünən əsas başlıq.', ru: 'Основной заголовок, отображаемый в верхней части страницы.' },
+  { az: 'Açar mətn', ru: 'Ключевой текст' },
+  { az: 'Link əlavə et', ru: 'Добавить ссылку' },
+  { az: 'Yuxarı', ru: 'Вверх' },
+  { az: 'Aşağı', ru: 'Вниз' },
+  { az: 'Yuxarı daşı', ru: 'Переместить вверх' },
+  { az: 'Aşağı daşı', ru: 'Переместить вниз' },
 ];
 
 const buildLookup = (pairs: TranslationPair[], to: 'az' | 'ru') => {
@@ -290,7 +321,23 @@ export const translateAdminUiText = (lang: AdminLanguage, value: string): string
   const [, prefix, core, suffix] = match;
   const lookup = lang === 'ru' ? TO_RU : TO_AZ;
   const translated = lookup.get(core);
-  if (!translated) return input;
+  if (!translated) {
+    if (lang === 'ru') {
+      const optionMatch = core.match(/^Seçim\s+(\d+)$/i);
+      if (optionMatch) return `${prefix}Вариант ${optionMatch[1]}${suffix}`;
+      const orderMatch = core.match(/^Sıra:\s*(\d+)$/i);
+      if (orderMatch) return `${prefix}Ряд: ${orderMatch[1]}${suffix}`;
+    }
+
+    if (lang === 'az') {
+      const optionMatch = core.match(/^Вариант\s+(\d+)$/i);
+      if (optionMatch) return `${prefix}Seçim ${optionMatch[1]}${suffix}`;
+      const orderMatch = core.match(/^Ряд:\s*(\d+)$/i);
+      if (orderMatch) return `${prefix}Sıra: ${orderMatch[1]}${suffix}`;
+    }
+
+    return input;
+  }
   return `${prefix}${translated}${suffix}`;
 };
 

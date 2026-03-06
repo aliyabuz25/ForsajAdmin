@@ -5228,7 +5228,7 @@ const VisualEditor: React.FC = () => {
                         className={`mode-btn ${editorMode === 'event-management' ? 'active' : ''}`}
                         onClick={() => setEditorMode('event-management')}
                     >
-                        Tedbir Yönetimi
+                        Tədbir İdarəetməsi
                     </button>
                     <button
                         className={`mode-btn ${editorMode === 'news' ? 'active' : ''}`}
@@ -5266,7 +5266,7 @@ const VisualEditor: React.FC = () => {
                 <div className="editor-layout with-sidebar">
                     <aside className="page-list">
                         <div className="list-header" style={{ marginBottom: '1rem' }}>
-                            <h3>Tedbir Yönetimi</h3>
+                            <h3>Tədbir İdarəetməsi</h3>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <button
@@ -5297,7 +5297,7 @@ const VisualEditor: React.FC = () => {
                         <div className="editor-workspace">
                             <div className="canvas-header canvas-header-block">
                                 <h2 style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <Calendar size={22} /> Tedbir Yönetimi
+                                    <Calendar size={22} /> Tədbir İdarəetməsi
                                 </h2>
                                 <p style={{ color: '#64748b' }}>
                                     Tədbir modalı, pilot qeydiyyat formu və klub dropdown seçimlərini buradan dəyişin.

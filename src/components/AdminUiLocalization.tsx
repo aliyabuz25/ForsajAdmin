@@ -121,14 +121,30 @@ const shouldSkipNode = (node: Text) => {
 
 const AdminUiLocalization: React.FC<AdminUiLocalizationProps> = ({ language }) => {
   const [lookup, setLookup] = useState<Map<string, LocalizedEntry>>(new Map());
-  const textOriginalsRef = useRef<WeakMap<Text, string>>(new WeakMap());
-  const attrOriginalsRef = useRef<WeakMap<Element, Map<string, string>>>(new WeakMap());
+  const textOriginalsRef = useRef<Map<Text, string>>(new Map());
+  const attrOriginalsRef = useRef<Map<Element, Map<string, string>>>(new Map());
   const debounceTimerRef = useRef<number | null>(null);
 
   const applyLocalization = useCallback(() => {
     if (language === 'az') {
-      textOriginalsRef.current = new WeakMap();
-      attrOriginalsRef.current = new WeakMap();
+      textOriginalsRef.current.forEach((original, textNode) => {
+        if (!textNode.isConnected) return;
+        if ((textNode.nodeValue || '') !== original) {
+          textNode.nodeValue = original;
+        }
+      });
+
+      attrOriginalsRef.current.forEach((attrMap, el) => {
+        if (!el.isConnected) return;
+        attrMap.forEach((original, attr) => {
+          if (el.getAttribute(attr) !== original) {
+            el.setAttribute(attr, original);
+          }
+        });
+      });
+
+      textOriginalsRef.current.clear();
+      attrOriginalsRef.current.clear();
       return;
     }
 
