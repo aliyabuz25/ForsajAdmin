@@ -1164,6 +1164,7 @@ const VisualEditor: React.FC = () => {
     const [selectedPhotoEventId, setSelectedPhotoEventId] = useState<string>('');
     const [photoAlbumFilter, setPhotoAlbumFilter] = useState<string>('all');
     const [newPhotoAlbumName, setNewPhotoAlbumName] = useState<string>('');
+    const [renamePhotoAlbumName, setRenamePhotoAlbumName] = useState<string>('');
     const galleryMultiUploadInputRef = useRef<HTMLInputElement | null>(null);
     const [homeEditTab, setHomeEditTab] = useState<HomeEditTab>('all');
 
@@ -3839,6 +3840,50 @@ const VisualEditor: React.FC = () => {
         setPhotoAlbumFilter(normalizedAlbum);
     };
 
+    const renamePhotoAlbumBulk = () => {
+        if (photoAlbumFilter === 'all') {
+            toast.error('Yenidən adlandırmaq üçün əvvəlcə albom seçin');
+            return;
+        }
+
+        const sourceAlbum = normalizePhotoAlbum(photoAlbumFilter);
+        const targetAlbum = normalizePhotoAlbum(renamePhotoAlbumName);
+
+        if (!renamePhotoAlbumName.trim()) {
+            toast.error('Yeni albom adı daxil edin');
+            return;
+        }
+
+        if (sourceAlbum === targetAlbum) {
+            toast.error('Yeni albom adı fərqli olmalıdır');
+            return;
+        }
+
+        let renamedCount = 0;
+        setGalleryPhotos((prev) => prev.map((item) => {
+            if (normalizePhotoAlbum(item.album) !== sourceAlbum) return item;
+            renamedCount += 1;
+            return { ...item, album: targetAlbum };
+        }));
+
+        if (renamedCount === 0) {
+            toast.error('Seçilən albomda yenilənəcək şəkil yoxdur');
+            return;
+        }
+
+        if (selectedPhotoId !== null && normalizePhotoAlbum(photoForm.album) === sourceAlbum) {
+            setPhotoForm((prev) => ({ ...prev, album: targetAlbum }));
+        }
+
+        if (normalizePhotoAlbum(selectedPhotoAlbum) === sourceAlbum) {
+            setSelectedPhotoAlbum(targetAlbum);
+        }
+
+        setPhotoAlbumFilter(targetAlbum);
+        setRenamePhotoAlbumName(targetAlbum);
+        toast.success(`"${sourceAlbum}" albomu "${targetAlbum}" olaraq yeniləndi`);
+    };
+
     const addGalleryPhoto = () => {
         const newId = getNextGalleryPhotoId();
         const normalizedAlbum = normalizePhotoAlbum(selectedPhotoAlbum);
@@ -4189,6 +4234,7 @@ const VisualEditor: React.FC = () => {
         const note = window.prompt('Bildiriş üçün qısa qeyd (istəyə bağlı):', '') ?? '';
         setIsSendingRankingNotice(true);
         const tid = toast.loading('Abunələrə bildiriş göndərilir...');
+        const benignMailReasons = new Set(['smtp_disabled', 'smtp_not_configured', 'no_subscribers', 'no_drivers_data']);
         try {
             const res = await fetch('/api/notifications/drivers-ranking', {
                 method: 'POST',
@@ -4199,10 +4245,26 @@ const VisualEditor: React.FC = () => {
                 body: JSON.stringify({ note, approved: true })
             });
             const data = await res.json().catch(() => ({} as any));
+            const reason = String(data?.mailStatus?.reason || '').trim();
+            const recipients = Number(data?.mailStatus?.recipients || 0);
+            const failedRecipients = Number(data?.mailStatus?.failedRecipients || 0);
             if (!res.ok || !data?.success) {
+                if (benignMailReasons.has(reason)) {
+                    if (reason === 'no_subscribers') {
+                        toast('Aktiv newsletter abunəçisi yoxdur.', { id: tid });
+                    } else if (reason === 'no_drivers_data') {
+                        toast('Sürücü məlumatı olmadığı üçün bildiriş göndərilmədi.', { id: tid });
+                    } else {
+                        toast('SMTP aktiv deyil və ya tam qurulmayıb.', { id: tid });
+                    }
+                    return;
+                }
                 throw new Error(data?.error || 'Bildiriş göndərilə bilmədi');
             }
-            const recipients = Number(data?.mailStatus?.recipients || 0);
+            if (reason === 'partial_failure' && failedRecipients > 0) {
+                toast.success(`Bildiriş qismən göndərildi (${Math.max(recipients - failedRecipients, 0)}/${recipients})`, { id: tid });
+                return;
+            }
             toast.success(recipients > 0 ? `Bildiriş göndərildi (${recipients} abunəçi)` : 'Bildiriş göndərildi', { id: tid });
         } catch (error: any) {
             toast.error(error?.message || 'Bildiriş göndərilə bilmədi', { id: tid });
@@ -5160,6 +5222,14 @@ const VisualEditor: React.FC = () => {
     const activePhotoAlbumFilter = photoAlbumFilter === 'all'
         ? 'all'
         : normalizePhotoAlbum(photoAlbumFilter);
+
+    useEffect(() => {
+        if (photoAlbumFilter === 'all') {
+            setRenamePhotoAlbumName('');
+            return;
+        }
+        setRenamePhotoAlbumName(normalizePhotoAlbum(photoAlbumFilter));
+    }, [photoAlbumFilter]);
 
     const filteredPhotos = galleryPhotos.filter((item) => {
         const itemAlbum = normalizePhotoAlbum(item.album);
@@ -6519,6 +6589,42 @@ const VisualEditor: React.FC = () => {
                                         </option>
                                     ))}
                                 </select>
+                                <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '4px' }}>ALBOM ADINI YENİLƏ</label>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <input
+                                        type="text"
+                                        value={renamePhotoAlbumName}
+                                        onChange={(e) => setRenamePhotoAlbumName(e.target.value)}
+                                        placeholder="Seçilən albomun yeni adı"
+                                        disabled={photoAlbumFilter === 'all'}
+                                        style={{
+                                            flex: 1,
+                                            minWidth: 0,
+                                            padding: '8px 10px',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            fontSize: '12px',
+                                            background: photoAlbumFilter === 'all' ? '#f8fafc' : '#fff'
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={renamePhotoAlbumBulk}
+                                        disabled={photoAlbumFilter === 'all'}
+                                        style={{
+                                            padding: '8px 10px',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            background: photoAlbumFilter === 'all' ? '#f8fafc' : '#fff',
+                                            cursor: photoAlbumFilter === 'all' ? 'not-allowed' : 'pointer',
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            color: photoAlbumFilter === 'all' ? '#94a3b8' : '#0f172a'
+                                        }}
+                                    >
+                                        Yenilə
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={deletePhotoAlbumBulk}

@@ -1422,7 +1422,7 @@ const normalizeOptionalLocaleCode = (value) => {
     return trimmed ? normalizeLocaleCode(trimmed) : '';
 };
 
-const getPublicSiteBaseUrl = (fallback = 'http://localhost:3005') => {
+const getPublicSiteBaseUrl = (fallback = 'https://forsaj.octotech.az') => {
     const raw = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim();
     return (raw || fallback).replace(/\/+$/, '');
 };
@@ -1949,6 +1949,8 @@ const sendBulkSubscriberEmail = async ({ buildContent }) => {
     }, {});
 
     let sentBatches = 0;
+    let failedRecipients = 0;
+    let firstFailureReason = '';
     const localeStats = [];
 
     for (const [locale, localeRecipients] of Object.entries(recipientsByLocale)) {
@@ -1968,6 +1970,8 @@ const sendBulkSubscriberEmail = async ({ buildContent }) => {
             ? `<img src="${escapeHtml(logoAsset.src)}" alt="${safeSiteName}" style="height:44px;max-width:220px;width:auto;display:block;object-fit:contain;" />`
             : `<div style="font-size:22px;font-weight:900;letter-spacing:0.02em;color:#f9fafb;">${safeSiteName}</div>`;
 
+        let localeSentCount = 0;
+        let localeFailedCount = 0;
         for (const recipientEmail of localeRecipients) {
             const unsubscribeUrl = buildSubscriberUnsubscribeUrl({
                 baseUrl: getPublicSiteBaseUrl(smtp.siteUrl || 'http://localhost:3005'),
@@ -2010,24 +2014,58 @@ const sendBulkSubscriberEmail = async ({ buildContent }) => {
                 '',
                 `${localeCopy.unsubscribeTextLine}: ${unsubscribeUrl}`
             ].join('\n');
-            await transport.sendMail({
-                from: smtp.from || smtp.user,
-                to: recipientEmail,
-                subject,
-                text: textBody,
-                html: htmlBody,
-                attachments: logoAsset.attachments,
-                headers: {
-                    'List-Unsubscribe': `<${unsubscribeUrl}>`
+            try {
+                await transport.sendMail({
+                    from: smtp.from || smtp.user,
+                    to: recipientEmail,
+                    subject,
+                    text: textBody,
+                    html: htmlBody,
+                    attachments: logoAsset.attachments,
+                    headers: {
+                        'List-Unsubscribe': `<${unsubscribeUrl}>`
+                    }
+                });
+                sentBatches += 1;
+                localeSentCount += 1;
+            } catch (error) {
+                failedRecipients += 1;
+                localeFailedCount += 1;
+                if (!firstFailureReason) {
+                    firstFailureReason = error?.message || 'mail_error';
                 }
-            });
-            sentBatches += 1;
+                console.error('[subscribers] bulk email send failed:', recipientEmail, error?.message || error);
+            }
         }
 
-        localeStats.push({ locale, recipients: localeRecipients.length });
+        localeStats.push({
+            locale,
+            recipients: localeRecipients.length,
+            sent: localeSentCount,
+            failed: localeFailedCount
+        });
     }
 
-    return { sent: true, recipients: recipients.length, batches: sentBatches, locales: localeStats };
+    if (sentBatches === 0) {
+        return {
+            sent: false,
+            reason: failedRecipients > 0 ? 'mail_error' : 'no_batches_sent',
+            recipients: recipients.length,
+            failedRecipients,
+            failureMessage: firstFailureReason,
+            locales: localeStats
+        };
+    }
+
+    return {
+        sent: true,
+        reason: failedRecipients > 0 ? 'partial_failure' : 'sent',
+        recipients: recipients.length,
+        batches: sentBatches,
+        failedRecipients,
+        ...(firstFailureReason ? { failureMessage: firstFailureReason } : {}),
+        locales: localeStats
+    };
 };
 
 const extractNewEvents = (previousList, nextList) => {
