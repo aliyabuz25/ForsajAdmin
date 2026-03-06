@@ -33,23 +33,7 @@ type FrontView =
 type EventsOpenMode = 'default' | 'force-list';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<FrontView>('home');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [eventsOpenMode, setEventsOpenMode] = useState<EventsOpenMode>('default');
-  const handleViewChange = (view: FrontView, category: string | null = null) => {
-    setCurrentView((prevView) => {
-      if (view === 'events') {
-        setEventsOpenMode(prevView === 'contact' ? 'force-list' : 'default');
-      }
-      return view;
-    });
-    setActiveCategory(category);
-    window.scrollTo(0, 0);
-  };
-
-  const { getText } = useSiteContent('general');
-
-  useEffect(() => {
+  const [currentView, setCurrentView] = useState<FrontView>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const rawView = (params.get('view') || '').trim().toLowerCase();
@@ -69,7 +53,7 @@ const App: React.FC = () => {
       };
 
       const resolvedView = viewMap[rawView];
-      if (!resolvedView) return;
+      if (!resolvedView) return 'home';
 
       if (resolvedView === 'news') {
         const newsId = Number(rawNewsId);
@@ -77,6 +61,7 @@ const App: React.FC = () => {
           sessionStorage.setItem(SELECTED_NEWS_ID_KEY, String(newsId));
         }
       }
+
       if (resolvedView === 'events') {
         const eventId = Number(rawNewsId);
         if (Number.isFinite(eventId)) {
@@ -84,12 +69,25 @@ const App: React.FC = () => {
         }
       }
 
-      setCurrentView(resolvedView);
-      setActiveCategory(null);
+      return resolvedView;
     } catch {
-      // ignore malformed query string / storage access errors
+      return 'home';
     }
-  }, []);
+  });
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [eventsOpenMode, setEventsOpenMode] = useState<EventsOpenMode>('default');
+  const handleViewChange = (view: FrontView, category: string | null = null) => {
+    setCurrentView((prevView) => {
+      if (view === 'events') {
+        setEventsOpenMode(prevView === 'contact' ? 'force-list' : 'default');
+      }
+      return view;
+    });
+    setActiveCategory(category);
+    window.scrollTo(0, 0);
+  };
+
+  const { getText } = useSiteContent('general');
 
   useEffect(() => {
     const onPageShow = (event: PageTransitionEvent) => {

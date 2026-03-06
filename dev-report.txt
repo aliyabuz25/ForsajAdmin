@@ -1,0 +1,33 @@
+DEV REPORT
+Tarih: 06.03.2026
+Proje: Forsaj Admin Paneli
+
+1. [dd1d59e] Admin dil değiştirme akışındaki durum geri yükleme problemi düzeltildi; VisualEditor RU etiketleri iyileştirildi.
+2. [5bb44dd] Panel gizleme/gösterme ile ilgili eksik admin çeviri etiketleri tamamlandı.
+3. [251df87] Admin paneli İngilizce fallback çeviri kapsamı genişletildi.
+4. Admin UI otomatik çeviri katmanı güncellendi: `placeholder`, `title` ve `aria-label` alanları daha geniş kapsamda çevrilir hale getirildi.
+5. Admin UI otomatik çeviri katmanında `select/option` metinlerinin çevrilmemesine neden olan kısıt kaldırıldı.
+6. UsersManager sayfası tamamen dil-duyarlı hale getirildi (AZ/RU/EN): başlıklar, açıklamalar, kart metinleri, filtreler, boş durum metinleri, modal metinleri ve butonlar.
+7. UsersManager sayfasındaki toast/hata/başarı mesajları çeviri fonksiyonuna bağlandı.
+8. UsersManager tarih gösterimi aktif dile göre biçimlenecek şekilde güncellendi (`az-AZ`, `ru-RU`, `en-US`).
+9. UsersManager açılır pencereleri merkez modal yapıdan sağ offcanvas yapıya dönüştürüldü (Yeni idarəçi + İstifadəçini redaktə et).
+10. Offcanvas davranışları eklendi: backdrop tıklaması ile kapanma, `Esc` ile kapanma, açıkken body scroll kilidi.
+11. Offcanvas UX düzeltmesi yapıldı: `Saxla / Ləğv et` butonlarının çok altta kalma sorunu giderildi, panel yüksekliği `100dvh` ile stabilize edildi.
+12. `src/App.tsx` tarafında global admin yükleniyor/404 metinleri çeviri fonksiyonuna bağlandı.
+13. `src/App.tsx` route güncellendi: UsersManager bileşenine aktif admin dili prop olarak geçirildi.
+14. `src/utils/adminLanguage.ts` sözlüğü kapsamlı şekilde genişletildi (UsersManager + GeneralSettings + Privacy/Terms edit ekranı için eksik RU/EN karşılıkları eklendi).
+15. Dinamik metin çeviri kalıpları eklendi:
+16. - `X nəticə göstərilir` / `X результатов` / `X results shown`
+17. - `Bölmə N`, `Bölmə N Başlıq`, `Bölmə N İkon`, `Bölmə N Mətn`
+18. - `Bölmə N əlavə edildi`
+19. GeneralSettings ekranında karışık dil görünen alanlar için tam sözlük eşleşmeleri eklendi:
+20. - SEO əsas, OG/Twitter, təsdiq kodları, əlaqə, şöbə e-poçtları, SMTP, brendinq, sosial linklər, WhatsApp, marquee, statistika
+21. - Alan label/placeholder/help metinleri ve aksiyon etiketleri (`Göstər`, `Test et`, `Yüklə`, vb.)
+22. Privacy Policy / Terms of Service düzenleme ekranında karışık kalan metinler için sözlük kapsamı genişletildi:
+23. - Bölmə Maddələri, Bölmə Əlavə Et, Bölmə başlıkları, ikon alanları, giriş metni, yenilənmə etiketleri, əlaqə bölməsi, digər sahələr
+24. - Görsel bölümü metinleri (Bölmədəki Şəkillər, Yeni Şəkil Yeri, Yeni Şəkil Yüklə, Cihazdan Yüklə, vb.)
+25. Teknik doğrulamalar düzenli çalıştırıldı: ilgili dosyalarda ESLint kontrolü ve tam build (tsc + vite build) başarılı.
+26. Docker operasyonları gün içinde tekrarlı olarak yürütüldü: `docker compose -f docker-compose.local.run.yml up -d --build`.
+27. Son durum servis sağlığı doğrulandı: admin (`3011`) healthy, backend (`5005`) healthy, frontend (`3010`) healthy.
+
+Not: Gün sonu itibarıyla bazı dosyalarda commitlenmemiş çalışma değişiklikleri bulunmaktadır; bu rapor bugünkü tamamlanan ve uygulanan düzeltmeleri teknik sırayla özetler.

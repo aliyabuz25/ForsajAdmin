@@ -8,6 +8,15 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
   const { getText, getImage, getUrl, isLoading } = useSiteContent('hero');
+  const renderMultiline = (value: string) => {
+    const lines = String(value || '').replace(/\r\n?/g, '\n').split('\n');
+    return lines.map((line, index) => (
+      <React.Fragment key={`line-${index}`}>
+        {line}
+        {index < lines.length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
 
   const heroImg = getImage('hero-bg', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop');
 
@@ -115,15 +124,15 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
         <div className="flex items-center justify-center gap-2 mb-6">
           <div className="w-10 h-0.5 bg-[#FF4D00]"></div>
           <h3 className="hero-kicker text-[#FF4D00] font-black italic tracking-[0.16em] text-[10px] uppercase break-words [overflow-wrap:anywhere]">
-            {getText('text-0', 'AZERBAIJAN OFFROAD MOTORSPORT HUB')}
+            {renderMultiline(getText('text-0', 'AZERBAIJAN OFFROAD MOTORSPORT HUB'))}
           </h3>
           <div className="w-10 h-0.5 bg-[#FF4D00]"></div>
         </div>
         <h2 className="hero-title text-[clamp(2rem,8vw,6.8rem)] font-black italic tracking-[-0.02em] leading-[0.92] mb-8 text-white uppercase break-words [overflow-wrap:anywhere]">
-          {getText('text-1', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI')}
+          {renderMultiline(getText('text-1', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI'))}
         </h2>
         <p className="hero-desc text-gray-400 font-bold italic max-w-2xl mx-auto mb-10 text-[13px] md:text-[15px] leading-relaxed uppercase tracking-wide break-words [overflow-wrap:anywhere]">
-          {getText('text-2', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.')}
+          {renderMultiline(getText('text-2', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.'))}
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-center items-center w-full max-w-3xl mx-auto">
@@ -132,7 +141,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
             className="w-full sm:w-auto max-w-full bg-[#FF4D00] hover:bg-white hover:text-black text-black font-black italic py-5 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-3 transition-all transform hover:scale-105 active:scale-95 shadow-[0_10px_40px_rgba(255,77,0,0.3)]"
           >
             <span className="break-words [overflow-wrap:anywhere] text-center">
-              {getText('text-3', 'YARIŞLARA BAX')}
+              {renderMultiline(getText('text-3', 'YARIŞLARA BAX'))}
             </span>
             <ChevronRight className="w-6 h-6 shrink-0" />
           </button>
@@ -140,7 +149,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
             onClick={() => handleAction('text-4', 'about')}
             className="w-full sm:w-auto max-w-full border-2 border-white/20 text-white hover:border-[#FF4D00] hover:text-[#FF4D00] font-black italic py-5 px-6 sm:px-12 rounded-sm transition-all bg-white/5 backdrop-blur-sm break-words [overflow-wrap:anywhere]"
           >
-            {getText('text-4', 'HAQQIMIZDA')}
+            {renderMultiline(getText('text-4', 'HAQQIMIZDA'))}
           </button>
         </div>
       </div>

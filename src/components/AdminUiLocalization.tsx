@@ -113,10 +113,10 @@ const shouldSkipNode = (node: Text) => {
   if (!node.nodeValue || !node.nodeValue.trim()) return true;
   if (parent.closest('.sidebar')) return true;
   if (parent.closest('.notranslate,[translate="no"]')) return true;
-  if (parent.closest('input,textarea,select,[contenteditable="true"],[contenteditable=""]')) return true;
+  if (parent.closest('input,textarea,[contenteditable="true"],[contenteditable=""]')) return true;
 
   const tag = parent.tagName;
-  return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA' || tag === 'OPTION';
+  return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA';
 };
 
 const AdminUiLocalization: React.FC<AdminUiLocalizationProps> = ({ language }) => {
@@ -172,8 +172,6 @@ const AdminUiLocalization: React.FC<AdminUiLocalizationProps> = ({ language }) =
     attrNodes.forEach((el) => {
       if (el.closest('.sidebar')) return;
       if (el.closest('.notranslate,[translate="no"]')) return;
-      if (el.matches('input:not([type="button"]):not([type="submit"])')) return;
-      if (el.matches('textarea,select,[contenteditable="true"],[contenteditable=""]')) return;
 
       let attrMap = attrOriginalsRef.current.get(el);
       if (!attrMap) {

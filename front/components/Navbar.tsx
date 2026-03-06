@@ -113,11 +113,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const { getImage: getImageGeneral } = useSiteContent('general');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileLanguageModalOpen, setIsMobileLanguageModalOpen] = useState(false);
-  const [mobileLanguage, setMobileLanguage] = useState<string>(() => {
-    if (language === 'RU') return 'ru';
-    if (language === 'ENG') return 'en';
-    return 'az';
-  });
+  const mobileLanguage = language === 'RU' ? 'ru' : language === 'ENG' ? 'en' : 'az';
 
   const mobileLanguageOptions = [
     { code: 'az', label: 'AZ', flag: 'https://flagcdn.com/w40/az.png' },
@@ -144,11 +140,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isMobileMenuOpen, isMobileLanguageModalOpen]);
-
-  useEffect(() => {
-    const next = language === 'RU' ? 'ru' : language === 'ENG' ? 'en' : 'az';
-    setMobileLanguage((prev) => (prev === next ? prev : next));
-  }, [language]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -222,7 +213,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
   const handleMobileLanguageSelect = (lang: string) => {
     const normalized = (lang || '').toLowerCase();
     if (normalized !== 'az' && normalized !== 'ru' && normalized !== 'en') return;
-    setMobileLanguage(normalized);
     setSiteLanguage(normalized === 'ru' ? 'RU' : normalized === 'en' ? 'ENG' : 'AZ');
     setIsMobileLanguageModalOpen(false);
   };

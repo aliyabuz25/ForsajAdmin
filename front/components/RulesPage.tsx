@@ -17,7 +17,16 @@ interface RuleSection {
 }
 
 const RulesPage: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<string>('pilot');
+  const [initialRulesTarget] = useState<string>(() => {
+    try {
+      const rawTarget = (sessionStorage.getItem(RULES_TARGET_SECTION_KEY) || '').trim();
+      sessionStorage.removeItem(RULES_TARGET_SECTION_KEY);
+      return rawTarget;
+    } catch {
+      return '';
+    }
+  });
+  const [activeSection, setActiveSection] = useState<string>('');
   const { getText, getUrl, getPage } = useSiteContent('rulespage');
   const rulesPage = getPage('rulespage');
 
@@ -177,16 +186,9 @@ const RulesPage: React.FC = () => {
     return merged;
   }, [getText, getUrl, rulesPage?.sections]);
 
-  useEffect(() => {
-    if (!ruleSections.length) return;
-    if (!ruleSections.some((section) => section.id === activeSection)) {
-      setActiveSection(ruleSections[0].id);
-    }
-  }, [activeSection, ruleSections]);
-
-  const applyTargetSection = useCallback((rawTarget: string) => {
+  const resolveTargetSectionId = useCallback((rawTarget: string) => {
     const target = (rawTarget || '').trim();
-    if (!target || !ruleSections.length) return;
+    if (!target || !ruleSections.length) return '';
 
     const normalizedTarget = normalizeTargetToken(target);
     const inferredTarget = inferSectionByToken(normalizedTarget);
@@ -199,23 +201,13 @@ const RulesPage: React.FC = () => {
       return false;
     });
 
-    if (match) {
-      setActiveSection(match.id);
-    }
+    return match?.id || '';
   }, [inferSectionByToken, normalizeTargetToken, ruleSections]);
 
-  useEffect(() => {
-    if (!ruleSections.length) return;
-
-    try {
-      const rawTarget = (sessionStorage.getItem(RULES_TARGET_SECTION_KEY) || '').trim();
-      sessionStorage.removeItem(RULES_TARGET_SECTION_KEY);
-      if (!rawTarget) return;
-      applyTargetSection(rawTarget);
-    } catch {
-      // ignore storage access errors
-    }
-  }, [applyTargetSection, ruleSections.length]);
+  const applyTargetSection = useCallback((rawTarget: string) => {
+    const nextSectionId = resolveTargetSectionId(rawTarget);
+    if (nextSectionId) setActiveSection(nextSectionId);
+  }, [resolveTargetSectionId]);
 
   useEffect(() => {
     const onRulesTarget = (event: Event) => {
@@ -231,7 +223,15 @@ const RulesPage: React.FC = () => {
     };
   }, [applyTargetSection]);
 
-  const currentSection = ruleSections.find(s => s.id === activeSection) || ruleSections[0];
+  const resolvedActiveSection = useMemo(() => {
+    if (!ruleSections.length) return '';
+    if (ruleSections.some((section) => section.id === activeSection)) return activeSection;
+    const initialTargetSectionId = resolveTargetSectionId(initialRulesTarget);
+    if (initialTargetSectionId) return initialTargetSectionId;
+    return ruleSections[0].id;
+  }, [activeSection, initialRulesTarget, resolveTargetSectionId, ruleSections]);
+
+  const currentSection = ruleSections.find(s => s.id === resolvedActiveSection) || ruleSections[0];
   const resolveDocUrl = (rawUrl?: string) => {
     const value = (rawUrl || '').trim();
     if (!value) return '';
@@ -288,18 +288,18 @@ const RulesPage: React.FC = () => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex items-center justify-between p-6 font-black italic text-[11px] uppercase tracking-[0.2em] transition-all transform hover:translate-x-1 border border-white/5 ${activeSection === section.id
+                className={`flex items-center justify-between p-6 font-black italic text-[11px] uppercase tracking-[0.2em] transition-all transform hover:translate-x-1 border border-white/5 ${resolvedActiveSection === section.id
                   ? 'bg-[#FF4D00] text-black shadow-2xl border-[#FF4D00]'
                   : 'bg-[#111] text-white hover:bg-[#1a1a1a]'
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  <span className={activeSection === section.id ? 'text-black' : 'text-[#FF4D00]'}>
+                  <span className={resolvedActiveSection === section.id ? 'text-black' : 'text-[#FF4D00]'}>
                     {section.icon}
                   </span>
                   {section.title}
                 </div>
-                <ChevronRight size={16} className={activeSection === section.id ? 'text-black' : 'text-gray-600'} />
+                <ChevronRight size={16} className={resolvedActiveSection === section.id ? 'text-black' : 'text-gray-600'} />
               </button>
             ))}
           </div>

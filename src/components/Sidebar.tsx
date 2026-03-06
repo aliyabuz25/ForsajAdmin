@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     Layout,
@@ -123,22 +123,110 @@ const getSidebarItemLocalizationKey = (title: string, path?: string) => {
     return '';
 };
 
+const normalizeSidebarMenuText = (value: string) =>
+    normalizeSidebarLookupText(value || '');
+
+const normalizeSidebarPath = (path?: string) => {
+    if (!path) return path;
+    if (path === '/frontend-settings' || path === '/admin/frontend-settings') {
+        return '/general-settings?tab=general';
+    }
+    if (path === '/general-settings' || path === '/admin/general-settings') {
+        return '/general-settings?tab=general';
+    }
+    return path;
+};
+
+const filterSidebarItemsByRole = (items: SidebarItem[], userRole: string): SidebarItem[] => {
+    const restrictedPaths = ['/frontend-settings', '/general-settings', '/users-management'];
+    const hiddenRootPaths = new Set(['/', '/admin']);
+
+    return items
+        .map((item) => {
+            const children = item.children ? filterSidebarItemsByRole(item.children, userRole) : undefined;
+            const normalizedPath = normalizeSidebarPath(item.path);
+            const normalizedPathKey = (normalizedPath || '').toLowerCase();
+            const normalizedTitle = normalizeSidebarMenuText(item.title || '');
+
+            if (userRole === 'secondary') {
+                const isRestricted = restrictedPaths.some(p => normalizedPath?.toLowerCase().startsWith(p));
+                if (isRestricted) return null;
+            }
+
+            if (
+                hiddenRootPaths.has(normalizedPathKey) ||
+                normalizedTitle === 'panel ana sehife' ||
+                normalizedTitle === 'dashboard'
+            ) {
+                return null;
+            }
+
+            if (!normalizedPath && (!children || children.length === 0)) return null;
+            return { ...item, path: normalizedPath, children };
+        })
+        .filter(Boolean) as SidebarItem[];
+};
+
+const dedupeSidebarMenuItems = (items: SidebarItem[]) => {
+    const seenTitles = new Set<string>();
+
+    return items.filter((item) => {
+        const key = normalizeSidebarMenuText(item.title || '');
+        if (!key) return false;
+        if (seenTitles.has(key)) return false;
+        seenTitles.add(key);
+        return true;
+    });
+};
+
+const getFriendlySidebarTitle = (title: string) => {
+    const key = normalizeSidebarMenuText(title);
+    if (key === 'ana sehife / naviqasiya / footer') return 'Ana Səhifə';
+    if (key === 'sosyal') return 'Sosial Media';
+    return title;
+};
+
+const getSidebarGroupKeyByItem = (item: SidebarItem): SidebarGroupKey => {
+    const path = normalizeSidebarPath(item.path || '') || '';
+    if (path.includes('page=privacypolicypage') || path.includes('page=termsofservicepage')) return 'legal';
+    if (path.startsWith('/users-management') || path.startsWith('/general-settings') || path.startsWith('/applications') || path.startsWith('/translations')) return 'management';
+    return 'content';
+};
+
+const getSidebarItemOrder = (item: SidebarItem) => {
+    const path = normalizeSidebarPath(item.path || '') || '';
+    const title = normalizeSidebarMenuText(item.title || '');
+
+    if (path.includes('page=home')) return 10;
+    if (path.includes('page=about')) return 20;
+    if (path.includes('mode=news')) return 30;
+    if (path.includes('mode=events')) return 40;
+    if (path.includes('mode=drivers')) return 50;
+    if (path.includes('mode=videos')) return 60;
+    if (path.includes('page=rulespage')) return 70;
+    if (path.includes('page=contactpage')) return 80;
+    if (path.includes('page=privacypolicypage')) return 90;
+    if (path.includes('page=termsofservicepage')) return 100;
+    if (path.startsWith('/users-management')) return 110;
+    if (path.includes('tab=general')) return 120;
+    if (path.includes('tab=social') || title === 'sosial media') return 130;
+    if (path.includes('tab=whatsapp') || title === 'whatsapp integration') return 135;
+    if (path.startsWith('/translations')) return 138;
+    if (path.startsWith('/applications')) return 140;
+
+    return 999;
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, onLanguageChange }) => {
     const userRole = user?.role || 'secondary';
     const location = useLocation();
+    const sidebarContentRef = useRef<HTMLDivElement | null>(null);
     const [sidebarLocalization, setSidebarLocalization] = useState<SidebarLocalizationMap>({});
     const languageOptions: Array<{ code: AdminLanguage; label: string; flag: string }> = [
         { code: 'az', label: 'AZ', flag: 'https://flagcdn.com/w40/az.png' },
         { code: 'ru', label: 'RU', flag: 'https://flagcdn.com/w40/ru.png' },
         { code: 'en', label: 'EN', flag: 'https://flagcdn.com/w40/us.png' }
     ];
-    const normalizeText = (value: string) =>
-        (value || '')
-            .toLocaleLowerCase('az')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
-
     useEffect(() => {
         let cancelled = false;
 
@@ -171,17 +259,6 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
             language,
             fallback
         );
-    };
-
-    const normalizePath = (path?: string) => {
-        if (!path) return path;
-        if (path === '/frontend-settings' || path === '/admin/frontend-settings') {
-            return '/general-settings?tab=general';
-        }
-        if (path === '/general-settings' || path === '/admin/general-settings') {
-            return '/general-settings?tab=general';
-        }
-        return path;
     };
 
     const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
@@ -220,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
 
     // Better active check including query params
     const isCurrentActive = (path?: string) => {
-        const normalizedPath = normalizePath(path);
+        const normalizedPath = normalizeSidebarPath(path);
         if (!normalizedPath) return false;
         if (normalizedPath.includes('?')) {
             return (location.pathname + location.search) === normalizedPath;
@@ -231,8 +308,8 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
     const renderLinkItem = (item: SidebarItem, parentIcon?: string, forcedPath?: string) => (
         <li className="sidebar-item">
             <NavLink
-                to={normalizePath(forcedPath || item.path) || '#'}
-                className={() => `sidebar-link ${isCurrentActive(normalizePath(forcedPath || item.path)) ? 'active' : ''}`}
+                to={normalizeSidebarPath(forcedPath || item.path) || '#'}
+                className={() => `sidebar-link ${isCurrentActive(normalizeSidebarPath(forcedPath || item.path)) ? 'active' : ''}`}
             >
                 {(item.icon || parentIcon) && <IconComponent name={item.icon || parentIcon || ''} className="sidebar-icon" />}
                 <span className="sidebar-text">{item.title}</span>
@@ -245,90 +322,6 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
         </li>
     );
 
-    const filterByRole = (items: SidebarItem[]): SidebarItem[] => {
-        const restrictedPaths = ['/frontend-settings', '/general-settings', '/users-management'];
-        const hiddenRootPaths = new Set(['/', '/admin']);
-
-        const filtered = items
-            .map((item) => {
-                const children = item.children ? filterByRole(item.children) : undefined;
-                const normalizedPath = normalizePath(item.path);
-                const normalizedPathKey = (normalizedPath || '').toLowerCase();
-                const normalizedTitle = normalizeText(item.title || '');
-
-                if (userRole === 'secondary') {
-                    const isRestricted = restrictedPaths.some(p => normalizedPath?.toLowerCase().startsWith(p));
-                    if (isRestricted) return null;
-                }
-
-                if (
-                    hiddenRootPaths.has(normalizedPathKey) ||
-                    normalizedTitle === 'panel ana sehife' ||
-                    normalizedTitle === 'dashboard'
-                ) {
-                    return null;
-                }
-
-                // If parent has no direct path and all children are filtered out, hide it.
-                if (!normalizedPath && (!children || children.length === 0)) return null;
-
-                return { ...item, path: normalizedPath, children };
-            })
-            .filter(Boolean) as SidebarItem[];
-
-        return filtered;
-    };
-
-    const dedupeMenuItems = (items: SidebarItem[]) => {
-        const seenTitles = new Set<string>();
-
-        return items.filter((item) => {
-            const key = normalizeText(item.title || '');
-            if (!key) return false;
-            if (seenTitles.has(key)) return false;
-            seenTitles.add(key);
-            return true;
-        });
-    };
-
-    const getFriendlyTitle = (title: string) => {
-        const key = normalizeText(title);
-        if (key === 'ana sehife / naviqasiya / footer') return 'Ana Səhifə';
-        if (key === 'sosyal') return 'Sosial Media';
-        return title;
-    };
-
-    const getGroupKey = (item: SidebarItem): SidebarGroupKey => {
-        const path = normalizePath(item.path || '') || '';
-        if (path.includes('page=privacypolicypage') || path.includes('page=termsofservicepage')) return 'legal';
-        if (path.startsWith('/users-management') || path.startsWith('/general-settings') || path.startsWith('/applications') || path.startsWith('/translations')) return 'management';
-        return 'content';
-    };
-
-    const getItemOrder = (item: SidebarItem) => {
-        const path = normalizePath(item.path || '') || '';
-        const title = normalizeText(item.title || '');
-
-        if (path.includes('page=home')) return 10;
-        if (path.includes('page=about')) return 20;
-        if (path.includes('mode=news')) return 30;
-        if (path.includes('mode=events')) return 40;
-        if (path.includes('mode=drivers')) return 50;
-        if (path.includes('mode=videos')) return 60;
-        if (path.includes('page=rulespage')) return 70;
-        if (path.includes('page=contactpage')) return 80;
-        if (path.includes('page=privacypolicypage')) return 90;
-        if (path.includes('page=termsofservicepage')) return 100;
-        if (path.startsWith('/users-management')) return 110;
-        if (path.includes('tab=general')) return 120;
-        if (path.includes('tab=social') || title === 'sosial media') return 130;
-        if (path.includes('tab=whatsapp') || title === 'whatsapp integration') return 135;
-        if (path.startsWith('/translations')) return 138;
-        if (path.startsWith('/applications')) return 140;
-
-        return 999;
-    };
-
     const groupLabels: Record<SidebarGroupKey, string> = {
         content: getLocalizedSidebarUiLabel('groupContent'),
         legal: getLocalizedSidebarUiLabel('groupLegal'),
@@ -336,9 +329,9 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
     };
 
     const preparedItems = useMemo(
-        () => dedupeMenuItems(filterByRole(menuItems))
-            .map((item) => ({ ...item, title: getFriendlyTitle(item.title) }))
-            .sort((a, b) => getItemOrder(a) - getItemOrder(b)),
+        () => dedupeSidebarMenuItems(filterSidebarItemsByRole(menuItems, userRole))
+            .map((item) => ({ ...item, title: getFriendlySidebarTitle(item.title) }))
+            .sort((a, b) => getSidebarItemOrder(a) - getSidebarItemOrder(b)),
         [menuItems, userRole]
     );
 
@@ -349,10 +342,31 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
             management: []
         };
         preparedItems.forEach((item) => {
-            buckets[getGroupKey(item)].push(item);
+            buckets[getSidebarGroupKeyByItem(item)].push(item);
         });
         return buckets;
     }, [preparedItems]);
+
+    useEffect(() => {
+        const container = sidebarContentRef.current;
+        if (!container) return;
+
+        const activeLink = container.querySelector<HTMLElement>('.sidebar-link.active');
+        if (!activeLink) return;
+
+        const rafId = window.requestAnimationFrame(() => {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            activeLink.scrollIntoView({
+                block: 'nearest',
+                inline: 'nearest',
+                behavior: prefersReducedMotion ? 'auto' : 'smooth'
+            });
+        });
+
+        return () => {
+            window.cancelAnimationFrame(rafId);
+        };
+    }, [language, location.pathname, location.search]);
 
     return (
         <aside className="sidebar notranslate" translate="no">
@@ -378,7 +392,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                 </div>
             </div>
 
-            <div className="sidebar-content">
+            <div className="sidebar-content" ref={sidebarContentRef}>
                 <div className="sidebar-section-label">{getLocalizedSidebarUiLabel('primaryNavigation')}</div>
                 {(['content', 'legal', 'management'] as SidebarGroupKey[]).map((groupKey) => {
                     const items = groupedItems[groupKey];
@@ -395,8 +409,9 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                                     const localizedTitle = localizationKey && language !== 'az'
                                         ? getAdminSidebarLocalizedText(sidebarLocalization, localizationKey, language, translatedTitle)
                                         : translatedTitle;
+                                    const itemKey = effectivePath || item.path || item.title;
                                     return (
-                                        <React.Fragment key={`${item.title}-${effectivePath || 'no-path'}`}>
+                                        <React.Fragment key={itemKey}>
                                             {renderLinkItem({ ...item, title: localizedTitle }, item.icon, effectivePath)}
                                         </React.Fragment>
                                     );

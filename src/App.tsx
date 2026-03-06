@@ -13,7 +13,7 @@ import TranslationsManager from './pages/TranslationsManager';
 import { Toaster } from 'react-hot-toast';
 import type { SidebarItem } from './types/navigation';
 import { ADMIN_USER_KEY, clearAdminSession, getAuthToken, SESSION_EXPIRED_EVENT } from './utils/session';
-import { getStoredAdminLanguage, setStoredAdminLanguage, type AdminLanguage } from './utils/adminLanguage';
+import { getStoredAdminLanguage, setStoredAdminLanguage, translateAdminUiText, type AdminLanguage } from './utils/adminLanguage';
 import './index.css';
 
 const normalizeText = (value: string) =>
@@ -139,8 +139,8 @@ const App: React.FC = () => {
   const sitemapSignatureRef = useRef('');
 
   const uiText = {
-    loading: adminLanguage === 'ru' ? 'Загрузка...' : 'Yüklənir...',
-    notFound: adminLanguage === 'ru' ? 'Страница не найдена' : 'Səhifə tapılmadı'
+    loading: translateAdminUiText(adminLanguage, 'Yüklənir...'),
+    notFound: translateAdminUiText(adminLanguage, 'Səhifə tapılmadı')
   };
 
   const handleLanguageChange = (lang: AdminLanguage) => {
@@ -446,7 +446,7 @@ const App: React.FC = () => {
 
                       <Route path="/general-settings" element={<GeneralSettings />} />
 
-                      <Route path="/users-management" element={<UsersManager currentUser={user} />} />
+                      <Route path="/users-management" element={<UsersManager currentUser={user} language={adminLanguage} />} />
 
                       <Route path="/translations" element={<TranslationsManager language={adminLanguage} />} />
 
