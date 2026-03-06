@@ -263,6 +263,18 @@ const RulesPage: React.FC = () => {
       return token;
     }
   }, [getText, globalDocUrl]);
+  const handleGlobalPdfDownload = useCallback(() => {
+    if (!globalDocUrl) return;
+
+    const link = document.createElement('a');
+    link.href = globalDocUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.download = displayDocName || 'rules.pdf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }, [displayDocName, globalDocUrl]);
 
   return (
     <div className="bg-[#0A0A0A] min-h-screen py-16 px-6 lg:px-20 text-white">
@@ -321,9 +333,8 @@ const RulesPage: React.FC = () => {
             </div>
             <button
               className="w-full bg-[#FF4D00] text-black py-4 font-black italic text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-white transition-all transform -skew-x-12"
-              onClick={() => {
-                if (globalDocUrl) window.open(globalDocUrl, '_blank');
-              }}
+              onClick={handleGlobalPdfDownload}
+              disabled={!globalDocUrl}
             >
               <span className="transform skew-x-12 flex items-center gap-2">
                 {getText('BTN_DOWNLOAD_PDF', 'PDF YÜKLƏ')} <Download size={14} />

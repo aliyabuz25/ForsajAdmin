@@ -41,8 +41,15 @@ interface TranslationsManagerProps {
 interface PageLabelMeta {
     az: string;
     ru: string;
+    en?: string;
     descriptionAz: string;
     descriptionRu: string;
+    descriptionEn?: string;
+}
+
+interface SiteContentPage {
+    id: string;
+    title: string;
 }
 
 const DEFAULT_PAYLOAD: LocalizationPayload = {
@@ -159,8 +166,10 @@ const PAGE_META: Record<string, PageLabelMeta> = {
     privacypolicypage: {
         az: 'Məxfilik siyasəti',
         ru: 'Политика конфиденциальности',
+        en: 'Privacy Policy',
         descriptionAz: 'Hüquqi mətnlər (privacy)',
-        descriptionRu: 'Юридические тексты (privacy)'
+        descriptionRu: 'Юридические тексты (privacy)',
+        descriptionEn: 'Legal texts (privacy)'
     },
     rulespage: {
         az: 'Qaydalar səhifəsi',
@@ -171,8 +180,10 @@ const PAGE_META: Record<string, PageLabelMeta> = {
     termsofservicepage: {
         az: 'Xidmət şərtləri',
         ru: 'Условия использования',
+        en: 'Terms of Service',
         descriptionAz: 'Hüquqi mətnlər (terms)',
-        descriptionRu: 'Юридические тексты (terms)'
+        descriptionRu: 'Юридические тексты (terms)',
+        descriptionEn: 'Legal texts (terms)'
     },
     videoarchive: {
         az: 'Video arxiv',
@@ -263,16 +274,50 @@ const prettyPageName = (pageId: string) =>
         .trim()
         .replace(/\b\w/g, (char) => char.toUpperCase());
 
-const getPageDisplayName = (pageId: string, language: AdminLanguage) => {
-    const meta = PAGE_META[String(pageId || '').trim().toLowerCase()];
-    if (!meta) return prettyPageName(pageId);
-    return language === 'ru' ? meta.ru : meta.az;
+const normalizeSiteContentPages = (raw: any): SiteContentPage[] => {
+    if (!Array.isArray(raw)) return [];
+    return raw
+        .map((page) => ({
+            id: String(page?.id || page?.page_id || '').trim().toLowerCase(),
+            title: String(page?.title || '').trim()
+        }))
+        .filter((page) => page.id);
 };
 
-const getPageDisplayDescription = (pageId: string, language: AdminLanguage) => {
+const getPageDisplayName = (
+    pageId: string,
+    language: AdminLanguage,
+    siteContentPages: SiteContentPage[]
+) => {
     const meta = PAGE_META[String(pageId || '').trim().toLowerCase()];
-    if (!meta) return String(pageId || '').trim();
-    return language === 'ru' ? meta.descriptionRu : meta.descriptionAz;
+    if (meta) {
+        if (language === 'ru') return meta.ru;
+        if (language === 'en' && meta.en) return meta.en;
+        return meta.az;
+    }
+
+    const dynamicPage = siteContentPages.find((page) => page.id === String(pageId || '').trim().toLowerCase());
+    if (dynamicPage?.title) return dynamicPage.title;
+    return prettyPageName(pageId);
+};
+
+const getPageDisplayDescription = (
+    pageId: string,
+    language: AdminLanguage,
+    siteContentPages: SiteContentPage[]
+) => {
+    const meta = PAGE_META[String(pageId || '').trim().toLowerCase()];
+    if (meta) {
+        if (language === 'ru') return meta.descriptionRu;
+        if (language === 'en' && meta.descriptionEn) return meta.descriptionEn;
+        return meta.descriptionAz;
+    }
+
+    const dynamicPage = siteContentPages.find((page) => page.id === String(pageId || '').trim().toLowerCase());
+    if (dynamicPage?.title) {
+        return getLocalizedText(language, 'Dinamik səhifə məzmunu', 'Динамический контент страницы');
+    }
+    return String(pageId || '').trim();
 };
 
 const isUnderscorePlaceholder = (value: unknown) => {
@@ -336,6 +381,7 @@ const isKeyActiveInPage = (usageMap: LocalizationUsageMap, pageId: string, key: 
 const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) => {
     const [payload, setPayload] = useState<LocalizationPayload>(DEFAULT_PAYLOAD);
     const [usageMap, setUsageMap] = useState<LocalizationUsageMap>({});
+    const [siteContentPages, setSiteContentPages] = useState<SiteContentPage[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
@@ -426,8 +472,8 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         const query = pageSearch.trim().toLowerCase();
         const cards = allPageIds
             .map((pageId) => {
-                const name = getPageDisplayName(pageId, language);
-                const description = getPageDisplayDescription(pageId, language);
+                const name = getPageDisplayName(pageId, language, siteContentPages);
+                const description = getPageDisplayDescription(pageId, language, siteContentPages);
                 const count = pageVisibleCounts[pageId] ?? 0;
                 const completionPercent = pageCompletionById[pageId] ?? 0;
                 return { pageId, name, description, count, completionPercent };
@@ -439,7 +485,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         return cards.filter((card) =>
             `${card.pageId} ${card.name} ${card.description}`.toLowerCase().includes(query)
         );
-    }, [allPageIds, language, pageCompletionById, pageSearch, pageVisibleCounts]);
+    }, [allPageIds, language, pageCompletionById, pageSearch, pageVisibleCounts, siteContentPages]);
 
     const pageIds = useMemo(() => pageCards.map((card) => card.pageId), [pageCards]);
     const pageVisibleTotalKeys = useMemo(
@@ -495,12 +541,25 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
             const token = getAuthToken();
             let apiPayload = DEFAULT_PAYLOAD;
             let usage: LocalizationUsageMap = {};
+            let nextSiteContentPages: SiteContentPage[] = [];
             const response = await fetch('/api/localization', {
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             });
             if (!response.ok) throw new Error('load_failed');
             const data = await response.json();
             apiPayload = normalizePayload(data);
+
+            try {
+                const siteContentResponse = await fetch('/api/site-content', {
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                });
+                if (siteContentResponse.ok) {
+                    const siteContent = await siteContentResponse.json();
+                    nextSiteContentPages = normalizeSiteContentPages(siteContent);
+                }
+            } catch {
+                // optional source
+            }
 
             try {
                 const usageResponse = await fetch('/api/localization-usage');
@@ -529,6 +588,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
             setPayload(merged);
             setUsageMap(usage);
+            setSiteContentPages(nextSiteContentPages);
             setDirty(false);
         } catch (error) {
             console.error(error);
@@ -540,6 +600,26 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
     useEffect(() => {
         fetchLocalization();
+    }, []);
+
+    useEffect(() => {
+        const handleContentRefresh = () => {
+            void fetchLocalization();
+        };
+
+        const handleStorage = (event: StorageEvent) => {
+            if (event.key !== CONTENT_VERSION_KEY) return;
+            void fetchLocalization();
+        };
+
+        window.addEventListener('forsaj-site-content-ready', handleContentRefresh);
+        window.addEventListener('forsaj-localization-ready', handleContentRefresh);
+        window.addEventListener('storage', handleStorage);
+        return () => {
+            window.removeEventListener('forsaj-site-content-ready', handleContentRefresh);
+            window.removeEventListener('forsaj-localization-ready', handleContentRefresh);
+            window.removeEventListener('storage', handleStorage);
+        };
     }, []);
 
     const updateEntry = (key: string, value: string) => {

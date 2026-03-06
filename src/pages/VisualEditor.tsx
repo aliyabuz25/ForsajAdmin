@@ -1085,6 +1085,7 @@ const resolvePageGroup = (pageParam?: string | null) => {
 };
 
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const GROUPED_PAGE_COLLAPSE_KEY = 'forsaj_grouped_page_collapsed_v1';
 const SECTION_COLLAPSE_KEY = 'forsaj_section_collapsed_v1';
 const normalizeOrder = (value: number | undefined, fallback: number) =>
@@ -1153,6 +1154,7 @@ const VisualEditor: React.FC = () => {
     const clubOptionInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
     const [pendingLegalSectionScrollNo, setPendingLegalSectionScrollNo] = useState<number | null>(null);
     const legalSectionCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+    const rulesPdfInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
     const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhotoItem[]>([]);
     const autoSyncTriggeredRef = useRef(false);
@@ -2201,7 +2203,7 @@ const VisualEditor: React.FC = () => {
             setTimeout(() => {
                 setIsExtracting(false);
                 localStorage.setItem('forsaj_extracted', 'true');
-                localStorage.setItem(CONTENT_VERSION_KEY, Date.now().toString());
+                notifySiteContentUpdated();
                 toast.success('Sinxronizasiya tamamlandı! Baza yeniləndi.', { id: toastId });
             }, 500);
 
@@ -3300,6 +3302,11 @@ const VisualEditor: React.FC = () => {
         });
     };
 
+    const notifySiteContentUpdated = (version: string = Date.now().toString()) => {
+        localStorage.setItem(CONTENT_VERSION_KEY, version);
+        window.dispatchEvent(new CustomEvent(SITE_CONTENT_READY_EVENT));
+    };
+
     const savePagesSilently = async (nextPages: PageContent[]) => {
         try {
             const res = await fetch('/api/save-content', {
@@ -3308,7 +3315,7 @@ const VisualEditor: React.FC = () => {
                 body: JSON.stringify(nextPages)
             });
             if (res.ok) {
-                localStorage.setItem(CONTENT_VERSION_KEY, Date.now().toString());
+                notifySiteContentUpdated();
             }
         } catch (error) {
             console.error('Silent save failed:', error);
@@ -3425,7 +3432,7 @@ const VisualEditor: React.FC = () => {
                 if (!res.ok) throw new Error(await res.text());
             }
 
-            localStorage.setItem(CONTENT_VERSION_KEY, saveVersion);
+            notifySiteContentUpdated(saveVersion);
             if (editorMode === 'photos' || editorMode === 'videos' || editorMode === 'events') {
                 localStorage.setItem(GALLERY_VERSION_KEY, saveVersion);
             }
@@ -6934,6 +6941,9 @@ const VisualEditor: React.FC = () => {
                                                                                     id={uploadInputId}
                                                                                     type="file"
                                                                                     accept=".pdf,application/pdf"
+                                                                                    ref={(node) => {
+                                                                                        rulesPdfInputRefs.current[uploadInputId] = node;
+                                                                                    }}
                                                                                     style={{ display: 'none' }}
                                                                                     onChange={async (e) => {
                                                                                         const f = e.target.files?.[0];
@@ -6945,7 +6955,7 @@ const VisualEditor: React.FC = () => {
                                                                                 <button
                                                                                     type="button"
                                                                                     className="btn-secondary"
-                                                                                    onClick={() => document.getElementById(uploadInputId)?.click()}
+                                                                                    onClick={() => rulesPdfInputRefs.current[uploadInputId]?.click()}
                                                                                 >
                                                                                     PDF Yüklə
                                                                                 </button>
@@ -7613,6 +7623,9 @@ const VisualEditor: React.FC = () => {
                                                                 id={uploadInputId}
                                                                 type="file"
                                                                 accept=".pdf,application/pdf"
+                                                                ref={(node) => {
+                                                                    rulesPdfInputRefs.current[uploadInputId] = node;
+                                                                }}
                                                                 style={{ display: 'none' }}
                                                                 onChange={async (e) => {
                                                                     const f = e.target.files?.[0];
@@ -7624,7 +7637,7 @@ const VisualEditor: React.FC = () => {
                                                             <button
                                                                 type="button"
                                                                 className="btn-secondary"
-                                                                onClick={() => document.getElementById(uploadInputId)?.click()}
+                                                                onClick={() => rulesPdfInputRefs.current[uploadInputId]?.click()}
                                                             >
                                                                 PDF Yüklə
                                                             </button>
