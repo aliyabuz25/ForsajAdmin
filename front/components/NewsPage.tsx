@@ -283,8 +283,8 @@ const NewsPage: React.FC = () => {
     }
 
     const popup = window.open(shareUrl, '_blank', 'noopener,noreferrer');
-    if (!popup) {
-      window.location.href = shareUrl;
+    if (popup) {
+      popup.focus();
     }
   };
 

@@ -199,7 +199,7 @@ const ContactPage: React.FC = () => {
                 <h4 className="text-lg font-black italic uppercase tracking-widest">{getText('OFFICE_LABEL', 'BAŞ OFİS')}</h4>
               </div>
 
-              <h3 className="text-[clamp(1.2rem,4vw,2.75rem)] font-black italic uppercase tracking-tighter mb-2 leading-none text-white whitespace-nowrap">
+              <h3 className="max-w-full text-[clamp(1.2rem,4vw,2.75rem)] font-black italic uppercase tracking-tighter mb-2 leading-none text-white whitespace-normal break-words [overflow-wrap:anywhere]">
                 {addressLine1SingleLine}
               </h3>
               <p className="text-[#FF4D00] font-black italic text-[10px] uppercase tracking-[0.3em] pb-8 border-b border-white/5">
