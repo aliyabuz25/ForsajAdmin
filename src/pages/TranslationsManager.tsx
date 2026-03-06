@@ -488,7 +488,6 @@ const buildMergedLocalizationEntry = (
         ENG: getBestLocalizedValue(entries, keys, 'ENG', azValue)
     };
 };
-
 const isMeaningfulTranslationValue = (value: unknown) => {
     const text = String(value || '').trim();
     if (!text) return false;
