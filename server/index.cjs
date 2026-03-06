@@ -605,7 +605,58 @@ const saveBundledLocalizationMirror = async (payload) => {
 const FRONT_LOCALIZATION_DYNAMIC_PREFIXES = {
     contactpage: ['TOPIC_OPTION_'],
     eventspage: ['CLUB_OPTION_'],
-    rulespage: ['RULE_TAB_']
+    rulespage: ['RULE_TAB_'],
+    privacypolicypage: ['SECTION_'],
+    termsofservicepage: ['SECTION_']
+};
+
+const shouldSkipSiteContentLocalizationKey = (key, section) => {
+    const normalizedKey = String(key || '').trim().toUpperCase();
+    if (!normalizedKey) return true;
+    if (/_ICON$/.test(normalizedKey)) return true;
+
+    const rawValue = String(section?.value ?? '').trim();
+    if (!rawValue) return true;
+    if (normalizedKey === rawValue.toUpperCase()) return true;
+    return false;
+};
+
+const mergeLocalizationWithSiteContent = (localizationPayload, siteContent) => {
+    const normalizedLocalization = normalizeLocalizationPayload(localizationPayload) || createDefaultLocalization();
+    const next = {
+        ...normalizedLocalization,
+        pages: { ...normalizedLocalization.pages }
+    };
+
+    const pages = Array.isArray(siteContent) ? siteContent : [];
+    pages.forEach((page) => {
+        const pageId = resolvePageIdentity(page);
+        if (!pageId) return;
+
+        const sections = Array.isArray(page?.sections) ? page.sections : [];
+        if (!next.pages[pageId]) next.pages[pageId] = {};
+        const pageEntries = { ...next.pages[pageId] };
+
+        sections.forEach((section) => {
+            if (!isPlainObject(section)) return;
+            if (String(section.type || 'text').trim().toLowerCase() !== 'text') return;
+
+            const key = String(section.id || '').trim();
+            if (shouldSkipSiteContentLocalizationKey(key, section)) return;
+
+            const azValue = String(section.value ?? '');
+            const currentEntry = isPlainObject(pageEntries[key]) ? pageEntries[key] : {};
+            pageEntries[key] = {
+                AZ: String(currentEntry.AZ ?? currentEntry.az ?? azValue),
+                RU: String(currentEntry.RU ?? currentEntry.ru ?? ''),
+                ENG: String(currentEntry.ENG ?? currentEntry.EN ?? currentEntry.en ?? '')
+            };
+        });
+
+        next.pages[pageId] = pageEntries;
+    });
+
+    return next;
 };
 
 const FRONT_LOCALIZATION_SOURCE_FILES = new Set(['App.tsx']);
@@ -2698,6 +2749,7 @@ app.get('/api/localization', async (req, res) => {
     try {
         const data = await getContent('localization', createDefaultLocalization());
         let normalized = normalizeLocalizationPayload(data) || createDefaultLocalization();
+        const siteContent = await getContent('site-content', []);
 
         // If persisted localization is empty, fallback to bundled localization shipped with frontend build.
         if (!hasLocalizationContent(normalized)) {
@@ -2707,6 +2759,7 @@ app.get('/api/localization', async (req, res) => {
             }
         }
 
+        normalized = mergeLocalizationWithSiteContent(normalized, siteContent);
         res.json(normalized);
     } catch (error) {
         console.error('Error reading localization:', error);
@@ -2752,9 +2805,10 @@ app.post('/api/localization', async (req, res) => {
         }
 
         const latest = await getContent('localization', createDefaultLocalization());
+        const siteContent = await getContent('site-content', []);
         res.json({
             success: true,
-            data: latest,
+            data: mergeLocalizationWithSiteContent(latest, siteContent),
             persistence: { dbSaved, fileSaved, bundledMirrorSaved, dbReady }
         });
     } catch (error) {

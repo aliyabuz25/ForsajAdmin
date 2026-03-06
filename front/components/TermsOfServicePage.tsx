@@ -91,10 +91,12 @@ const TermsOfServicePage: React.FC = () => {
     const sectionNo = index + 1;
     const fallback = sectionFallbacks[index] || { title: `${sectionNo}. Bölmə`, body: '' };
     const pair = dynamicSections.get(sectionNo);
+    const fallbackTitle = (pair?.title || '').trim() || fallback.title;
+    const fallbackBody = (pair?.body || '').trim() || fallback.body;
     return {
-      title: (pair?.title || '').trim() || getText(`SECTION_${sectionNo}_TITLE`, fallback.title),
+      title: getText(`SECTION_${sectionNo}_TITLE`, fallbackTitle),
       icon: (pair?.icon || '').trim(),
-      body: (pair?.body || '').trim() || getText(`SECTION_${sectionNo}_BODY`, fallback.body)
+      body: getText(`SECTION_${sectionNo}_BODY`, fallbackBody)
     };
   }).filter((section) => (section.title || '').trim() || (section.body || '').trim());
 
