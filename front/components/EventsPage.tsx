@@ -8,6 +8,7 @@ import CsPlayer from './CsPlayer';
 
 const EVENTS_TARGET_EVENT_KEY = 'forsaj_events_target_event';
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
 const EVENTS_REFRESH_INTERVAL_MS = 12000;
 
 interface EventItem {
@@ -147,6 +148,9 @@ const EventsPage: React.FC<EventsPageProps> = ({ onViewChange, openMode = 'defau
         void loadEvents();
       }
     };
+    const onContentReady = () => {
+      void loadEvents();
+    };
     const onFocus = () => {
       void loadEvents();
     };
@@ -159,6 +163,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onViewChange, openMode = 'defau
 
     void loadEvents();
     window.addEventListener('storage', onStorage);
+    window.addEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -166,6 +171,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onViewChange, openMode = 'defau
       mounted = false;
       window.clearInterval(intervalId);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };

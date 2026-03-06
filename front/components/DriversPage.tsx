@@ -25,12 +25,17 @@ interface DriversPageProps {
   initialCategoryId?: string | null;
 }
 
+const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const SITE_CONTENT_READY_EVENT = 'forsaj-site-content-ready';
+
 const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { getText } = useSiteContent('driverspage');
 
   useEffect(() => {
+    let mounted = true;
+
     const loadDrivers = async () => {
       try {
         const response = await fetch(`/api/drivers?v=${Date.now()}`, { cache: 'no-store' });
@@ -38,7 +43,7 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
 
         const data = await response.json();
 
-        if (data) {
+        if (data && mounted) {
           const mappedCats = data.map((c: any) => {
             const drivers = Array.isArray(c.drivers) ? c.drivers : [];
             return {
@@ -59,7 +64,37 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
         console.error('Drivers fetch failed from API:', err);
       }
     };
-    loadDrivers();
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === CONTENT_VERSION_KEY) {
+        void loadDrivers();
+      }
+    };
+    const onContentReady = () => {
+      void loadDrivers();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void loadDrivers();
+      }
+    };
+    const onFocus = () => {
+      void loadDrivers();
+    };
+
+    void loadDrivers();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SITE_CONTENT_READY_EVENT, onContentReady);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [initialCategoryId]);
 
   if (!selectedCategory && categories.length > 0 && !initialCategoryId) {

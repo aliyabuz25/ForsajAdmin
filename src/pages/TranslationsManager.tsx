@@ -326,17 +326,20 @@ const isUnderscorePlaceholder = (value: unknown) => {
     return /^[A-Za-z0-9_]+$/.test(text);
 };
 
-const isHeaderLikeKey = (key: string) => /^[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)+$/.test(key);
+const isMeaningfulTranslationValue = (value: unknown) => {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    return !isUnderscorePlaceholder(text);
+};
 
 const shouldHideTranslationEntry = (entry?: LocalizationEntry | null) => {
     if (!entry) return false;
-    return [entry.AZ, entry.RU, entry.ENG].some((value) => isUnderscorePlaceholder(value));
+    return ![entry.AZ, entry.RU, entry.ENG].some((value) => isMeaningfulTranslationValue(value));
 };
 
 const shouldHideTranslationKey = (key: string, entry?: LocalizationEntry | null) => {
     const normalizedKey = String(key || '').trim();
     if (!normalizedKey) return true;
-    if (isHeaderLikeKey(normalizedKey)) return true;
     return shouldHideTranslationEntry(entry);
 };
 
@@ -477,8 +480,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                 const count = pageVisibleCounts[pageId] ?? 0;
                 const completionPercent = pageCompletionById[pageId] ?? 0;
                 return { pageId, name, description, count, completionPercent };
-            })
-            .filter((card) => card.count > 0);
+            });
 
         if (!query) return cards;
 

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { resolveSocialLinks } from '../utils/socialLinks';
 
 const ContactPage: React.FC = () => {
-  const { getPage, getText } = useSiteContent('contactpage');
+  const { getPage, getText, language } = useSiteContent('contactpage');
   const { getText: getGeneralText } = useSiteContent('general');
   const { getPage: getFooterPage, getText: getFooterText } = useSiteContent('footer');
   const normalizeComparable = (value: string) =>
@@ -296,6 +296,7 @@ const ContactPage: React.FC = () => {
               name: String(fd.get('name') || '').trim(),
               contact: String(fd.get('contact') || '').trim(),
               type: String(fd.get('type') || '').trim(),
+              locale: language,
               content: JSON.stringify({
                 message
               })

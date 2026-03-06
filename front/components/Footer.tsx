@@ -13,7 +13,7 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
-  const { getText, getUrl, getImage } = useSiteContent('footer');
+  const { getText, getUrl, getImage, language } = useSiteContent('footer');
   const { getText: getGeneralText, getImage: getImageGeneral } = useSiteContent('general');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [isNewsletterSubmitting, setIsNewsletterSubmitting] = useState(false);
@@ -198,9 +198,11 @@ const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
       name: getText('FOOTER_NEWSLETTER_APP_NAME', 'NEWSLETTER ABUNƏSİ'),
       contact: email,
       type: getText('FOOTER_NEWSLETTER_APP_TYPE', 'Newsletter Subscription'),
+      locale: language,
       content: JSON.stringify({
         source: 'footer-newsletter',
-        email
+        email,
+        locale: language
       })
     };
 
@@ -211,7 +213,8 @@ const Footer: React.FC<FooterProps> = ({ onViewChange }) => {
         body: JSON.stringify({
           email,
           name: payload.name,
-          source: 'footer-newsletter'
+          source: 'footer-newsletter',
+          locale: language
         })
       });
       if (!res.ok) {

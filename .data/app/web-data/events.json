@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "title": "Baku Dunes Sprint Cup",
+    "date": "2026-04-18",
+    "location": "Bakı, Qaradağ",
+    "category": "OFFROAD",
+    "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop",
+    "description": "[b]Sprint format[/b] ilə 12 km qum parkuru. Texniki yoxlama səhər 08:00-da başlayır.",
+    "rules": "",
+    "youtubeUrl": "",
+    "status": "planned",
+    "registrationEnabled": true
+  },
+  {
+    "id": 2,
+    "title": "Gobustan Rock Trail",
+    "date": "2026-05-10",
+    "location": "Qobustan",
+    "category": "TRIAL",
+    "img": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=2070&auto=format&fit=crop",
+    "description": "Daşlıq və texniki hissələrdən ibarət peşəkar trail mərhələsi.",
+    "rules": "",
+    "youtubeUrl": "",
+    "status": "planned",
+    "registrationEnabled": true
+  },
+  {
+    "id": 3,
+    "title": "Caspian Night Drift Show",
+    "date": "2026-06-21",
+    "location": "Bakı Dənizkənarı Bulvar",
+    "category": "SHOW",
+    "img": "https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=2070&auto=format&fit=crop",
+    "description": "Axşam şousu, canlı DJ və xüsusi drift proqramı.",
+    "rules": "",
+    "youtubeUrl": "",
+    "status": "planned",
+    "registrationEnabled": false
+  },
+  {
+    "id": 4,
+    "title": "Shamakhi Mud Challenge 2025",
+    "date": "2025-11-16",
+    "location": "Şamaxı",
+    "category": "MUD",
+    "img": "https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?q=80&w=2070&auto=format&fit=crop",
+    "description": "Palçıq parkurunda keçmiş mövsümün ən çətin mərhələlərindən biri.",
+    "rules": "",
+    "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "status": "past",
+    "registrationEnabled": false
+  },
+  {
+    "id": 5,
+    "title": "Absheron Desert Enduro 2025",
+    "date": "2025-09-28",
+    "location": "Abşeron",
+    "category": "ENDURO",
+    "img": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2070&auto=format&fit=crop",
+    "description": "2025 mövsümündən arxiv yarışı. Video highlight əlavə edilib.",
+    "rules": "",
+    "youtubeUrl": "https://www.youtube.com/watch?v=9bZkp7q19f0",
+    "status": "past",
+    "registrationEnabled": false
+  },
+  {
+    "id": 6,
+    "title": "Mountain Crawl Finals 2024",
+    "date": "2024-10-13",
+    "location": "Quba",
+    "category": "CRAWL",
+    "img": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=2070&auto=format&fit=crop",
+    "description": "Final mərhələnin video xülasəsi arxiv üçün yerləşdirildi.",
+    "rules": "",
+    "youtubeUrl": "https://www.youtube.com/watch?v=3JZ_D3ELwOQ",
+    "status": "past",
+    "registrationEnabled": false
+  }
+]
