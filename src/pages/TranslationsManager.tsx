@@ -7,6 +7,7 @@ import { clearAdminSession, getAuthToken } from '../utils/session';
 import './TranslationsManager.css';
 
 type SiteLanguage = 'AZ' | 'RU' | 'ENG';
+type EditableSiteLanguage = Exclude<SiteLanguage, 'AZ'>;
 
 interface LocalizationEntry {
     AZ: string;
@@ -50,6 +51,7 @@ const DEFAULT_PAYLOAD: LocalizationPayload = {
     languages: ['AZ', 'RU', 'ENG'],
     pages: {}
 };
+const EDITABLE_LANGUAGES: EditableSiteLanguage[] = ['RU', 'ENG'];
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
 const PAGE_META: Record<string, PageLabelMeta> = {
     about: {
@@ -338,7 +340,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [selectedPage, setSelectedPage] = useState('');
-    const [selectedLang, setSelectedLang] = useState<SiteLanguage>(language === 'ru' ? 'RU' : 'AZ');
+    const [selectedLang, setSelectedLang] = useState<EditableSiteLanguage>(language === 'ru' ? 'RU' : 'ENG');
     const [search, setSearch] = useState('');
     const [pageSearch, setPageSearch] = useState('');
     const [showOnlyMissing, setShowOnlyMissing] = useState(false);
@@ -563,7 +565,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     };
 
     const fillMissingWithAz = () => {
-        if (!selectedPage || selectedLang === 'AZ') return;
+        if (!selectedPage) return;
         setPayload((prev) => {
             const currentPage = prev.pages[selectedPage] || {};
             const nextPage: Record<string, LocalizationEntry> = {};
@@ -719,7 +721,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                         <>
                             <div className="editor-toolbar">
                                 <div className="lang-tabs">
-                                    {(['AZ', 'RU', 'ENG'] as SiteLanguage[]).map((langTab) => (
+                                    {EDITABLE_LANGUAGES.map((langTab) => (
                                         <button
                                             key={langTab}
                                             type="button"
@@ -754,11 +756,9 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                                     />
                                     <span>{t.onlyActiveKeys}</span>
                                 </label>
-                                {selectedLang !== 'AZ' && (
-                                    <button type="button" className="btn-secondary" onClick={fillMissingWithAz}>
-                                        {t.fillMissing}
-                                    </button>
-                                )}
+                                <button type="button" className="btn-secondary" onClick={fillMissingWithAz}>
+                                    {t.fillMissing}
+                                </button>
                             </div>
 
                             <div className="translation-list">
@@ -771,19 +771,17 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                                             <div className="translation-row" key={key}>
                                                 <div className="translation-meta">
                                                     <div className="translation-key">{key}</div>
-                                                    {selectedLang !== 'AZ' && (
-                                                        <div className="translation-source">
-                                                            <span>{t.sourceAz}</span>
-                                                            <p>{entry.AZ}</p>
-                                                        </div>
-                                                    )}
+                                                    <div className="translation-source">
+                                                        <span>{t.sourceAz}</span>
+                                                        <p>{entry.AZ}</p>
+                                                    </div>
                                                 </div>
                                                 <div className="translation-input-wrap">
                                                     <label>{t.value}</label>
                                                     <textarea
                                                         value={entry[selectedLang]}
                                                         onChange={(event) => updateEntry(key, event.target.value)}
-                                                        rows={selectedLang === 'AZ' ? 2 : 3}
+                                                        rows={3}
                                                     />
                                                 </div>
                                             </div>
