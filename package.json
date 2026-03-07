@@ -11,6 +11,7 @@
     "db:down": "docker-compose down",
     "install:all": "npm install && cd front && npm install",
     "extract-content": "node scripts/extractJsonMap.cjs",
+    "push:auto": "bash ./scripts/push-current.sh",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
