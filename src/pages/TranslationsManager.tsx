@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Globe2, Loader2, RefreshCw, Save, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { CheckCircle2, Clipboard, Globe2, Loader2, RefreshCw, Save, Search, Sparkles, Wand2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { AdminLanguage } from '../utils/adminLanguage';
 import { getLocalizedText } from '../utils/adminLanguage';
@@ -632,6 +632,10 @@ const buildMergedLocalizationEntry = (
         ENG: getBestLocalizedValue(entries, keys, 'ENG', azValue)
     };
 };
+
+const hasTranslatedValue = (entry: LocalizationEntry, language: EditableSiteLanguage) =>
+    Boolean(String(entry?.[language] || '').trim());
+
 const isMeaningfulTranslationValue = (value: unknown) => {
     const text = String(value || '').trim();
     if (!text) return false;
@@ -889,6 +893,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     const [pageSearch, setPageSearch] = useState('');
     const [showOnlyMissing, setShowOnlyMissing] = useState(false);
     const [showOnlyActiveKeys, setShowOnlyActiveKeys] = useState(false);
+    const translationInputRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
     const t = {
         title: getLocalizedText(language, 'Translations', 'Переводы'),
@@ -917,6 +922,19 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         autoTranslateError: getLocalizedText(language, 'Avtomatik tərcümə zamanı xəta baş verdi', 'Ошибка при автопереводе'),
         autoTranslateIdle: getLocalizedText(language, 'Boş tərcümə tapılmadı', 'Пустые переводы не найдены'),
         translating: getLocalizedText(language, 'Tərcümə olunur...', 'Выполняется перевод...'),
+        selectedPageLabel: getLocalizedText(language, 'Seçilmiş səhifə', 'Выбранная страница'),
+        visibleKeysLabel: getLocalizedText(language, 'Görünən açarlar', 'Видимые ключи'),
+        translatedLabel: getLocalizedText(language, 'Dolu sahələr', 'Заполненные поля'),
+        missingLabel: getLocalizedText(language, 'Boş sahələr', 'Пустые поля'),
+        quickActions: getLocalizedText(language, 'Sürətli əməliyyatlar', 'Быстрые действия'),
+        rowFillFromAz: getLocalizedText(language, 'AZ-dən doldur', 'Заполнить из AZ'),
+        rowCopySource: getLocalizedText(language, 'Mənbəni kopyala', 'Скопировать источник'),
+        sourceCopied: getLocalizedText(language, 'Mənbə mətn kopyalandı', 'Исходный текст скопирован'),
+        nextMissing: getLocalizedText(language, 'Növbəti boş xana', 'Следующее пустое поле'),
+        translationReady: getLocalizedText(language, 'Hazır', 'Готово'),
+        translationMissing: getLocalizedText(language, 'Boşdur', 'Пусто'),
+        mergedKeys: getLocalizedText(language, 'birləşmiş açar', 'объединенный ключ'),
+        editorHint: getLocalizedText(language, 'Açarı redaktə etdikdə eyni mənbəyə bağlı dublikat açarlar birlikdə yenilənir.', 'При редактировании ключа все дубликаты с тем же источником обновляются вместе.'),
         countLabel: getLocalizedText(language, 'açar', 'ключей'),
         pageListInfo: getLocalizedText(language, 'səhifə', 'страниц'),
         completionShort: getLocalizedText(language, 'tamamlanma', 'заполнено'),
@@ -1011,6 +1029,10 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     }, [allPageIds, language, pageCompletionById, pageSearch, pageVisibleCounts, siteContentPages]);
 
     const pageIds = useMemo(() => pageCards.map((card) => card.pageId), [pageCards]);
+    const selectedPageCard = useMemo(
+        () => pageCards.find((card) => card.pageId === selectedPage) || null,
+        [pageCards, selectedPage]
+    );
     const pageVisibleTotalKeys = useMemo(
         () => pageCards.reduce((sum, card) => sum + card.count, 0),
         [pageCards]
@@ -1053,9 +1075,19 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
     const completion = useMemo(() => {
         if (!currentGroups.length) return 0;
-        const translated = currentGroups.filter((group) => String(group.entry[selectedLang] || '').trim()).length;
+        const translated = currentGroups.filter((group) => hasTranslatedValue(group.entry, selectedLang)).length;
         return Math.round((translated / currentGroups.length) * 100);
     }, [currentGroups, selectedLang]);
+
+    const visibleMissingCount = useMemo(
+        () => visibleGroups.filter((group) => !hasTranslatedValue(group.entry, selectedLang)).length,
+        [selectedLang, visibleGroups]
+    );
+
+    const visibleTranslatedCount = useMemo(
+        () => visibleGroups.length - visibleMissingCount,
+        [visibleGroups.length, visibleMissingCount]
+    );
 
     const fetchLocalization = async () => {
         setLoading(true);
@@ -1172,11 +1204,42 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         setDirty(true);
     };
 
+    const fillGroupWithSource = (groupKey: string) => {
+        const group = currentGroupsByKey[groupKey];
+        if (!group) return;
+        updateEntry(groupKey, group.entry.AZ);
+    };
+
+    const copySourceText = async (groupKey: string) => {
+        const group = currentGroupsByKey[groupKey];
+        if (!group) return;
+
+        try {
+            await navigator.clipboard.writeText(group.entry.AZ || '');
+            toast.success(t.sourceCopied);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const jumpToNextMissing = () => {
+        const nextMissingGroup = visibleGroups.find((group) => !hasTranslatedValue(group.entry, selectedLang));
+        if (!nextMissingGroup) {
+            toast(t.autoTranslateIdle);
+            return;
+        }
+
+        const target = translationInputRefs.current[nextMissingGroup.key];
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.focus();
+    };
+
     const fillMissingWithAz = () => {
         if (!selectedPage) return;
         setPayload((prev) => {
             const nextPages = { ...prev.pages };
-            for (const group of currentGroups) {
+            for (const group of visibleGroups) {
                 const fallbackValue = String(group.entry[selectedLang] || '').trim()
                     ? group.entry[selectedLang]
                     : group.entry.AZ;
@@ -1211,7 +1274,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         const updates = new Map<string, { pageId: string; key: string; value: string }>();
         const queuedGroups = new Map<string, { keys: string[]; pageIds: string[]; sourceText: string; format: 'text' | 'html' }[]>();
 
-        currentGroups.forEach((group) => {
+        visibleGroups.forEach((group) => {
             const currentValue = String(group.entry[selectedLang] || '').trim();
             if (currentValue) return;
 
@@ -1472,50 +1535,88 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                         <div className="empty-state">{t.noPageSelected}</div>
                     ) : (
                         <>
+                            <div className="editor-overview">
+                                <div className="editor-overview-main">
+                                    <span className="editor-overview-label">{t.selectedPageLabel}</span>
+                                    <h2>{selectedPageCard?.name || getPageDisplayName(selectedPage, language, siteContentPages)}</h2>
+                                    <p>{selectedPageCard?.description || getPageDisplayDescription(selectedPage, language, siteContentPages)}</p>
+                                    <span className="editor-overview-id">{t.idLabel}: {selectedPage}</span>
+                                </div>
+                                <div className="editor-stats">
+                                    <div className="editor-stat">
+                                        <span>{t.visibleKeysLabel}</span>
+                                        <strong>{visibleGroups.length}</strong>
+                                    </div>
+                                    <div className="editor-stat">
+                                        <span>{t.translatedLabel}</span>
+                                        <strong>{visibleTranslatedCount}</strong>
+                                    </div>
+                                    <div className="editor-stat editor-stat-attention">
+                                        <span>{t.missingLabel}</span>
+                                        <strong>{visibleMissingCount}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="editor-toolbar">
-                                <div className="lang-tabs">
-                                    {EDITABLE_LANGUAGES.map((langTab) => (
-                                        <button
-                                            key={langTab}
-                                            type="button"
-                                            className={`lang-tab ${selectedLang === langTab ? 'active' : ''}`}
-                                            onClick={() => setSelectedLang(langTab)}
-                                        >
-                                            {langTab}
+                                <div className="editor-toolbar-row">
+                                    <div className="lang-tabs">
+                                        {EDITABLE_LANGUAGES.map((langTab) => (
+                                            <button
+                                                key={langTab}
+                                                type="button"
+                                                className={`lang-tab ${selectedLang === langTab ? 'active' : ''}`}
+                                                onClick={() => setSelectedLang(langTab)}
+                                            >
+                                                {langTab}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="toolbar-search">
+                                        <Search size={16} />
+                                        <input
+                                            value={search}
+                                            onChange={(event) => setSearch(event.target.value)}
+                                            placeholder={t.search}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="editor-toolbar-row editor-toolbar-row-actions">
+                                    <label className="missing-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={showOnlyMissing}
+                                            onChange={(event) => setShowOnlyMissing(event.target.checked)}
+                                        />
+                                        <span>{t.onlyMissing}</span>
+                                    </label>
+                                    <label className="missing-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={showOnlyActiveKeys}
+                                            onChange={(event) => setShowOnlyActiveKeys(event.target.checked)}
+                                        />
+                                        <span>{t.onlyActiveKeys}</span>
+                                    </label>
+                                    <div className="toolbar-actions-group">
+                                        <span className="toolbar-actions-label">{t.quickActions}</span>
+                                        <button type="button" className="btn-secondary btn-inline-icon" onClick={jumpToNextMissing}>
+                                            <Sparkles size={15} />
+                                            <span>{t.nextMissing}</span>
                                         </button>
-                                    ))}
+                                        <button type="button" className="btn-secondary btn-inline-icon" onClick={fillMissingWithAz}>
+                                            <Wand2 size={15} />
+                                            <span>{t.fillMissing}</span>
+                                        </button>
+                                        <button type="button" className="btn-secondary btn-inline-icon" onClick={autoTranslateMissing} disabled={translating}>
+                                            {translating ? <Loader2 size={16} className="spin" /> : <Wand2 size={15} />}
+                                            <span>{t.autoTranslateMissing}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="toolbar-search">
-                                    <Search size={16} />
-                                    <input
-                                        value={search}
-                                        onChange={(event) => setSearch(event.target.value)}
-                                        placeholder={t.search}
-                                    />
+                                <div className="editor-hint">
+                                    {t.editorHint}
                                 </div>
-                                <label className="missing-toggle">
-                                    <input
-                                        type="checkbox"
-                                        checked={showOnlyMissing}
-                                        onChange={(event) => setShowOnlyMissing(event.target.checked)}
-                                    />
-                                    <span>{t.onlyMissing}</span>
-                                </label>
-                                <label className="missing-toggle">
-                                    <input
-                                        type="checkbox"
-                                        checked={showOnlyActiveKeys}
-                                        onChange={(event) => setShowOnlyActiveKeys(event.target.checked)}
-                                    />
-                                    <span>{t.onlyActiveKeys}</span>
-                                </label>
-                                <button type="button" className="btn-secondary" onClick={fillMissingWithAz}>
-                                    {t.fillMissing}
-                                </button>
-                                <button type="button" className="btn-secondary" onClick={autoTranslateMissing} disabled={translating}>
-                                    {translating ? <Loader2 size={16} className="spin" /> : null}
-                                    <span>{t.autoTranslateMissing}</span>
-                                </button>
                             </div>
 
                             <div className="translation-list">
@@ -1524,18 +1625,45 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                                 ) : (
                                     visibleGroups.map((group) => {
                                         const entry = group.entry;
+                                        const hasValue = hasTranslatedValue(entry, selectedLang);
                                         return (
-                                            <div className="translation-row" key={group.key}>
+                                            <div
+                                                className={`translation-row ${hasValue ? 'is-ready' : 'is-missing'}`}
+                                                key={group.key}
+                                            >
                                                 <div className="translation-meta">
-                                                    <div className="translation-key">{group.key}</div>
+                                                    <div className="translation-meta-top">
+                                                        <div className="translation-key">{group.key}</div>
+                                                        <span className={`translation-state ${hasValue ? 'is-ready' : 'is-missing'}`}>
+                                                            {hasValue ? t.translationReady : t.translationMissing}
+                                                        </span>
+                                                    </div>
+                                                    {group.keys.length > 1 && (
+                                                        <div className="translation-merge-note">
+                                                            {group.keys.length} {t.mergedKeys}
+                                                        </div>
+                                                    )}
                                                     <div className="translation-source">
                                                         <span>{t.sourceAz}</span>
                                                         <p>{collapseRepeatedSourceText(entry.AZ)}</p>
+                                                    </div>
+                                                    <div className="translation-row-actions">
+                                                        <button type="button" className="row-action-btn" onClick={() => fillGroupWithSource(group.key)}>
+                                                            <Wand2 size={14} />
+                                                            <span>{t.rowFillFromAz}</span>
+                                                        </button>
+                                                        <button type="button" className="row-action-btn" onClick={() => void copySourceText(group.key)}>
+                                                            <Clipboard size={14} />
+                                                            <span>{t.rowCopySource}</span>
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div className="translation-input-wrap">
                                                     <label>{t.value}</label>
                                                     <textarea
+                                                        ref={(node) => {
+                                                            translationInputRefs.current[group.key] = node;
+                                                        }}
                                                         value={entry[selectedLang]}
                                                         onChange={(event) => updateEntry(group.key, event.target.value)}
                                                         rows={3}
