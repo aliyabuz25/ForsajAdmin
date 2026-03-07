@@ -56,6 +56,10 @@
     border: 1px solid #e2e8f0;
     background: #f8fafc;
     border-radius: 12px;
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
 }
 
 .quick-nav-btn {
@@ -76,9 +80,9 @@
 }
 
 .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     align-items: start;
 }
 
@@ -88,6 +92,7 @@
     overflow: hidden;
     border: 1px solid #e2e8f0;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    width: 100%;
 }
 
 .settings-card-hidden {
@@ -96,10 +101,22 @@
 
 .card-header {
     padding: 1rem 1.2rem;
-    border-bottom: 1px solid #e5e7eb;
     display: flex;
     gap: 0.8rem;
     align-items: flex-start;
+}
+
+.card-expand-btn {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
 }
 
 .card-title-wrap {
@@ -107,6 +124,7 @@
     flex-direction: column;
     gap: 0.3rem;
     min-width: 0;
+    flex: 1;
 }
 
 .card-title-row {
@@ -127,8 +145,28 @@
     line-height: 1.35;
 }
 
+.card-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.card-chevron.is-expanded {
+    transform: rotate(180deg);
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
 .card-visibility-btn {
-    margin-left: auto;
+    margin-left: 0;
     width: 30px;
     height: 30px;
     border-radius: 999px;
@@ -144,7 +182,8 @@
     flex-shrink: 0;
 }
 
-.settings-card:hover .card-visibility-btn {
+.settings-card:hover .card-visibility-btn,
+.settings-card.is-expanded .card-visibility-btn {
     opacity: 1;
 }
 
@@ -156,6 +195,16 @@
 
 .card-body {
     padding: 1.15rem 1.2rem 1.25rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.settings-card:not(.is-expanded) .card-body {
+    display: none;
+}
+
+.settings-card.is-expanded {
+    box-shadow: 0 14px 36px rgba(37, 99, 235, 0.08);
+    border-color: #cfe0ff;
 }
 
 .hidden-settings-empty {
@@ -347,8 +396,8 @@
 }
 
 @media (max-width: 1200px) {
-    .settings-grid {
-        grid-template-columns: 1fr;
+    .settings-quick-nav {
+        top: 8px;
     }
 }
 
@@ -360,6 +409,11 @@
     .settings-header {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .settings-quick-nav {
+        position: static;
+        box-shadow: none;
     }
 
     .save-btn {
@@ -378,5 +432,13 @@
 
     .social-input-row {
         grid-template-columns: 1fr;
+    }
+
+    .card-header {
+        padding: 0.9rem 1rem;
+    }
+
+    .card-expand-btn {
+        gap: 0.75rem;
     }
 }

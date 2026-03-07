@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Image as ImageIcon, BarChart3, Save, Upload, Mail, Eye, EyeOff, Activity, MessageCircle } from 'lucide-react';
+import { Globe, Image as ImageIcon, BarChart3, Save, Upload, Mail, Eye, EyeOff, Activity, MessageCircle, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import './GeneralSettings.css';
@@ -28,6 +28,18 @@ const SETTINGS_NAV_ITEMS = [
     { id: 'stats', label: 'Statistika' }
 ] as const;
 
+type SettingsSectionId = typeof SETTINGS_NAV_ITEMS[number]['id'];
+
+const TAB_TO_SECTION: Partial<Record<string, SettingsSectionId>> = {
+    seo: 'seo-basic',
+    general: 'branding',
+    contact: 'contact-details',
+    social: 'social-links',
+    whatsapp: 'whatsapp-settings',
+    stats: 'stats',
+    marquee: 'marquee-settings',
+};
+
 const normalizeExternalUrl = (rawValue: string) => {
     const value = (rawValue || '').trim();
     if (!value) return '';
@@ -55,21 +67,37 @@ const GeneralSettings: React.FC = () => {
     const location = useLocation();
     const activeTab = new URLSearchParams(location.search).get('tab');
     const isHiddenTab = activeTab === 'hidden';
+    const [expandedSections, setExpandedSections] = useState<SettingsSectionId[]>([]);
 
-    const isCardHidden = (sectionId: string) => hiddenCards.includes(sectionId);
-    const shouldRenderCard = (sectionId: string) => isHiddenTab ? isCardHidden(sectionId) : !isCardHidden(sectionId);
-    const getCardClassName = (sectionId: string) =>
-        `settings-card shadow-sm${shouldRenderCard(sectionId) ? '' : ' settings-card-hidden'}`;
+    const isCardHidden = (sectionId: SettingsSectionId) => hiddenCards.includes(sectionId);
+    const shouldRenderCard = (sectionId: SettingsSectionId) => isHiddenTab ? isCardHidden(sectionId) : !isCardHidden(sectionId);
+    const getCardClassName = (sectionId: SettingsSectionId) =>
+        `settings-card shadow-sm${shouldRenderCard(sectionId) ? '' : ' settings-card-hidden'}${expandedSections.includes(sectionId) ? ' is-expanded' : ''}`;
 
-    const hideCard = (sectionId: string) => {
+    const isSectionExpanded = (sectionId: SettingsSectionId) => expandedSections.includes(sectionId);
+
+    const toggleSection = (sectionId: SettingsSectionId) => {
+        setExpandedSections((prev) =>
+            prev.includes(sectionId)
+                ? prev.filter((id) => id !== sectionId)
+                : [...prev, sectionId]
+        );
+    };
+
+    const openSection = (sectionId: SettingsSectionId | '') => {
+        if (!sectionId) return;
+        setExpandedSections((prev) => (prev.includes(sectionId) ? prev : [...prev, sectionId]));
+    };
+
+    const hideCard = (sectionId: SettingsSectionId) => {
         setHiddenCards((prev) => prev.includes(sectionId) ? prev : [...prev, sectionId]);
     };
 
-    const restoreCard = (sectionId: string) => {
+    const restoreCard = (sectionId: SettingsSectionId) => {
         setHiddenCards((prev) => prev.filter((id) => id !== sectionId));
     };
 
-    const renderCardAction = (sectionId: string) => {
+    const renderCardAction = (sectionId: SettingsSectionId) => {
         const hidden = isCardHidden(sectionId);
         const isRestoreAction = isHiddenTab && hidden;
 
@@ -77,7 +105,10 @@ const GeneralSettings: React.FC = () => {
             <button
                 type="button"
                 className="card-visibility-btn"
-                onClick={() => (hidden ? restoreCard(sectionId) : hideCard(sectionId))}
+                onClick={(event) => {
+                    event.stopPropagation();
+                    hidden ? restoreCard(sectionId) : hideCard(sectionId);
+                }}
                 title={isRestoreAction ? 'Kartı geri gətir' : 'Kartı gizlət'}
                 aria-label={isRestoreAction ? 'Kartı geri gətir' : 'Kartı gizlət'}
             >
@@ -85,6 +116,29 @@ const GeneralSettings: React.FC = () => {
             </button>
         );
     };
+
+    const renderCardHeader = (sectionId: SettingsSectionId, icon: React.ReactNode, title: string, description: string) => (
+        <div className="card-header">
+            <button
+                type="button"
+                className="card-expand-btn"
+                onClick={() => toggleSection(sectionId)}
+                aria-expanded={isSectionExpanded(sectionId)}
+            >
+                <div className="card-title-wrap">
+                    <div className="card-title-row">
+                        {icon}
+                        <h2>{title}</h2>
+                    </div>
+                    <p className="card-description">{description}</p>
+                </div>
+                <span className={`card-chevron ${isSectionExpanded(sectionId) ? 'is-expanded' : ''}`}>
+                    <ChevronDown size={18} />
+                </span>
+            </button>
+            {renderCardAction(sectionId)}
+        </div>
+    );
 
     const loadSettings = async () => {
         try {
@@ -111,19 +165,10 @@ const GeneralSettings: React.FC = () => {
         if (isLoading) return;
         const params = new URLSearchParams(location.search);
         const tab = params.get('tab');
-
-        const tabToSection: Record<string, string> = {
-            seo: 'seo-basic',
-            general: 'branding',
-            contact: 'contact-details',
-            social: 'social-links',
-            whatsapp: 'whatsapp-settings',
-            stats: 'stats',
-            marquee: 'marquee-settings',
-        };
-
-        const section = tab ? tabToSection[tab] : '';
+        const section = tab ? TAB_TO_SECTION[tab] ?? '' : '';
         if (!section) return;
+
+        openSection(section);
 
         setTimeout(() => {
             const target = document.querySelector(`[data-settings-section="${section}"]`);
@@ -132,6 +177,26 @@ const GeneralSettings: React.FC = () => {
             }
         }, 50);
     }, [location.search, isLoading]);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        const visibleSections: SettingsSectionId[] = SETTINGS_NAV_ITEMS
+            .map((item) => item.id)
+            .filter((sectionId) => shouldRenderCard(sectionId));
+
+        setExpandedSections((prev) => {
+            const retained = prev.filter((sectionId) => visibleSections.includes(sectionId));
+            if (retained.length > 0) return retained;
+
+            const preferredSection = activeTab ? TAB_TO_SECTION[activeTab] ?? '' : '';
+            if (preferredSection && visibleSections.includes(preferredSection)) {
+                return [preferredSection];
+            }
+
+            return visibleSections[0] ? [visibleSections[0]] : [];
+        });
+    }, [activeTab, hiddenCards, isHiddenTab, isLoading]);
 
     const ensurePage = (draftPages: any[], pageId: string) => {
         let pageIdx = draftPages.findIndex((p) => p.id === pageId);
@@ -305,7 +370,8 @@ const GeneralSettings: React.FC = () => {
         }
     };
 
-    const scrollToSection = (sectionId: string) => {
+    const scrollToSection = (sectionId: SettingsSectionId) => {
+        openSection(sectionId);
         const target = document.querySelector(`[data-settings-section="${sectionId}"]`);
         if (!target) return;
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -350,16 +416,7 @@ const GeneralSettings: React.FC = () => {
             <div className="settings-grid">
                 {/* SEO Section */}
                 <div className={getCardClassName('seo-basic')} data-settings-section="seo-basic">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Globe size={20} className="text-blue-500" />
-                                <h2>SEO və axtarış motoru</h2>
-                            </div>
-                            <p className="card-description">Axtarış nəticələrində görünən əsas meta məlumatlar.</p>
-                        </div>
-                        {renderCardAction('seo-basic')}
-                    </div>
+                    {renderCardHeader('seo-basic', <Globe size={20} className="text-blue-500" />, 'SEO və axtarış motoru', 'Axtarış nəticələrində görünən əsas meta məlumatlar.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>Meta başlıq (sayt adı)</label>
@@ -433,16 +490,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Open Graph / Twitter SEO */}
                 <div className={getCardClassName('seo-social')} data-settings-section="seo-social">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Globe size={20} className="text-cyan-500" />
-                                <h2>Sosial paylaşım SEO (OG / Twitter)</h2>
-                            </div>
-                            <p className="card-description">Link paylaşılarkən görünən başlıq, təsvir və şəkil.</p>
-                        </div>
-                        {renderCardAction('seo-social')}
-                    </div>
+                    {renderCardHeader('seo-social', <Globe size={20} className="text-cyan-500" />, 'Sosial paylaşım SEO (OG / Twitter)', 'Link paylaşılarkən görünən başlıq, təsvir və şəkil.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>OG başlıq</label>
@@ -528,16 +576,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Verification Section */}
                 <div className={getCardClassName('seo-verify')} data-settings-section="seo-verify">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <BarChart3 size={20} className="text-violet-500" />
-                                <h2>Axtarış motoru təsdiqləri</h2>
-                            </div>
-                            <p className="card-description">Google, Bing və Yandex üçün doğrulama kodları.</p>
-                        </div>
-                        {renderCardAction('seo-verify')}
-                    </div>
+                    {renderCardHeader('seo-verify', <BarChart3 size={20} className="text-violet-500" />, 'Axtarış motoru təsdiqləri', 'Google, Bing və Yandex üçün doğrulama kodları.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>Google təsdiq kodu</label>
@@ -571,16 +610,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Contact Details Section */}
                 <div className={getCardClassName('contact-details')} data-settings-section="contact-details">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <ImageIcon size={20} className="text-red-500" />
-                                <h2>Əlaqə & Ünvan Məlumatları</h2>
-                            </div>
-                            <p className="card-description">Footer və əlaqə hissəsində görünən ofis və əlaqə məlumatları.</p>
-                        </div>
-                        {renderCardAction('contact-details')}
-                    </div>
+                    {renderCardHeader('contact-details', <ImageIcon size={20} className="text-red-500" />, 'Əlaqə & Ünvan Məlumatları', 'Footer və əlaqə hissəsində görünən ofis və əlaqə məlumatları.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>Baş Ofis Ünvan (Sətir 1)</label>
@@ -634,16 +664,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Department Emails Section */}
                 <div className={getCardClassName('departments')} data-settings-section="departments">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Mail size={20} className="text-purple-500" />
-                                <h2>Şöbə E-poçtları</h2>
-                            </div>
-                            <p className="card-description">Müraciətlərin istiqamətinə uyğun e-poçt ünvanları.</p>
-                        </div>
-                        {renderCardAction('departments')}
-                    </div>
+                    {renderCardHeader('departments', <Mail size={20} className="text-purple-500" />, 'Şöbə E-poçtları', 'Müraciətlərin istiqamətinə uyğun e-poçt ünvanları.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>Baş Ofis (HQ)</label>
@@ -677,16 +698,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* SMTP Section */}
                 <div className={getCardClassName('smtp-settings')} data-settings-section="smtp-settings">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Mail size={20} className="text-emerald-500" />
-                                <h2>SMTP Bildiriş Ayarları</h2>
-                            </div>
-                            <p className="card-description">Form müraciətləri göndəriləndə e-poçt bildirişi üçün SMTP məlumatları.</p>
-                        </div>
-                        {renderCardAction('smtp-settings')}
-                    </div>
+                    {renderCardHeader('smtp-settings', <Mail size={20} className="text-emerald-500" />, 'SMTP Bildiriş Ayarları', 'Form müraciətləri göndəriləndə e-poçt bildirişi üçün SMTP məlumatları.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>SMTP aktiv</label>
@@ -782,16 +794,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Branding Section */}
                 <div className={getCardClassName('branding')} data-settings-section="branding">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <ImageIcon size={20} className="text-orange-500" />
-                                <h2>Brendinq & Loqo</h2>
-                            </div>
-                            <p className="card-description">Light/Dark loqoları yükləyin, görünüşü dərhal önizləyin.</p>
-                        </div>
-                        {renderCardAction('branding')}
-                    </div>
+                    {renderCardHeader('branding', <ImageIcon size={20} className="text-orange-500" />, 'Brendinq & Loqo', 'Light/Dark loqoları yükləyin, görünüşü dərhal önizləyin.')}
                     <div className="card-body">
                         <div className="logo-upload-grid">
                             <div className="logo-box">
@@ -828,16 +831,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Social Links Section */}
                 <div className={getCardClassName('social-links')} data-settings-section="social-links">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Globe size={20} className="text-pink-500" />
-                                <h2>Sosial Media Linkləri</h2>
-                            </div>
-                            <p className="card-description">Sosial hesabları daxil edin və “Test et” ilə yoxlayın.</p>
-                        </div>
-                        {renderCardAction('social-links')}
-                    </div>
+                    {renderCardHeader('social-links', <Globe size={20} className="text-pink-500" />, 'Sosial Media Linkləri', 'Sosial hesabları daxil edin və “Test et” ilə yoxlayın.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>Instagram</label>
@@ -913,16 +907,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* WhatsApp Integration Section */}
                 <div className={getCardClassName('whatsapp-settings')} data-settings-section="whatsapp-settings">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <MessageCircle size={20} className="text-green-500" />
-                                <h2>WhatsApp Integration</h2>
-                            </div>
-                            <p className="card-description">Sürücü qeydiyyat müraciətlərində WhatsApp bildirişlərini HubMSG API ilə idarə edin.</p>
-                        </div>
-                        {renderCardAction('whatsapp-settings')}
-                    </div>
+                    {renderCardHeader('whatsapp-settings', <MessageCircle size={20} className="text-green-500" />, 'WhatsApp Integration', 'Sürücü qeydiyyat müraciətlərində WhatsApp bildirişlərini HubMSG API ilə idarə edin.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>WhatsApp bildirişləri</label>
@@ -976,16 +961,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Marquee Section */}
                 <div className={getCardClassName('marquee-settings')} data-settings-section="marquee-settings">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <Activity size={20} className="text-amber-500" />
-                                <h2>Marquee Ayarları</h2>
-                            </div>
-                            <p className="card-description">Ana səhifənin üst hissəsindəki hərəkətli elan xəttini idarə edin.</p>
-                        </div>
-                        {renderCardAction('marquee-settings')}
-                    </div>
+                    {renderCardHeader('marquee-settings', <Activity size={20} className="text-amber-500" />, 'Marquee Ayarları', 'Ana səhifənin üst hissəsindəki hərəkətli elan xəttini idarə edin.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label className="toggle-row">
@@ -1051,16 +1027,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* Stats Section */}
                 <div className={getCardClassName('stats')} data-settings-section="stats">
-                    <div className="card-header">
-                        <div className="card-title-wrap">
-                            <div className="card-title-row">
-                                <BarChart3 size={20} className="text-green-500" />
-                                <h2>Sayt Statistikaları</h2>
-                            </div>
-                            <p className="card-description">Ana səhifədə göstərilən qısa statistik göstəricilər.</p>
-                        </div>
-                        {renderCardAction('stats')}
-                    </div>
+                    {renderCardHeader('stats', <BarChart3 size={20} className="text-green-500" />, 'Sayt Statistikaları', 'Ana səhifədə göstərilən qısa statistik göstəricilər.')}
                     <div className="card-body">
                         <div className="stats-edit-grid">
                             <div className="field-group">
