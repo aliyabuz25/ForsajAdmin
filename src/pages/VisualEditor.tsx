@@ -1169,6 +1169,14 @@ const VisualEditor: React.FC = () => {
     const [homeEditTab, setHomeEditTab] = useState<HomeEditTab>('all');
 
     useEffect(() => {
+        if (photoAlbumFilter === 'all') {
+            setRenamePhotoAlbumName('');
+            return;
+        }
+        setRenamePhotoAlbumName(normalizePhotoAlbum(photoAlbumFilter));
+    }, [photoAlbumFilter]);
+
+    useEffect(() => {
         if (mode) {
             setEditorMode(mode as any);
         } else if (pageParam) {
@@ -5222,14 +5230,6 @@ const VisualEditor: React.FC = () => {
     const activePhotoAlbumFilter = photoAlbumFilter === 'all'
         ? 'all'
         : normalizePhotoAlbum(photoAlbumFilter);
-
-    useEffect(() => {
-        if (photoAlbumFilter === 'all') {
-            setRenamePhotoAlbumName('');
-            return;
-        }
-        setRenamePhotoAlbumName(normalizePhotoAlbum(photoAlbumFilter));
-    }, [photoAlbumFilter]);
 
     const filteredPhotos = galleryPhotos.filter((item) => {
         const itemAlbum = normalizePhotoAlbum(item.album);

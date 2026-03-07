@@ -107,7 +107,11 @@ const GeneralSettings: React.FC = () => {
                 className="card-visibility-btn"
                 onClick={(event) => {
                     event.stopPropagation();
-                    hidden ? restoreCard(sectionId) : hideCard(sectionId);
+                    if (hidden) {
+                        restoreCard(sectionId);
+                    } else {
+                        hideCard(sectionId);
+                    }
                 }}
                 title={isRestoreAction ? 'Kartı geri gətir' : 'Kartı gizlət'}
                 aria-label={isRestoreAction ? 'Kartı geri gətir' : 'Kartı gizlət'}
