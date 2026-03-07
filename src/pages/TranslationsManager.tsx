@@ -922,6 +922,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         autoTranslateError: getLocalizedText(language, 'Avtomatik tərcümə zamanı xəta baş verdi', 'Ошибка при автопереводе'),
         autoTranslateIdle: getLocalizedText(language, 'Boş tərcümə tapılmadı', 'Пустые переводы не найдены'),
         translating: getLocalizedText(language, 'Tərcümə olunur...', 'Выполняется перевод...'),
+        floatingSaveHint: getLocalizedText(language, 'Kaydet butonu aşağıda sabitdir', 'Кнопка сохранения закреплена внизу'),
         selectedPageLabel: getLocalizedText(language, 'Seçilmiş səhifə', 'Выбранная страница'),
         visibleKeysLabel: getLocalizedText(language, 'Görünən açarlar', 'Видимые ключи'),
         translatedLabel: getLocalizedText(language, 'Dolu sahələr', 'Заполненные поля'),
@@ -1677,6 +1678,21 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                         </>
                     )}
                 </section>
+            </div>
+            <div className={`floating-save-dock ${dirty ? 'is-visible' : ''}`}>
+                <div className="floating-save-meta">
+                    <span className="floating-save-label">{dirty ? t.changed : t.upToDate}</span>
+                    <span className="floating-save-hint">{t.floatingSaveHint}</span>
+                </div>
+                <button
+                    type="button"
+                    className="btn-primary floating-save-button"
+                    onClick={saveLocalization}
+                    disabled={!dirty || saving || translating}
+                >
+                    {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+                    <span>{t.save}</span>
+                </button>
             </div>
         </div>
     );

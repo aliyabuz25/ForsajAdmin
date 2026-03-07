@@ -14,6 +14,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding-bottom: 110px;
 }
 
 .translations-header {
@@ -630,6 +631,59 @@
     font-weight: 600;
 }
 
+.floating-save-dock {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 320px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(14px);
+    transform: translateY(0);
+}
+
+.floating-save-dock.is-visible {
+    border-color: rgba(255, 95, 31, 0.28);
+    box-shadow: 0 22px 60px rgba(255, 95, 31, 0.18);
+}
+
+.floating-save-meta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.floating-save-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.floating-save-hint {
+    margin-top: 3px;
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.floating-save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
 .spin {
     animation: translations-spin 0.8s linear infinite;
 }
@@ -705,5 +759,20 @@
 
     .translation-meta-top {
         flex-direction: column;
+    }
+
+    .floating-save-dock {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        min-width: 0;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .floating-save-button {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
     }
 }
