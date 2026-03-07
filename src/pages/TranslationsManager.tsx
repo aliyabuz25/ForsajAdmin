@@ -50,6 +50,8 @@ interface PageLabelMeta {
 interface SiteContentPage {
     id: string;
     title: string;
+    sortIndex: number;
+    orderByKey: Record<string, number>;
 }
 
 interface DisplayPagesState {
@@ -76,6 +78,10 @@ const DEFAULT_PAYLOAD: LocalizationPayload = {
 };
 const EDITABLE_LANGUAGES: EditableSiteLanguage[] = ['RU', 'ENG'];
 const CONTENT_VERSION_KEY = 'forsaj_site_content_version';
+const TRANSLATION_TARGET_BY_LANG: Record<EditableSiteLanguage, 'ru' | 'en'> = {
+    RU: 'ru',
+    ENG: 'en'
+};
 const HOME_AGGREGATE_PAGE_IDS = ['home', 'navbar', 'hero', 'marquee', 'categoryleaders', 'nextrace', 'news', 'partners', 'videoarchive', 'footer'];
 const PAGE_SORT_ORDER = [
     'home',
@@ -328,12 +334,47 @@ const prettyPageName = (pageId: string) =>
         .trim()
         .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const isLikelyLocalizationKey = (value: unknown) => {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    if (isBusinessTranslationKey(text) || isGeneratedTranslationKey(text)) return true;
+    return /^[A-Z0-9]+(?:_[A-Z0-9]+)*$/.test(text);
+};
+
+const buildSiteContentOrderByKey = (rawSections: any[]) => {
+    const orderByKey: Record<string, number> = {};
+
+    rawSections.forEach((section, index) => {
+        const candidates = [
+            String(section?.id || '').trim(),
+            String(section?.label || '').trim(),
+            String(section?.value || '').trim()
+        ]
+            .flatMap((candidate) => {
+                if (!candidate) return [];
+                const unwrapped = candidate.replace(/^KEY:\s*/i, '').trim();
+                return unwrapped && unwrapped !== candidate ? [candidate, unwrapped] : [candidate];
+            })
+            .filter(Boolean);
+
+        candidates.forEach((candidate) => {
+            if (!isLikelyLocalizationKey(candidate)) return;
+            if (orderByKey[candidate] !== undefined) return;
+            orderByKey[candidate] = index;
+        });
+    });
+
+    return orderByKey;
+};
+
 const normalizeSiteContentPages = (raw: any): SiteContentPage[] => {
     if (!Array.isArray(raw)) return [];
     return raw
-        .map((page) => ({
+        .map((page, index) => ({
             id: String(page?.id || page?.page_id || '').trim().toLowerCase(),
-            title: String(page?.title || '').trim()
+            title: String(page?.title || '').trim(),
+            sortIndex: index,
+            orderByKey: buildSiteContentOrderByKey(Array.isArray(page?.sections) ? page.sections : [])
         }))
         .filter((page) => page.id);
 };
@@ -374,7 +415,11 @@ const getPageDisplayDescription = (
     return String(pageId || '').trim();
 };
 
-const comparePageIds = (left: string, right: string) => {
+const comparePageIds = (
+    left: string,
+    right: string,
+    siteContentOrderById: Record<string, number>
+) => {
     const leftIndex = PAGE_SORT_INDEX[left];
     const rightIndex = PAGE_SORT_INDEX[right];
 
@@ -383,6 +428,16 @@ const comparePageIds = (left: string, right: string) => {
     }
     if (Number.isFinite(leftIndex)) return -1;
     if (Number.isFinite(rightIndex)) return 1;
+
+    const leftContentIndex = siteContentOrderById[left];
+    const rightContentIndex = siteContentOrderById[right];
+
+    if (Number.isFinite(leftContentIndex) && Number.isFinite(rightContentIndex) && leftContentIndex !== rightContentIndex) {
+        return leftContentIndex - rightContentIndex;
+    }
+    if (Number.isFinite(leftContentIndex)) return -1;
+    if (Number.isFinite(rightContentIndex)) return 1;
+
     return left.localeCompare(right, 'en');
 };
 
@@ -594,6 +649,112 @@ const shouldHideTranslationKey = (key: string, entry?: LocalizationEntry | null)
     return shouldHideTranslationEntry(entry);
 };
 
+const isHtmlTranslationValue = (value: unknown) =>
+    /<\/?[a-z][^>]*>/i.test(String(value || '').trim());
+
+const isAutoTranslatableValue = (value: unknown) => {
+    const text = String(value || '').trim();
+    if (!text || text === '---') return false;
+    if (/^https?:\/\//i.test(text)) return false;
+    if (/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/i.test(text)) return false;
+    if (/^[0-9]+([.,:\/-][0-9]+)*$/.test(text)) return false;
+    if (/^(true|false|yes|no|on|off|null|undefined)$/i.test(text)) return false;
+    if (isUnderscorePlaceholder(text) || isLikelyLocalizationKey(text)) return false;
+    if (/^[A-Z0-9_.\/-]{2,40}$/.test(text)) return false;
+    return /[A-Za-zƏəÖöÜüĞğŞşİıÇçА-Яа-я]/.test(text);
+};
+
+const buildExistingTranslationLookup = (
+    pages: LocalizationPayload['pages'],
+    language: EditableSiteLanguage
+) => {
+    const lookup = new Map<string, string>();
+
+    Object.values(pages || {}).forEach((entries) => {
+        Object.values(entries || {}).forEach((entry) => {
+            const signature = getEntrySourceSignature(entry);
+            const localizedValue = String(entry?.[language] || '').trim();
+            if (!signature || !isMeaningfulTranslationValue(localizedValue)) return;
+
+            const existing = lookup.get(signature);
+            if (!existing) {
+                lookup.set(signature, localizedValue);
+                return;
+            }
+
+            const nextScore = getLocalizedValueScore(localizedValue, entry?.AZ || '');
+            const currentScore = getLocalizedValueScore(existing, entry?.AZ || '');
+            if (nextScore > currentScore || (nextScore === currentScore && localizedValue.length > existing.length)) {
+                lookup.set(signature, localizedValue);
+            }
+        });
+    });
+
+    return lookup;
+};
+
+const getTranslationGroupSortMeta = (
+    group: TranslationEntryGroup,
+    selectedPage: string,
+    origins: DisplayPagesState['origins'],
+    siteContentById: Record<string, SiteContentPage>
+) => {
+    const fallbackPageOrder = HOME_AGGREGATE_PAGE_IDS.length + 1000;
+    const best = group.keys.reduce<{
+        pageOrder: number;
+        keyOrder: number;
+        keyPriority: number;
+        key: string;
+    } | null>((currentBest, key) => {
+        const sourcePageId = origins[selectedPage]?.[key] || selectedPage;
+        const sourcePage = siteContentById[sourcePageId];
+        const aggregateIndex = selectedPage === 'home' ? HOME_AGGREGATE_PAGE_IDS.indexOf(sourcePageId) : -1;
+        const pageOrder = aggregateIndex >= 0
+            ? aggregateIndex
+            : (sourcePageId === selectedPage
+                ? 0
+                : (Number.isFinite(sourcePage?.sortIndex) ? sourcePage.sortIndex + HOME_AGGREGATE_PAGE_IDS.length : fallbackPageOrder));
+        const keyOrder = sourcePage?.orderByKey?.[key] ?? (10000 + getTranslationKeyPriority(key));
+        const keyPriority = getTranslationKeyPriority(key);
+        const nextValue = { pageOrder, keyOrder, keyPriority, key };
+
+        if (!currentBest) return nextValue;
+        if (nextValue.pageOrder !== currentBest.pageOrder) {
+            return nextValue.pageOrder < currentBest.pageOrder ? nextValue : currentBest;
+        }
+        if (nextValue.keyOrder !== currentBest.keyOrder) {
+            return nextValue.keyOrder < currentBest.keyOrder ? nextValue : currentBest;
+        }
+        if (nextValue.keyPriority !== currentBest.keyPriority) {
+            return nextValue.keyPriority < currentBest.keyPriority ? nextValue : currentBest;
+        }
+        return nextValue.key.localeCompare(currentBest.key, 'en') < 0 ? nextValue : currentBest;
+    }, null);
+
+    return best || {
+        pageOrder: fallbackPageOrder,
+        keyOrder: 10000 + getTranslationKeyPriority(group.key),
+        keyPriority: getTranslationKeyPriority(group.key),
+        key: group.key
+    };
+};
+
+const compareTranslationGroups = (
+    left: TranslationEntryGroup,
+    right: TranslationEntryGroup,
+    selectedPage: string,
+    origins: DisplayPagesState['origins'],
+    siteContentById: Record<string, SiteContentPage>
+) => {
+    const leftMeta = getTranslationGroupSortMeta(left, selectedPage, origins, siteContentById);
+    const rightMeta = getTranslationGroupSortMeta(right, selectedPage, origins, siteContentById);
+
+    if (leftMeta.pageOrder !== rightMeta.pageOrder) return leftMeta.pageOrder - rightMeta.pageOrder;
+    if (leftMeta.keyOrder !== rightMeta.keyOrder) return leftMeta.keyOrder - rightMeta.keyOrder;
+    if (leftMeta.keyPriority !== rightMeta.keyPriority) return leftMeta.keyPriority - rightMeta.keyPriority;
+    return leftMeta.key.localeCompare(rightMeta.key, 'en');
+};
+
 const getPageVisibleGroups = (
     entries: Record<string, LocalizationEntry>,
     pageId: string,
@@ -720,13 +881,14 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     const [siteContentPages, setSiteContentPages] = useState<SiteContentPage[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [translating, setTranslating] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [selectedPage, setSelectedPage] = useState('');
     const [selectedLang, setSelectedLang] = useState<EditableSiteLanguage>(language === 'ru' ? 'RU' : 'ENG');
     const [search, setSearch] = useState('');
     const [pageSearch, setPageSearch] = useState('');
     const [showOnlyMissing, setShowOnlyMissing] = useState(false);
-    const [showOnlyActiveKeys, setShowOnlyActiveKeys] = useState(true);
+    const [showOnlyActiveKeys, setShowOnlyActiveKeys] = useState(false);
 
     const t = {
         title: getLocalizedText(language, 'Translations', 'Переводы'),
@@ -750,6 +912,11 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         changed: getLocalizedText(language, 'Dəyişikliklər var', 'Есть несохраненные изменения'),
         upToDate: getLocalizedText(language, 'Hamısı aktualdır', 'Все изменения сохранены'),
         fillMissing: getLocalizedText(language, 'Boş xanaları AZ ilə doldur', 'Заполнить пустые значения из AZ'),
+        autoTranslateMissing: getLocalizedText(language, 'Boş xanaları avtomatik çevir', 'Автоперевести пустые значения'),
+        autoTranslateDone: getLocalizedText(language, 'Boş tərcümələr tamamlandı', 'Пустые переводы заполнены'),
+        autoTranslateError: getLocalizedText(language, 'Avtomatik tərcümə zamanı xəta baş verdi', 'Ошибка при автопереводе'),
+        autoTranslateIdle: getLocalizedText(language, 'Boş tərcümə tapılmadı', 'Пустые переводы не найдены'),
+        translating: getLocalizedText(language, 'Tərcümə olunur...', 'Выполняется перевод...'),
         countLabel: getLocalizedText(language, 'açar', 'ключей'),
         pageListInfo: getLocalizedText(language, 'səhifə', 'страниц'),
         completionShort: getLocalizedText(language, 'tamamlanma', 'заполнено'),
@@ -762,9 +929,25 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         [payload.pages]
     );
 
+    const siteContentById = useMemo(
+        () => siteContentPages.reduce<Record<string, SiteContentPage>>((acc, page) => {
+            acc[page.id] = page;
+            return acc;
+        }, {}),
+        [siteContentPages]
+    );
+
+    const siteContentOrderById = useMemo(
+        () => siteContentPages.reduce<Record<string, number>>((acc, page) => {
+            acc[page.id] = page.sortIndex;
+            return acc;
+        }, {}),
+        [siteContentPages]
+    );
+
     const allPageIds = useMemo(
-        () => Object.keys(displayPagesState.pages || {}).sort(comparePageIds),
-        [displayPagesState]
+        () => Object.keys(displayPagesState.pages || {}).sort((left, right) => comparePageIds(left, right, siteContentOrderById)),
+        [displayPagesState, siteContentOrderById]
     );
 
     const currentEntries = useMemo(
@@ -846,7 +1029,9 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
     const visibleGroups = useMemo(() => {
         const query = search.trim().toLowerCase();
         return [...currentGroups]
-            .sort((left, right) => left.key.localeCompare(right.key, 'en'))
+            .sort((left, right) =>
+                compareTranslationGroups(left, right, selectedPage, displayPagesState.origins, siteContentById)
+            )
             .filter((group) => {
                 const currentValue = String(group.entry[selectedLang] || '').trim();
                 if (showOnlyMissing && currentValue) return false;
@@ -864,7 +1049,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
                 return haystack.includes(query);
             });
-    }, [currentGroups, search, selectedLang, showOnlyMissing]);
+    }, [currentGroups, displayPagesState.origins, search, selectedLang, selectedPage, showOnlyMissing, siteContentById]);
 
     const completion = useMemo(() => {
         if (!currentGroups.length) return 0;
@@ -1019,8 +1204,138 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
         setDirty(true);
     };
 
+    const autoTranslateMissing = async () => {
+        if (!selectedPage || translating) return;
+
+        const existingTranslations = buildExistingTranslationLookup(payload.pages, selectedLang);
+        const updates = new Map<string, { pageId: string; key: string; value: string }>();
+        const queuedGroups = new Map<string, { keys: string[]; pageIds: string[]; sourceText: string; format: 'text' | 'html' }[]>();
+
+        currentGroups.forEach((group) => {
+            const currentValue = String(group.entry[selectedLang] || '').trim();
+            if (currentValue) return;
+
+            const sourceText = collapseRepeatedSourceText(group.entry.AZ).trim();
+            if (!sourceText) return;
+
+            const signature = getEntrySourceSignature(group.entry);
+            const existingValue = signature ? existingTranslations.get(signature) : '';
+
+            if (existingValue) {
+                group.keys.forEach((key) => {
+                    const pageId = displayPagesState.origins[selectedPage]?.[key] || selectedPage;
+                    updates.set(`${pageId}:${key}`, { pageId, key, value: existingValue });
+                });
+                return;
+            }
+
+            if (!isAutoTranslatableValue(sourceText)) {
+                group.keys.forEach((key) => {
+                    const pageId = displayPagesState.origins[selectedPage]?.[key] || selectedPage;
+                    updates.set(`${pageId}:${key}`, { pageId, key, value: sourceText });
+                });
+                return;
+            }
+
+            const format = isHtmlTranslationValue(sourceText) ? 'html' : 'text';
+            const queueKey = `${format}:${sourceText}`;
+            const queued = queuedGroups.get(queueKey) || [];
+            queued.push({
+                keys: group.keys,
+                pageIds: group.keys.map((key) => displayPagesState.origins[selectedPage]?.[key] || selectedPage),
+                sourceText,
+                format
+            });
+            queuedGroups.set(queueKey, queued);
+        });
+
+        if (!queuedGroups.size && !updates.size) {
+            toast(t.autoTranslateIdle);
+            return;
+        }
+
+        setTranslating(true);
+        try {
+            const token = getAuthToken();
+            const translateChunk = async (texts: string[], format: 'text' | 'html') => {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({
+                        q: texts,
+                        source: 'az',
+                        target: TRANSLATION_TARGET_BY_LANG[selectedLang],
+                        format
+                    })
+                });
+                if (!response.ok) throw new Error('translate_failed');
+
+                const result = await response.json();
+                if (Array.isArray(result?.translatedText)) {
+                    return result.translatedText.map((item: unknown) => String(item ?? ''));
+                }
+                return texts.map(() => String(result?.translatedText ?? ''));
+            };
+
+            for (const format of ['text', 'html'] as const) {
+                const queueEntries = Array.from(queuedGroups.values()).filter((queueItems) => queueItems[0]?.format === format);
+
+                for (let index = 0; index < queueEntries.length; index += 20) {
+                    const chunk = queueEntries.slice(index, index + 20);
+                    const sourceTexts = chunk.map((queueItems) => queueItems[0].sourceText);
+                    const translatedList = await translateChunk(sourceTexts, format);
+
+                    chunk.forEach((queueItems, chunkIndex) => {
+                        const translatedValue = String(translatedList[chunkIndex] || queueItems[0].sourceText);
+                        queueItems.forEach((queueItem) => {
+                            queueItem.keys.forEach((key, keyIndex) => {
+                                const pageId = queueItem.pageIds[keyIndex] || selectedPage;
+                                updates.set(`${pageId}:${key}`, { pageId, key, value: translatedValue });
+                            });
+                        });
+                    });
+                }
+            }
+
+            if (!updates.size) {
+                toast(t.autoTranslateIdle);
+                return;
+            }
+
+            setPayload((prev) => {
+                const nextPages = { ...prev.pages };
+                updates.forEach(({ pageId, key, value }) => {
+                    const sourcePage = nextPages[pageId] || {};
+                    const sourceEntry = sourcePage[key] || { AZ: '', RU: '', ENG: '' };
+                    nextPages[pageId] = {
+                        ...sourcePage,
+                        [key]: {
+                            ...sourceEntry,
+                            [selectedLang]: value
+                        }
+                    };
+                });
+
+                return {
+                    ...prev,
+                    pages: nextPages
+                };
+            });
+            setDirty(true);
+            toast.success(`${t.autoTranslateDone} (${updates.size})`);
+        } catch (error) {
+            console.error(error);
+            toast.error(t.autoTranslateError);
+        } finally {
+            setTranslating(false);
+        }
+    };
+
     const saveLocalization = async () => {
-        if (!dirty) return;
+        if (!dirty || translating) return;
         setSaving(true);
         try {
             const token = getAuthToken();
@@ -1083,7 +1398,7 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                         <RefreshCw size={16} />
                         <span>{t.refresh}</span>
                     </button>
-                    <button type="button" className="btn-primary" onClick={saveLocalization} disabled={!dirty || saving}>
+                    <button type="button" className="btn-primary" onClick={saveLocalization} disabled={!dirty || saving || translating}>
                         {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
                         <span>{t.save}</span>
                     </button>
@@ -1097,6 +1412,12 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                     <span className="status-chip status-clean">
                         <CheckCircle2 size={14} />
                         {t.upToDate}
+                    </span>
+                )}
+                {translating && (
+                    <span className="status-chip">
+                        <Loader2 size={14} className="spin" />
+                        {t.translating}
                     </span>
                 )}
                 <span className="status-chip">
@@ -1190,6 +1511,10 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                                 </label>
                                 <button type="button" className="btn-secondary" onClick={fillMissingWithAz}>
                                     {t.fillMissing}
+                                </button>
+                                <button type="button" className="btn-secondary" onClick={autoTranslateMissing} disabled={translating}>
+                                    {translating ? <Loader2 size={16} className="spin" /> : null}
+                                    <span>{t.autoTranslateMissing}</span>
                                 </button>
                             </div>
 
