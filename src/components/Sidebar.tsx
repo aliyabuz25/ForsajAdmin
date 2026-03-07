@@ -375,6 +375,10 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, user, onLogout, language, 
                     <div className="logo-mark">
                         <Hexagon className="logo-icon" size={22} fill="currentColor" />
                     </div>
+                    <div className="brand-name" aria-hidden="true">
+                        <strong>FORSAJ</strong>
+                        <span>ADMIN</span>
+                    </div>
                 </div>
                 <div className="sidebar-lang-switch" aria-label="Admin language switch">
                     {languageOptions.map((option) => (

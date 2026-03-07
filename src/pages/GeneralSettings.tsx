@@ -370,13 +370,6 @@ const GeneralSettings: React.FC = () => {
         }
     };
 
-    const scrollToSection = (sectionId: SettingsSectionId) => {
-        openSection(sectionId);
-        const target = document.querySelector(`[data-settings-section="${sectionId}"]`);
-        if (!target) return;
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
     if (isLoading) return <div className="loading-state">Yüklənir...</div>;
 
     return (
@@ -395,21 +388,6 @@ const GeneralSettings: React.FC = () => {
             {isHiddenTab && hiddenCards.length === 0 && (
                 <div className="hidden-settings-empty">
                     Gizlənmiş kart yoxdur. Kartları gizlətmək üçün normal görünüşdə kartın üzərinə gəlib göz ikonuna klikləyin.
-                </div>
-            )}
-
-            {!isHiddenTab && (
-                <div className="settings-quick-nav">
-                    {SETTINGS_NAV_ITEMS.map((item) => (
-                        <button
-                            key={item.id}
-                            type="button"
-                            className="quick-nav-btn"
-                            onClick={() => scrollToSection(item.id)}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
                 </div>
             )}
 
