@@ -889,7 +889,7 @@ const GeneralSettings: React.FC = () => {
 
                 {/* WhatsApp Integration Section */}
                 <div className={getCardClassName('whatsapp-settings')} data-settings-section="whatsapp-settings">
-                    {renderCardHeader('whatsapp-settings', <MessageCircle size={20} className="text-green-500" />, 'WhatsApp Integration', 'Sürücü qeydiyyat müraciətlərində WhatsApp bildirişlərini HubMSG API ilə idarə edin.')}
+                    {renderCardHeader('whatsapp-settings', <MessageCircle size={20} className="text-green-500" />, 'WhatsApp Integration', 'Sürücü qeydiyyat formundan gələn WhatsApp nömrəsinə bildiriş göndərilməsini HubMSG API ilə idarə edin.')}
                     <div className="card-body">
                         <div className="field-group">
                             <label>WhatsApp bildirişləri</label>
@@ -927,16 +927,7 @@ const GeneralSettings: React.FC = () => {
                                     {showWhatsAppApiKey ? 'Gizlət' : 'Göstər'}
                                 </button>
                             </div>
-                        </div>
-                        <div className="field-group">
-                            <label>Təşkilatçı WhatsApp nömrələri</label>
-                            <input
-                                type="text"
-                                value={getFieldValue('WHATSAPP_ORGANIZER_TO')}
-                                onChange={(e) => updateField('WHATSAPP_ORGANIZER_TO', e.target.value)}
-                                placeholder="994551234567, 994501112233"
-                            />
-                            <small className="field-help">Bir neçə nömrə üçün vergül istifadə edin. Ölkə kodu ilə daxil edin.</small>
+                            <small className="field-help">Qəbul edən nömrə pilot qeydiyyat formundakı WhatsApp sahəsindən avtomatik götürülür.</small>
                         </div>
                     </div>
                 </div>

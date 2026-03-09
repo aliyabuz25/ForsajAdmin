@@ -1570,21 +1570,11 @@ const resolveWhatsAppSettings = async () => {
         'WHATSAPP_API_KEY',
         process.env.WHATSAPP_API_KEY || '037ed90b2bcc903c7f15d33003d6b99c'
     ) || '').trim();
-    const organizerRaw = String(resolveGeneralSettingValue(
-        siteContent,
-        'WHATSAPP_ORGANIZER_TO',
-        process.env.ORGANIZER_WHATSAPP_TO || ''
-    ) || '').trim();
-    const organizerTargets = organizerRaw
-        .split(',')
-        .map((item) => normalizeHubMsgRecipient(item))
-        .filter(Boolean);
 
     return {
         enabled,
         endpoint,
-        apiKey,
-        organizerTargets
+        apiKey
     };
 };
 
@@ -1609,20 +1599,10 @@ const sendHubMsgWhatsAppMessage = async ({ endpoint, apiKey, recipient, message 
     return response.json().catch(() => ({}));
 };
 
-const buildPilotWhatsAppMessage = ({ locale, toOrganizer, name, eventTitle, whatsapp }) => {
+const buildPilotWhatsAppMessage = ({ locale, name, eventTitle }) => {
     const lang = normalizeLocaleCode(locale);
     const safeName = String(name || '').trim() || '-';
     const safeEventTitle = String(eventTitle || '').trim() || '-';
-
-    if (toOrganizer) {
-        if (lang === 'RU') {
-            return `Новая заявка пилота получена.\nИмя: ${safeName}\nWhatsApp: ${whatsapp}\nСобытие: ${safeEventTitle}\nСтатус: Заявка принята, ожидает обратной связи.`;
-        }
-        if (lang === 'EN') {
-            return `New pilot application received.\nName: ${safeName}\nWhatsApp: ${whatsapp}\nEvent: ${safeEventTitle}\nStatus: Application received, pending follow-up.`;
-        }
-        return `Yeni pilot müraciəti daxil oldu.\nAd: ${safeName}\nWhatsApp: ${whatsapp}\nTədbir: ${safeEventTitle}\nStatus: Müraciət qəbul edildi, geri əlaqə gözləyir.`;
-    }
 
     if (lang === 'RU') {
         return `Здравствуйте, ${safeName}!\nМы получили вашу заявку.\nВаша заявка еще не подтверждена.\nОчень скоро мы свяжемся с вами в WhatsApp.\nСобытие: ${safeEventTitle}`;
@@ -1652,35 +1632,13 @@ const sendPilotApplicationWhatsAppNotifications = async ({ name, whatsapp, event
             recipient: candidatePhone,
             message: buildPilotWhatsAppMessage({
                 locale,
-                toOrganizer: false,
                 name,
-                eventTitle,
-                whatsapp: candidatePhone
+                eventTitle
             })
         });
         deliveries.push({ target: 'candidate', to: candidatePhone, sent: true });
     } catch (error) {
         deliveries.push({ target: 'candidate', to: candidatePhone, sent: false, error: error?.message || 'candidate_send_failed' });
-    }
-
-    for (const organizerPhone of settings.organizerTargets) {
-        try {
-            await sendHubMsgWhatsAppMessage({
-                endpoint: settings.endpoint,
-                apiKey: settings.apiKey,
-                recipient: organizerPhone,
-                message: buildPilotWhatsAppMessage({
-                    locale,
-                    toOrganizer: true,
-                    name,
-                    eventTitle,
-                    whatsapp: candidatePhone
-                })
-            });
-            deliveries.push({ target: 'organizer', to: organizerPhone, sent: true });
-        } catch (error) {
-            deliveries.push({ target: 'organizer', to: organizerPhone, sent: false, error: error?.message || 'organizer_send_failed' });
-        }
     }
 
     const sentCount = deliveries.filter((item) => item.sent).length;
@@ -1691,8 +1649,7 @@ const sendPilotApplicationWhatsAppNotifications = async ({ name, whatsapp, event
     return {
         sent: true,
         sentCount,
-        deliveries,
-        organizerConfigured: settings.organizerTargets.length > 0
+        deliveries
     };
 };
 
