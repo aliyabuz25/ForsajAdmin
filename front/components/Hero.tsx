@@ -28,7 +28,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
   const primaryCtaLabel = getText('HERO_PRIMARY_CTA', '') || getText('text-3', 'YARIŞLARA BAX');
   const secondaryCtaLabel = getText('HERO_SECONDARY_CTA', '') || getText('text-4', 'HAQQIMIZDA');
   const primaryCtaUrl = getUrl('HERO_PRIMARY_CTA', '') || getUrl('text-3', 'events');
-  const secondaryCtaUrl = getUrl('HERO_SECONDARY_CTA', '') || getUrl('text-4', 'https://forsajclub.az/?view=about');
+  const secondaryCtaUrl = getUrl('HERO_SECONDARY_CTA', '') || getUrl('text-4', '/?view=about');
 
   if (isLoading) return <div className="h-[85vh] bg-black animate-pulse"></div>;
 

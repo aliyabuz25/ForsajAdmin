@@ -12,7 +12,7 @@ const jwt = require('jsonwebtoken');
 
 const PORT = process.env.PORT || 5000;
 const app = express();
-const FORCED_MAIL_LOGO_URL = 'https://forsajclub.az/uploads/1771427495257-714907240.png';
+const FORCED_MAIL_LOGO_URL = 'https://forsaj.az/uploads/1771427495257-714907240.png';
 const LIBRETRANSLATE_URL = String(process.env.LIBRETRANSLATE_URL || '').trim();
 const LIBRETRANSLATE_FALLBACK_URLS = String(process.env.LIBRETRANSLATE_FALLBACK_URLS || '')
     .split(',')
@@ -1422,7 +1422,7 @@ const normalizeOptionalLocaleCode = (value) => {
     return trimmed ? normalizeLocaleCode(trimmed) : '';
 };
 
-const getPublicSiteBaseUrl = (fallback = 'https://forsajclub.az') => {
+const getPublicSiteBaseUrl = (fallback = 'https://forsaj.az') => {
     const raw = String(process.env.PUBLIC_SITE_URL || process.env.SITE_URL || '').trim();
     return (raw || fallback).replace(/\/+$/, '');
 };

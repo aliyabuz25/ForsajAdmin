@@ -29,7 +29,7 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=edge'
-      - 'traefik.http.routers.forsaj-api.rule=(Host(`forsajclub.az`) || Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))'
+      - 'traefik.http.routers.forsaj-api.rule=(Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))'
       - 'traefik.http.routers.forsaj-api.entrypoints=web'
       - 'traefik.http.routers.forsaj-api.priority=1500'
       - 'traefik.http.services.forsaj-api.loadbalancer.server.port=5000'
@@ -52,7 +52,7 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=edge'
-      - 'traefik.http.routers.forsaj.rule=Host(`forsajclub.az`) || Host(`forsaj.az`) || Host(`forsaj.octotech.az`)'
+      - 'traefik.http.routers.forsaj.rule=Host(`forsaj.az`) || Host(`forsaj.octotech.az`)'
       - 'traefik.http.routers.forsaj.entrypoints=web'
       - 'traefik.http.routers.forsaj.priority=500'
       - 'traefik.http.services.forsaj.loadbalancer.server.port=80'
@@ -75,7 +75,7 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=edge'
-      - 'traefik.http.routers.forsaj-admin.rule=(Host(`forsajclub.az`) || Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && PathPrefix(`/admin`)'
+      - 'traefik.http.routers.forsaj-admin.rule=(Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && PathPrefix(`/admin`)'
       - 'traefik.http.routers.forsaj-admin.entrypoints=web'
       - 'traefik.http.routers.forsaj-admin.priority=1000'
       - 'traefik.http.services.forsaj-admin.loadbalancer.server.port=80'
@@ -116,11 +116,11 @@ services:
       - edge
     environment:
       PMA_HOST: "forsaj-db"
-      PMA_ABSOLUTE_URI: "https://forsajclub.az/dbadmin/"
+      PMA_ABSOLUTE_URI: "https://forsaj.az/dbadmin/"
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=edge'
-      - 'traefik.http.routers.forsaj-dbadmin.rule=(Host(`forsajclub.az`) || Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && PathPrefix(`/dbadmin`)'
+      - 'traefik.http.routers.forsaj-dbadmin.rule=(Host(`forsaj.az`) || Host(`forsaj.octotech.az`)) && PathPrefix(`/dbadmin`)'
       - 'traefik.http.routers.forsaj-dbadmin.entrypoints=web'
       - 'traefik.http.routers.forsaj-dbadmin.priority=3000'
       - 'traefik.http.routers.forsaj-dbadmin.middlewares=forsaj-dbadmin-strip'

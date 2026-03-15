@@ -1595,13 +1595,13 @@ const VisualEditor: React.FC = () => {
                     ensureSection('HERO_TITLE', 'Hero Başlıq', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI', undefined, ['text-1']);
                     ensureSection('HERO_DESCRIPTION', 'Hero Təsvir', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.', undefined, ['text-2']);
                     ensureSection('HERO_PRIMARY_CTA', 'Hero Düymə 1', 'YARIŞLARA BAX', 'events', ['text-3']);
-                    ensureSection('HERO_SECONDARY_CTA', 'Hero Düymə 2', 'HAQQIMIZDA', 'https://forsajclub.az/?view=about', ['text-4']);
+                    ensureSection('HERO_SECONDARY_CTA', 'Hero Düymə 2', 'HAQQIMIZDA', '/?view=about', ['text-4']);
 
                     ensureSection('text-0', 'KEY: text-0', 'AZERBAIJAN OFFROAD MOTORSPORT HUB', undefined, ['HERO_KICKER']);
                     ensureSection('text-1', 'KEY: text-1', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI', undefined, ['HERO_TITLE']);
                     ensureSection('text-2', 'KEY: text-2', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.', undefined, ['HERO_DESCRIPTION']);
                     ensureSection('text-3', 'Hero Düymə 1', 'YARIŞLARA BAX', 'events', ['HERO_PRIMARY_CTA']);
-                    ensureSection('text-4', 'Hero Düymə 2', 'HAQQIMIZDA', 'https://forsajclub.az/?view=about', ['HERO_SECONDARY_CTA']);
+                    ensureSection('text-4', 'Hero Düymə 2', 'HAQQIMIZDA', '/?view=about', ['HERO_SECONDARY_CTA']);
 
                     heroPage.sections = sections;
                     prioritizeSectionOrder(heroPage, [
