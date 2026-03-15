@@ -235,9 +235,11 @@ const ContactPage: React.FC = () => {
                 <div className="bg-white/5 p-4 text-[#FF4D00] group-hover:bg-[#FF4D00] group-hover:text-black transition-all shadow-xl">
                   <Mail size={24} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-gray-600 font-black italic text-[8px] uppercase tracking-[0.4em] mb-1">{getText('EMAIL_LABEL', 'E-POÇT ÜNVANI')}</p>
-                  <p className="text-xl font-black italic uppercase tracking-tighter text-white">{officeEmail}</p>
+                  <p className="text-sm sm:text-lg md:text-xl font-black italic uppercase tracking-tight sm:tracking-tighter text-white leading-[1.1] break-all [overflow-wrap:anywhere]">
+                    {officeEmail}
+                  </p>
                 </div>
               </div>
 
@@ -357,9 +359,9 @@ const ContactPage: React.FC = () => {
               <textarea name="content" required placeholder={getText('FIELD_MESSAGE_PLACEHOLDER', 'BURADA YAZIN...')} rows={5} className="w-full bg-[#111] border border-white/5 text-white p-5 font-black italic text-xs uppercase outline-none focus:border-[#FF4D00] transition-colors resize-none placeholder:text-gray-800" />
             </div>
 
-            <button className="w-full bg-[#FF4D00] text-black py-4 sm:py-6 px-4 font-black italic text-xl sm:text-3xl uppercase tracking-tight sm:tracking-tighter flex items-center justify-center gap-2 sm:gap-4 hover:bg-white transition-all transform shadow-[0_15px_40px_rgba(255,77,0,0.2)]">
-              <span className="whitespace-nowrap">{getText('BTN_SEND', 'MESAJI GÖNDƏR')}</span>
-              <Send className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
+            <button className="w-full bg-[#FF4D00] text-black py-4 sm:py-6 px-4 font-black italic text-base sm:text-2xl md:text-3xl uppercase tracking-tight sm:tracking-tighter flex items-center justify-center gap-2 sm:gap-4 hover:bg-white transition-all transform shadow-[0_15px_40px_rgba(255,77,0,0.2)]">
+              <span className="text-center break-words [overflow-wrap:anywhere]">{getText('BTN_SEND', 'MESAJI GÖNDƏR')}</span>
+              <Send className="w-5 h-5 sm:w-7 sm:h-7 shrink-0" />
             </button>
           </form>
         </div>

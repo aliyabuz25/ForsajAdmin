@@ -1565,18 +1565,57 @@ const VisualEditor: React.FC = () => {
                 };
                 const ensureHeroDefaults = (heroPage: PageContent) => {
                     const sections = heroPage.sections || [];
-                    const ensureSection = (id: string, label: string, value: string, url?: string) => {
+                    const pickSection = (ids: string[]) =>
+                        ids
+                            .map((id) => sections.find((section) => section.id === id))
+                            .find((section) => !!section);
+                    const ensureSection = (
+                        id: string,
+                        label: string,
+                        value: string,
+                        url?: string,
+                        aliasIds: string[] = []
+                    ) => {
                         const idx = sections.findIndex(s => s.id === id);
+                        const sourceSection = pickSection([id, ...aliasIds]);
+                        const nextValue = String(sourceSection?.value || value || '').trim() || value;
+                        const nextUrl = String(sourceSection?.url || url || '').trim();
                         if (idx === -1) {
-                            sections.push({ id, type: 'text', label, value, ...(url ? { url } : {}) });
+                            sections.push({ id, type: 'text', label, value: nextValue, ...(nextUrl ? { url: nextUrl } : {}) });
                             return;
                         }
-                        if (url && !sections[idx].url) sections[idx].url = url;
+                        const currentValue = String(sections[idx].value || '').trim();
+                        if ((!currentValue || currentValue.toUpperCase() === id.toUpperCase()) && nextValue) {
+                            sections[idx].value = nextValue;
+                        }
+                        if (nextUrl && !sections[idx].url) sections[idx].url = nextUrl;
                     };
 
-                    ensureSection('text-3', 'Hero Düymə 1', 'YARIŞLARA BAX', 'events');
-                    ensureSection('text-4', 'Hero Düymə 2', 'HAQQIMIZDA', 'about');
+                    ensureSection('HERO_KICKER', 'Hero Üst Başlıq', 'AZERBAIJAN OFFROAD MOTORSPORT HUB', undefined, ['text-0']);
+                    ensureSection('HERO_TITLE', 'Hero Başlıq', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI', undefined, ['text-1']);
+                    ensureSection('HERO_DESCRIPTION', 'Hero Təsvir', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.', undefined, ['text-2']);
+                    ensureSection('HERO_PRIMARY_CTA', 'Hero Düymə 1', 'YARIŞLARA BAX', 'events', ['text-3']);
+                    ensureSection('HERO_SECONDARY_CTA', 'Hero Düymə 2', 'HAQQIMIZDA', 'about', ['text-4']);
+
+                    ensureSection('text-0', 'KEY: text-0', 'AZERBAIJAN OFFROAD MOTORSPORT HUB', undefined, ['HERO_KICKER']);
+                    ensureSection('text-1', 'KEY: text-1', 'SƏRHƏDSİZ OFFROAD HƏYƏCANI', undefined, ['HERO_TITLE']);
+                    ensureSection('text-2', 'KEY: text-2', 'Azərbaycanın ən çətin yollarında peşəkar yarışlar və adrenalin dolu anlar.', undefined, ['HERO_DESCRIPTION']);
+                    ensureSection('text-3', 'Hero Düymə 1', 'YARIŞLARA BAX', 'events', ['HERO_PRIMARY_CTA']);
+                    ensureSection('text-4', 'Hero Düymə 2', 'HAQQIMIZDA', 'about', ['HERO_SECONDARY_CTA']);
+
                     heroPage.sections = sections;
+                    prioritizeSectionOrder(heroPage, [
+                        'HERO_KICKER',
+                        'HERO_TITLE',
+                        'HERO_DESCRIPTION',
+                        'HERO_PRIMARY_CTA',
+                        'HERO_SECONDARY_CTA',
+                        'text-0',
+                        'text-1',
+                        'text-2',
+                        'text-3',
+                        'text-4'
+                    ]);
                 };
                 const ensurePageSectionDefaults = (
                     page: PageContent,

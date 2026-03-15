@@ -239,14 +239,14 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
               </div>
 
               {/* RIGHT: BLURRED STANDINGS PREVIEW */}
-              <div className="sm:w-2/5 flex flex-col bg-black/40 border border-white/5 p-6 rounded-sm relative group/blur shadow-inner">
+              <div className="sm:w-2/5 flex flex-col bg-black/40 border border-white/5 p-6 rounded-sm relative isolate overflow-hidden group/blur shadow-inner">
                 <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
                   <span className="text-[10px] font-black italic text-gray-600 uppercase tracking-widest">{getText('GRID_LABEL', 'TOP 10 GRID')}</span>
                   <Zap size={14} className="text-[#FF4D00]" />
                 </div>
 
                 {/* Lighter, readable but restricted list */}
-                <div className="space-y-4">
+                <div className="space-y-4 relative z-0">
                   {cat.fullStandings.slice(3, 10).map((d) => (
                     <div key={d.id} className="flex items-center justify-between text-[11px] font-black italic text-gray-500 uppercase blur-[0.6px] transition-all group-hover/blur:blur-none group-hover/blur:text-gray-400">
                       <div className="flex items-center gap-3">
@@ -259,7 +259,7 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
                 </div>
 
                 {/* Light Blur Overlay with Action */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent backdrop-blur-[4px] flex flex-col items-center justify-center p-6 text-center">
+                <div className="relative z-10 mt-6 flex flex-col items-center justify-center rounded-sm border border-white/10 bg-gradient-to-t from-black/95 via-black/85 to-black/70 p-6 text-center sm:absolute sm:inset-0 sm:mt-0 sm:rounded-none sm:border-0 sm:bg-gradient-to-t sm:from-black sm:via-black/30 sm:to-transparent sm:backdrop-blur-[4px]">
                   <div className="mb-8">
                     <p className="text-white font-black italic text-sm uppercase tracking-widest leading-none mb-2">
                       {getText('FULL_STANDINGS_TITLE', 'TAM SIRALAMA')}
@@ -270,8 +270,9 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className="group/btn relative w-full h-16 bg-[#FF4D00] text-black font-black italic text-sm uppercase transition-all duration-300 shadow-[0_15px_30px_rgba(255,77,0,0.3)] hover:shadow-[0_20px_50px_rgba(255,77,0,0.6)] hover:bg-white active:scale-95 overflow-hidden"
+                    className="group/btn relative z-10 w-full h-16 touch-manipulation bg-[#FF4D00] text-black font-black italic text-sm uppercase transition-all duration-300 shadow-[0_15px_30px_rgba(255,77,0,0.3)] hover:shadow-[0_20px_50px_rgba(255,77,0,0.6)] hover:bg-white active:scale-95 overflow-hidden"
                   >
                     {/* Button Animated Background */}
                     <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-0 transition-transform duration-500 skew-x-[-20deg]"></div>

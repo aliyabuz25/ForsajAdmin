@@ -32,6 +32,12 @@ type FrontView =
 
 type EventsOpenMode = 'default' | 'force-list';
 
+const toDocumentLang = (siteLanguage: string) => {
+  if (siteLanguage === 'RU') return 'ru';
+  if (siteLanguage === 'ENG') return 'en';
+  return 'az';
+};
+
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<FrontView>(() => {
     try {
@@ -87,7 +93,8 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const { getText } = useSiteContent('general');
+  const { getText, language } = useSiteContent('general');
+  const documentLang = toDocumentLang(language);
 
   useEffect(() => {
     const onPageShow = (event: PageTransitionEvent) => {
@@ -109,7 +116,6 @@ const App: React.FC = () => {
     const canonicalUrl = getText('SEO_CANONICAL_URL', window.location.origin);
     const robots = getText('SEO_ROBOTS', 'index,follow');
     const author = getText('SEO_AUTHOR', 'Forsaj Club');
-    const lang = getText('SEO_LANGUAGE', 'az');
     const ogTitle = getText('SEO_OG_TITLE', title);
     const ogDescription = getText('SEO_OG_DESCRIPTION', description);
     const ogImage = getText('SEO_OG_IMAGE', '');
@@ -155,7 +161,9 @@ const App: React.FC = () => {
     };
 
     document.title = title;
-    document.documentElement.lang = lang || 'az';
+    document.documentElement.lang = documentLang;
+    document.body.lang = documentLang;
+    document.documentElement.setAttribute('translate', 'yes');
 
     setMetaByName('description', description);
     setMetaByName('keywords', keywords);
@@ -179,10 +187,10 @@ const App: React.FC = () => {
     setMetaByName('twitter:creator', twitterCreator);
 
     setCanonical(canonicalUrl);
-  }, [getText]);
+  }, [documentLang, getText]);
 
   return (
-    <div className="cg-localized-preserve-lines flex flex-col min-h-screen w-full overflow-x-hidden">
+    <div lang={documentLang} className="cg-localized-preserve-lines flex flex-col min-h-screen w-full overflow-x-hidden">
       <Toaster position="top-right" />
       <Marquee />
       <Navbar currentView={currentView} onViewChange={(view) => handleViewChange(view, null)} />
