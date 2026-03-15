@@ -34,6 +34,11 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
   const { getText } = useSiteContent('driverspage');
 
   useEffect(() => {
+    if (initialCategoryId) return;
+    setSelectedCategory(null);
+  }, [initialCategoryId]);
+
+  useEffect(() => {
     let mounted = true;
 
     const loadDrivers = async () => {
@@ -57,7 +62,7 @@ const DriversPage: React.FC<DriversPageProps> = ({ initialCategoryId }) => {
 
           if (initialCategoryId) {
             const cat = mappedCats.find((c: any) => c.id === initialCategoryId);
-            if (cat) setSelectedCategory(cat);
+            setSelectedCategory(cat || null);
           }
         }
       } catch (err) {
