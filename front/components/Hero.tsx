@@ -28,7 +28,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
   const primaryCtaLabel = getText('HERO_PRIMARY_CTA', '') || getText('text-3', 'YARIŞLARA BAX');
   const secondaryCtaLabel = getText('HERO_SECONDARY_CTA', '') || getText('text-4', 'HAQQIMIZDA');
   const primaryCtaUrl = getUrl('HERO_PRIMARY_CTA', '') || getUrl('text-3', 'events');
-  const secondaryCtaUrl = getUrl('HERO_SECONDARY_CTA', '') || getUrl('text-4', 'about');
+  const secondaryCtaUrl = getUrl('HERO_SECONDARY_CTA', '') || getUrl('text-4', 'https://forsajclub.az/?view=about');
 
   if (isLoading) return <div className="h-[85vh] bg-black animate-pulse"></div>;
 
@@ -138,7 +138,7 @@ const Hero: React.FC<HeroProps> = ({ onViewChange }) => {
           </h3>
           <div className="w-10 h-0.5 bg-[#FF4D00]"></div>
         </div>
-        <h2 className="hero-title text-[clamp(2rem,8vw,6.8rem)] font-black italic tracking-[-0.02em] leading-[0.92] mb-8 text-white uppercase break-words [overflow-wrap:anywhere]">
+        <h2 className="hero-title text-[clamp(1.9rem,7.6vw,6.4rem)] font-black italic tracking-[-0.02em] leading-[0.92] mb-8 text-white uppercase break-words [overflow-wrap:anywhere]">
           {renderMultiline(heroTitle)}
         </h2>
         <p className="hero-desc text-gray-400 font-bold italic max-w-2xl mx-auto mb-10 text-[13px] md:text-[15px] leading-relaxed uppercase tracking-wide break-words [overflow-wrap:anywhere]">
