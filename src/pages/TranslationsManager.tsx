@@ -1585,18 +1585,19 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
 
                             <div className="editor-toolbar">
                                 <div className="editor-toolbar-row">
-                                    <div className="lang-tabs">
-                                        {EDITABLE_LANGUAGES.map((langTab) => (
-                                            <button
-                                                key={langTab}
-                                                type="button"
-                                                className={`lang-tab ${selectedLang === langTab ? 'active' : ''}`}
-                                                onClick={() => setSelectedLang(langTab)}
-                                            >
-                                                {langTab}
-                                            </button>
+                                <div className="lang-tabs">
+                                    <select
+                                        className="lang-select"
+                                        value={selectedLang}
+                                        onChange={(event) => setSelectedLang(event.target.value as EditableSiteLanguage)}
+                                    >
+                                        {EDITABLE_LANGUAGES.map((langOption) => (
+                                            <option key={langOption} value={langOption}>
+                                                {langOption}
+                                            </option>
                                         ))}
-                                    </div>
+                                    </select>
+                                </div>
                                     <div className="toolbar-search">
                                         <Search size={16} />
                                         <input

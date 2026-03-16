@@ -464,7 +464,22 @@
     display: inline-flex;
     border: 1px solid #d1d5db;
     border-radius: 10px;
-    overflow: hidden;
+    background: #ffffff;
+}
+
+.lang-select {
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    color: #1f2937;
+    cursor: pointer;
+}
+.lang-select:focus {
+    outline: none;
 }
 
 .lang-tab {
