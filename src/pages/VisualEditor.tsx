@@ -1434,7 +1434,8 @@ const VisualEditor: React.FC = () => {
                         'ƏSAS DƏYƏRLƏRİMİZ'
                     );
                     const hasValueSections = sections.some((section) => /^val-(icon|title|desc)-/i.test(section.id));
-                    if (!hasValueSections) {
+                    const hasMarker = sections.some((section) => section.id === VALUE_DEFAULTS_MARKER_ID);
+                    if (!hasValueSections && !hasMarker) {
                         ensureSection('val-icon-1', 'Dəyər 1 İkonu', 'Shield');
                         ensureSection('val-title-1', 'Dəyər 1 Başlıq', 'TƏHLÜKƏSİZLİK');
                         ensureSection('val-desc-1', 'Dəyər 1 Təsvir', 'EKSTREMAL İDMANDA CAN SAĞLIĞI BİZİM BİR NÖMRƏLİ QAYDAMIZDIR. BÜTÜN TEXNİKALARIMIZ FIA STANDARTLARINA UYĞUN YOXLANILIR.');
@@ -1447,6 +1448,7 @@ const VisualEditor: React.FC = () => {
                         ensureSection('val-icon-4', 'Dəyər 4 İkonu', 'Zap');
                         ensureSection('val-title-4', 'Dəyər 4 Başlıq', 'MÜKƏMMƏLLİK');
                         ensureSection('val-desc-4', 'Dəyər 4 Təsvir', 'HƏR YARIŞDA, HƏR DÖNGƏDƏ DAHA YAXŞI OLMAĞA ÇALIŞIRIQ. TƏLİMLƏRİMİZ PEŞƏKAR İNSTRUKTORLAR TƏRƏFİNDƏN İDARƏ OLUNUR.');
+                        sections.push({ id: VALUE_DEFAULTS_MARKER_ID, type: 'text', label: 'VAL MARKER', value: '1' });
                     }
 
                     const hasStatPairs = sections.some(s => s.id.includes('label-stat')) && sections.some(s => s.id.includes('value-stat'));
@@ -4556,6 +4558,7 @@ const VisualEditor: React.FC = () => {
         if (shouldSkipSectionInEditor(s)) return false;
         if (currentPage?.id === 'about' && isStatSectionId(s.id)) return false;
         if ((currentPage?.id === 'about' || currentPage?.id === 'values') && CORE_VALUE_FIELD_REGEX.test(s.id)) return false;
+        if (s.id === VALUE_DEFAULTS_MARKER_ID) return false;
         if (currentPage?.id === 'partners') return false;
         if (currentPage?.id === 'rulespage' && RULE_TAB_SECTION_REGEX.test(s.id)) return false;
         if (currentPage?.id === 'rulespage' && s.id.startsWith('RULES_')) return false;
@@ -4701,7 +4704,8 @@ const VisualEditor: React.FC = () => {
         );
     };
 
-    const isCoreValueField = (section: Section) => /^val-(icon|title|desc)-/i.test(section.id);
+const isCoreValueField = (section: Section) => /^val-(icon|title|desc)-/i.test(section.id);
+const VALUE_DEFAULTS_MARKER_ID = 'VAL_DEFAULTS_INSTALLED';
 
     const getCoreValueFieldType = (section: Section): 'icon' | 'title' | 'desc' | null => {
         if (!isCoreValueField(section)) return null;
