@@ -7658,7 +7658,7 @@ const VisualEditor: React.FC = () => {
                                         <div className="field-group">
                                             <div className="field-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <label><Shield size={16} /> Əsas Dəyərlər</label>
-                                                <button className="add-field-minimal" onClick={() => addCoreValueRow(pageIdx)}>
+                                                <button className="add-field-minimal" onClick={() => addCoreValueRow(selectedPageIndex)}>
                                                     <Plus size={14} /> Yeni Dəyər
                                                 </button>
                                             </div>
@@ -7672,7 +7672,7 @@ const VisualEditor: React.FC = () => {
                                                                 </div>
                                                                 <button
                                                                     title="Dəyəri sil"
-                                                                    onClick={() => removeCoreValueRow(row.suffix, pageIdx)}
+                                                                    onClick={() => removeCoreValueRow(row.suffix, selectedPageIndex)}
                                                                     style={{ background: '#fff', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '8px', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                                                 >
                                                                     <Trash2 size={14} />
@@ -7688,7 +7688,7 @@ const VisualEditor: React.FC = () => {
                                                                         key={`core-${row.suffix}-${opt}`}
                                                                         type="button"
                                                                         title={opt}
-                                                                        onClick={() => updateCoreValueField(row.suffix, 'icon', opt, pageIdx)}
+                                                                        onClick={() => updateCoreValueField(row.suffix, 'icon', opt, selectedPageIndex)}
                                                                             style={{
                                                                                 height: '44px',
                                                                                 border: selected ? '1px solid #f97316' : '1px solid #e2e8f0',
@@ -7710,14 +7710,14 @@ const VisualEditor: React.FC = () => {
                                                             <input
                                                                 type="text"
                                                                 value={row.title}
-                                                                onChange={(e) => updateCoreValueField(row.suffix, 'title', e.target.value, pageIdx)}
+                                                                onChange={(e) => updateCoreValueField(row.suffix, 'title', e.target.value, selectedPageIndex)}
                                                                 placeholder="Dəyər başlığı (Məs: TƏHLÜKƏSİZLİK)"
                                                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }}
                                                             />
                                                             <textarea
                                                                 rows={3}
                                                                 value={row.desc}
-                                                                onChange={(e) => updateCoreValueField(row.suffix, 'desc', e.target.value, pageIdx)}
+                                                                onChange={(e) => updateCoreValueField(row.suffix, 'desc', e.target.value, selectedPageIndex)}
                                                                 onKeyDown={(e) => e.stopPropagation()}
                                                                 placeholder="Dəyər təsviri"
                                                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', lineHeight: 1.4, resize: 'vertical' }}
