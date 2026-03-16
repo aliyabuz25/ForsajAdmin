@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Globe, Menu, X } from 'lucide-react';
 import { useSiteContent } from '../hooks/useSiteContent';
 
@@ -120,6 +120,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     { code: 'ru', label: 'RU', flag: 'https://flagcdn.com/w40/ru.png' },
     { code: 'en', label: 'EN', flag: 'https://flagcdn.com/w40/us.png' }
   ];
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isMobileMenuOpen && !isMobileLanguageModalOpen) return;
@@ -152,6 +154,17 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!isLangDropdownOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isLangDropdownOpen]);
 
   const navbarPage = getPage('navbar');
   const logoImg = getImageGeneral('SITE_LOGO_LIGHT').path;
@@ -215,6 +228,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     else if (code === 'en') setSiteLanguage('ENG');
     else setSiteLanguage('AZ');
     setIsMobileLanguageModalOpen(false);
+    setIsLangDropdownOpen(false);
   };
 
   return (
@@ -264,17 +278,38 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
 
         <div className="flex items-center justify-end min-w-[170px]">
           <div className="hidden lg:block">
-            <select
-              className="nav-lang-select"
-              value={mobileLanguage}
-              onChange={(event) => handleLanguageChange(event.target.value as 'az' | 'ru' | 'en')}
-            >
-              {mobileLanguageOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="nav-lang-dropdown" ref={langDropdownRef}>
+              <button
+                type="button"
+                className="nav-lang-trigger"
+                onClick={() => setIsLangDropdownOpen((prev) => !prev)}
+              >
+                <img
+                  src={mobileLanguageOptions.find((option) => option.code === mobileLanguage)?.flag}
+                  alt={mobileLanguage.toUpperCase()}
+                  className="nav-lang-flag"
+                />
+                <span>{mobileLanguage.toUpperCase()}</span>
+                <span className="nav-lang-chevron">▾</span>
+              </button>
+              {isLangDropdownOpen && (
+                <div className="nav-lang-list">
+                  {mobileLanguageOptions.map((option) => (
+                    <button
+                      key={`lang-option-${option.code}`}
+                      type="button"
+                      className={`nav-lang-list-item ${
+                        mobileLanguage === option.code ? 'is-active' : ''
+                      }`}
+                      onClick={() => handleLanguageChange(option.code)}
+                    >
+                      <img src={option.flag} alt={option.label} className="nav-lang-list-flag" />
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <button
             type="button"
