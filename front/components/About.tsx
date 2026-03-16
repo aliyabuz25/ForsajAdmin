@@ -174,12 +174,7 @@ const About: React.FC = () => {
     { label: text('txt-g-ncl-r-label-123', 'GƏNCLƏR'), value: toPlainText(getGeneralText('STATS_YOUTH') || getText('txt-g-ncl-r-value-123', '20+')) },
   ];
 
-  const values = dynamicValues.length > 0 ? dynamicValues : [
-    { icon: <Shield className="text-[#FF4D00]" />, title: text('txt-val-safety-title-123', 'TƏHLÜKƏSİZLİK'), desc: text('txt-val-safety-desc-123', 'EKSTREMAL İDMANDA CAN SAĞLIĞI BİZİM BİR NÖMRƏLİ QAYDAMIZDIR. BÜTÜN TEXNİKALARIMIZ FIA STANDARTLARINA UYĞUN YOXLANILIR.') },
-    { icon: <Users className="text-[#FF4D00]" />, title: text('txt-val-community-title-123', 'İCMA RUHU'), desc: text('txt-val-community-desc-123', 'FORSAJ BİR KLUBDAN DAHA ÇOX, SADİQ VƏ BÖYÜK BİR AİLƏDİR. BİRİMİZ HAMIMIZ, HAMIMIZ BİRİMİZ ÜÇÜN!') },
-    { icon: <Leaf className="text-[#FF4D00]" />, title: text('txt-val-nature-title-123', 'TƏBİƏTİ QORU'), desc: text('txt-val-nature-desc-123', 'BİZ OFFROAD EDƏRKƏN TƏBİƏTƏ ZƏRƏR VERMƏMƏYİ ÖZÜMÜZƏ BORC BİLİRİK. EKOLOJİ BALANS BİZİM ÜÇÜN MÜQƏDDƏSDİR.') },
-    { icon: <Zap className="text-[#FF4D00]" />, title: text('txt-val-excellence-title-123', 'MÜKƏMMƏLLİK'), desc: text('txt-val-excellence-desc-123', 'HƏR YARIŞDA, HƏR DÖNGƏDƏ DAHA YAXŞI OLMAĞA ÇALIŞIRIQ. TƏLİMLƏRİMİZ PEŞƏKAR İNSTRUKTORLAR TƏRƏFİNDƏN İDARƏ OLUNUR.') },
-  ];
+  const values = dynamicValues.length > 0 ? dynamicValues : [];
 
   const aboutKicker = resolveAboutText(
     ['ABOUT_KICKER', 'txt-est-2018-motorsp-949'],
@@ -316,21 +311,23 @@ const About: React.FC = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          {values.map((v, i) => (
-            <div key={i} className="flex flex-col items-start gap-6 group cursor-default">
-              <div className="bg-white/5 border border-white/5 p-6 rounded-sm transform group-hover:scale-110 group-hover:bg-[#FF4D00]/10 transition-all">
-                {v.icon}
+        {values.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {values.map((v, i) => (
+              <div key={i} className="flex flex-col items-start gap-6 group cursor-default">
+                <div className="bg-white/5 border border-white/5 p-6 rounded-sm transform group-hover:scale-110 group-hover:bg-[#FF4D00]/10 transition-all">
+                  {v.icon}
+                </div>
+                <h5 className="font-black italic text-xl sm:text-2xl uppercase tracking-tighter text-white group-hover:text-[#FF4D00] transition-colors break-words [overflow-wrap:anywhere] leading-tight">
+                  {v.title}
+                </h5>
+                <p className="text-gray-500 font-bold italic text-[10px] uppercase leading-relaxed tracking-widest break-words [overflow-wrap:anywhere]">
+                  {v.desc}
+                </p>
               </div>
-              <h5 className="font-black italic text-xl sm:text-2xl uppercase tracking-tighter text-white group-hover:text-[#FF4D00] transition-colors break-words [overflow-wrap:anywhere] leading-tight">
-                {v.title}
-              </h5>
-              <p className="text-gray-500 font-bold italic text-[10px] uppercase leading-relaxed tracking-widest break-words [overflow-wrap:anywhere]">
-                {v.desc}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
     </div>
