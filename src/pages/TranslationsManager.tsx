@@ -1489,6 +1489,30 @@ const TranslationsManager: React.FC<TranslationsManagerProps> = ({ language }) =
                     {selectedLang}: {completion}%
                 </span>
             </div>
+            {pageCards.length > 0 && (
+                <div className="translations-summary-grid">
+                    {pageCards.map((card) => (
+                        <article key={card.pageId} className="translation-summary-card">
+                            <div className="summary-card-head">
+                                <h3>{card.name}</h3>
+                                <span className="summary-card-percent">
+                                    {selectedLang}: {card.completionPercent}% {t.completionShort}
+                                </span>
+                            </div>
+                            <p className="summary-card-desc">{card.description}</p>
+                            <div className="summary-card-meta">
+                                <span className="summary-card-keycount">
+                                    {card.count} {t.countLabel}
+                                </span>
+                                <span className="summary-card-id">{card.pageId}</span>
+                            </div>
+                            <div className="summary-card-progress">
+                                <span style={{ width: `${card.completionPercent}%` }} />
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            )}
 
             <div className="translations-body">
                 <aside className="translations-pages">
