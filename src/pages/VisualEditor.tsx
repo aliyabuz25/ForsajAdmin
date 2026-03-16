@@ -1433,18 +1433,21 @@ const VisualEditor: React.FC = () => {
                         'Dəyərlər Başlığı',
                         'ƏSAS DƏYƏRLƏRİMİZ'
                     );
-                    ensureSection('val-icon-1', 'Dəyər 1 İkonu', 'Shield');
-                    ensureSection('val-title-1', 'Dəyər 1 Başlıq', 'TƏHLÜKƏSİZLİK');
-                    ensureSection('val-desc-1', 'Dəyər 1 Təsvir', 'EKSTREMAL İDMANDA CAN SAĞLIĞI BİZİM BİR NÖMRƏLİ QAYDAMIZDIR. BÜTÜN TEXNİKALARIMIZ FIA STANDARTLARINA UYĞUN YOXLANILIR.');
-                    ensureSection('val-icon-2', 'Dəyər 2 İkonu', 'Users');
-                    ensureSection('val-title-2', 'Dəyər 2 Başlıq', 'İCMA RUHU');
-                    ensureSection('val-desc-2', 'Dəyər 2 Təsvir', 'FORSAJ BİR KLUBDAN DAHA ÇOX, SADİQ VƏ BÖYÜK BİR AİLƏDİR. BİRİMİZ HAMIMIZ, HAMIMIZ BİRİMİZ ÜÇÜN!');
-                    ensureSection('val-icon-3', 'Dəyər 3 İkonu', 'Leaf');
-                    ensureSection('val-title-3', 'Dəyər 3 Başlıq', 'TƏBİƏTİ QORU');
-                    ensureSection('val-desc-3', 'Dəyər 3 Təsvir', 'BİZ OFFROAD EDƏRKƏN TƏBİƏTƏ ZƏRƏR VERMƏMƏYİ ÖZÜMÜZƏ BORC BİLİRİK. EKOLOJİ BALANS BİZİM ÜÇÜN MÜQƏDDƏSDİR.');
-                    ensureSection('val-icon-4', 'Dəyər 4 İkonu', 'Zap');
-                    ensureSection('val-title-4', 'Dəyər 4 Başlıq', 'MÜKƏMMƏLLİK');
-                    ensureSection('val-desc-4', 'Dəyər 4 Təsvir', 'HƏR YARIŞDA, HƏR DÖNGƏDƏ DAHA YAXŞI OLMAĞA ÇALIŞIRIQ. TƏLİMLƏRİMİZ PEŞƏKAR İNSTRUKTORLAR TƏRƏFİNDƏN İDARƏ OLUNUR.');
+                    const hasValueSections = sections.some((section) => /^val-(icon|title|desc)-/i.test(section.id));
+                    if (!hasValueSections) {
+                        ensureSection('val-icon-1', 'Dəyər 1 İkonu', 'Shield');
+                        ensureSection('val-title-1', 'Dəyər 1 Başlıq', 'TƏHLÜKƏSİZLİK');
+                        ensureSection('val-desc-1', 'Dəyər 1 Təsvir', 'EKSTREMAL İDMANDA CAN SAĞLIĞI BİZİM BİR NÖMRƏLİ QAYDAMIZDIR. BÜTÜN TEXNİKALARIMIZ FIA STANDARTLARINA UYĞUN YOXLANILIR.');
+                        ensureSection('val-icon-2', 'Dəyər 2 İkonu', 'Users');
+                        ensureSection('val-title-2', 'Dəyər 2 Başlıq', 'İCMA RUHU');
+                        ensureSection('val-desc-2', 'Dəyər 2 Təsvir', 'FORSAJ BİR KLUBDAN DAHA ÇOX, SADİQ VƏ BÖYÜK BİR AİLƏDİR. BİRİMİZ HAMIMIZ, HAMIMIZ BİRİMİZ ÜÇÜN!');
+                        ensureSection('val-icon-3', 'Dəyər 3 İkonu', 'Leaf');
+                        ensureSection('val-title-3', 'Dəyər 3 Başlıq', 'TƏBİƏTİ QORU');
+                        ensureSection('val-desc-3', 'Dəyər 3 Təsvir', 'BİZ OFFROAD EDƏRKƏN TƏBİƏTƏ ZƏRƏR VERMƏMƏYİ ÖZÜMÜZƏ BORC BİLİRİK. EKOLOJİ BALANS BİZİM ÜÇÜN MÜQƏDDƏSDİR.');
+                        ensureSection('val-icon-4', 'Dəyər 4 İkonu', 'Zap');
+                        ensureSection('val-title-4', 'Dəyər 4 Başlıq', 'MÜKƏMMƏLLİK');
+                        ensureSection('val-desc-4', 'Dəyər 4 Təsvir', 'HƏR YARIŞDA, HƏR DÖNGƏDƏ DAHA YAXŞI OLMAĞA ÇALIŞIRIQ. TƏLİMLƏRİMİZ PEŞƏKAR İNSTRUKTORLAR TƏRƏFİNDƏN İDARƏ OLUNUR.');
+                    }
 
                     const hasStatPairs = sections.some(s => s.id.includes('label-stat')) && sections.some(s => s.id.includes('value-stat'));
                     if (hasStatPairs) {
