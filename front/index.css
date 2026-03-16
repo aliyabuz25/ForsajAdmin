@@ -89,6 +89,26 @@ select {
   font-family: var(--font-ui);
 }
 
+.nav-lang-select {
+  background: transparent;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-lang-select:focus {
+  outline: none;
+  border-color: #ff4d00;
+  box-shadow: 0 0 0 2px rgba(255, 77, 0, 0.2);
+}
+
 a {
   text-decoration: none;
   color: inherit;

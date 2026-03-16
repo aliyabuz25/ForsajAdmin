@@ -210,10 +210,10 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleMobileLanguageSelect = (lang: string) => {
-    const normalized = (lang || '').toLowerCase();
-    if (normalized !== 'az' && normalized !== 'ru' && normalized !== 'en') return;
-    setSiteLanguage(normalized === 'ru' ? 'RU' : normalized === 'en' ? 'ENG' : 'AZ');
+  const handleLanguageChange = (code: 'az' | 'ru' | 'en') => {
+    if (code === 'ru') setSiteLanguage('RU');
+    else if (code === 'en') setSiteLanguage('ENG');
+    else setSiteLanguage('AZ');
     setIsMobileLanguageModalOpen(false);
   };
 
@@ -263,23 +263,18 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
         </div>
 
         <div className="flex items-center justify-end min-w-[170px]">
-          <div className="hidden lg:grid grid-cols-3 gap-2" translate="no">
-            {mobileLanguageOptions.map((option) => (
-              <button
-                key={`desktop-lang-${option.code}`}
-                type="button"
-                onClick={() => handleMobileLanguageSelect(option.code)}
-                translate="no"
-                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-sm border transition-all font-black italic text-[11px] uppercase ${
-                  mobileLanguage === option.code
-                    ? 'bg-[#FF4D00] text-black border-[#FF4D00]'
-                    : 'bg-white/5 text-white border-white/10 hover:bg-white/10'
-                }`}
-              >
-                <img src={option.flag} alt={option.label} className="w-4 h-4 rounded-full object-cover border border-white/30" />
-                <span className="notranslate" translate="no">{option.label}</span>
-              </button>
-            ))}
+          <div className="hidden lg:block">
+            <select
+              className="nav-lang-select"
+              value={mobileLanguage}
+              onChange={(event) => handleLanguageChange(event.target.value as 'az' | 'ru' | 'en')}
+            >
+              {mobileLanguageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="button"
@@ -365,7 +360,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange }) => {
                 <button
                   key={option.code}
                   type="button"
-                  onClick={() => handleMobileLanguageSelect(option.code)}
+                  onClick={() => handleLanguageChange(option.code)}
                   translate="no"
                   className={`flex items-center justify-center gap-2 px-3 py-3 rounded-sm border transition-all font-black italic text-xs uppercase ${
                     mobileLanguage === option.code
