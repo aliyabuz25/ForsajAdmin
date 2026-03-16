@@ -709,11 +709,14 @@ const LEGAL_SECTION_GROUPS: Record<string, Array<{ title: string; subtitle: stri
 };
 
 const CORE_VALUE_FIELD_REGEX = /^val-(icon|title|desc)-(.+)$/i;
+const VALUE_DEFAULTS_MARKER_ID = 'VAL_DEFAULTS_INSTALLED';
 const parseCoreValueField = (id: string): { field: CoreValueField; suffix: string } | null => {
     const match = String(id || '').trim().match(CORE_VALUE_FIELD_REGEX);
     if (!match) return null;
     return { field: match[1].toLowerCase() as CoreValueField, suffix: match[2] };
 };
+
+const isCoreValueField = (section: Section) => /^val-(icon|title|desc)-/i.test(section.id);
 
 const PAGE_EDIT_HINTS: Record<string, string> = {
     navbar: 'Üst menudakı düymə adları və keçidlərini buradan yeniləyin.',
@@ -4703,10 +4706,6 @@ const VisualEditor: React.FC = () => {
             v.includes('[center]')
         );
     };
-
-const isCoreValueField = (section: Section) => /^val-(icon|title|desc)-/i.test(section.id);
-const VALUE_DEFAULTS_MARKER_ID = 'VAL_DEFAULTS_INSTALLED';
-
     const getCoreValueFieldType = (section: Section): 'icon' | 'title' | 'desc' | null => {
         if (!isCoreValueField(section)) return null;
         if (/^val-icon-/i.test(section.id)) return 'icon';
